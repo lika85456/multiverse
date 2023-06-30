@@ -5,7 +5,8 @@ node_modules
 .sst
 .build
 
-# opennext
+dist
+
 .open-next
 
 # misc
@@ -13,3 +14,7 @@ node_modules
 
 # local env files
 .env*.local
+
+.turbo
+
+code.zip
