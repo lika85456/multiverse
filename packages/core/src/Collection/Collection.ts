@@ -1,5 +1,5 @@
-import S3 from "../aws/s3/S3";
-import h5wasm, { Dataset } from 'h5wasm';
+import type { Dataset } from "h5wasm";
+import h5wasm from "h5wasm";
 
 const COLLECTION_TEMP_PATH = "/tmp/collections";
 
@@ -9,16 +9,11 @@ export default class Collection {
 
     constructor(
         public id: string,
+        public author: string,
         public name: string,
-        public s3: S3,
         public vectors: number,
         public dimensions: number
     ) {
-        this.collectionPath = `${COLLECTION_TEMP_PATH}/${this.id}`;
-    }
-
-    public async exists(): Promise<boolean> {
-        return await this.s3.exists() && this.s3.existsObject(this.id);
     }
 
     public async upload(fsPath: string): Promise<void> {
@@ -27,12 +22,20 @@ export default class Collection {
 
     public async read() {
         await h5wasm.ready;
-        let f = new h5wasm.File(datasetPath, "r");
+        const f = new h5wasm.File(datasetPath, "r");
 
         console.log(f.keys());
 
         const dataset:Dataset = f.get("train");
 
-        console.log(dataset.slice([[1,1],[]]));
+        console.log(dataset.slice([[1, 1], []]));
+    }
+
+    private persistentPath(): string {
+        return `${COLLECTION_TEMP_PATH}/${this.id}`;
+    }
+
+    private bucketId(): string {
+        return `${this.author}/${this.name}`;
     }
 };

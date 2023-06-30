@@ -1,6 +1,4 @@
-import type {
-    CreateBucketCommandOutput, ListBucketsCommandOutput, ListObjectsCommandOutput
-} from "@aws-sdk/client-s3";
+import type { CreateBucketCommandOutput, ListBucketsCommandOutput } from "@aws-sdk/client-s3";
 import { S3 as AWSS3 } from "@aws-sdk/client-s3";
 import type { Region } from "../types";
 import fs from "fs";
@@ -71,8 +69,16 @@ export class Bucket {
         this.s3 = new AWSS3({ region: this.config.region });
     }
 
+    public name(): string {
+        return this.config.bucket;
+    }
+
     public async listObjects(): Promise<string[]> {
         const res = await this.s3.listObjects({ Bucket: this.config.bucket });
+
+        if (res.$metadata.httpStatusCode === 200 && !res.Contents) {
+            return [];
+        }
 
         if (res.$metadata.httpStatusCode === 200 && res.Contents) {
             return res.Contents.map(x => x.Key).filter(x => x !== undefined) as string[];
