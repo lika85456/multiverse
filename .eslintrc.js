@@ -4,7 +4,11 @@ const config = {
     extends: [
         "custom/base",
     ],
-    parserOptions: { project: "./tsconfig.json", }
+    parserOptions: {
+        ecmaVersion: "latest",
+        project: true,
+        tsconfigRootDir: __dirname
+    },
 };
 
 module.exports = config;

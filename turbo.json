@@ -27,6 +27,29 @@
                 "test/**/*.tsx"
             ]
         },
+        "cdk:deploy": {
+            "cache": false,
+            "dependsOn": [
+                "build"
+            ],
+            "inputs": [
+                "cdk/**/*"
+            ]
+        },
+        "cdk:destroy": {
+            "cache": false,
+            "inputs": [
+                "cdk/**/*"
+            ]
+        },
+        "cdk:synth": {
+            "dependsOn": [
+                "build"
+            ],
+            "outputs": [
+                "cdk/**/*"
+            ]
+        },
         "lint": {},
         "dev": {
             "cache": false,

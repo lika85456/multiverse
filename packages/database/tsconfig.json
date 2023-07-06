@@ -1,19 +1,22 @@
 {
-    "extends": "tsconfig/base.json",
-    "compilerOptions": {
-      "declaration": true,
-      "importHelpers": false,
-      "module": "CommonJS",
-      "outDir": "dist",
-      "rootDir": "src",
-      "strict": true,
-      "target": "ES2020",
-      "lib": ["esnext"],
-      "types": ["node", "vitest/globals", "jest"],
-      "allowJs": true,
-    },
-    "include": [
-      "src/**/*",
-    ],
-    "exclude": ["dist", "build", "node_modules"],
-  }
+  "extends": "tsconfig/base.json",
+  "compilerOptions": {
+    "declaration": true,
+    "importHelpers": false,
+    "module": "CommonJS",
+    "outDir": "dist",
+    "rootDir": "src",
+    "strict": true,
+    "target": "ES2020",
+    "lib": ["esnext"],
+    "types": ["node", "vitest/globals", "jest"],
+    "allowJs": true,
+  },
+  "include": [
+    "src/**/*",
+    "scripts/**/*",
+    "test/**/*",
+    "tsup.config.ts"
+  ],
+  "exclude": ["dist", "build", "node_modules"],
+}

@@ -7,7 +7,7 @@ const exec = promisify(execCb);
 
 const sourcePath = "dist";
 const zipPath = "code.zip";
-const zipDir = "/tmp/databaseZip";
+const zipDir = "/tmp/orchestratorZip";
 
 void (async() => {
     console.info("Zipping code");
@@ -30,11 +30,14 @@ void (async() => {
 
     // copy node_modules
     console.info("Copying node_modules");
-    await fs.cp(`${sourcePath}/../node_modules`, `${zipDir}/node_modules`, { recursive: true });
+    await fs.cp(`${sourcePath}/../node_modules/`, `${zipDir}/node_modules`, { recursive: true });
 
     // zip
     console.info("Zipping");
-    await exec(`zip -r ${zipPath} .`, { cwd: zipDir });
+    await exec(`zip -r ${zipPath} .`, {
+        cwd: zipDir,
+        maxBuffer: 1024 * 1024 * 100
+    });
     await fs.copyFile(`${zipDir}/${zipPath}`, zipPath);
 
     // cleanup

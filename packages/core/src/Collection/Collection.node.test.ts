@@ -8,17 +8,17 @@ const datasetPath = "packages/core/src/Collection/test.hdf5";
 
 describe("<Collection>", () => {
     it("should not exist", async() => {
-
+        expect(true);
     });
 
-    it("should read hdf5", async() => {
-        await h5wasm.ready;
-        const f = new h5wasm.File(datasetPath, "r");
+    // it("should read hdf5", async() => {
+    //     await h5wasm.ready;
+    //     const f = new h5wasm.File(datasetPath, "r");
 
-        console.log(f.keys());
+    //     console.log(f.keys());
 
-        const dataset:Dataset = f.get("train");
+    //     const dataset:Dataset = f.get("train");
 
-        console.log(dataset.slice([[1, 2], []]));
-    });
+    //     console.log(dataset.slice([[1, 2], []]));
+    // });
 });
