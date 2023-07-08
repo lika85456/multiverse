@@ -15,7 +15,7 @@
   "include": [
     "src/**/*",
     "scripts/**/*",
-    "test/**/*",
+    "tests/**/*",
     "tsup.config.ts"
   ],
   "exclude": ["dist", "build", "node_modules"],

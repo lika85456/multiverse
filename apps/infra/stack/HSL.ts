@@ -37,15 +37,15 @@ export default class HorizontallyScaledLambda extends Stack {
         super(scope, id, props);
 
         // s3 bucket for indexes and collections
-        const bucket = new Bucket(this, "collections", {
-            removalPolicy: RemovalPolicy.DESTROY,
-            autoDeleteObjects: true
-        });
+        // const bucket = new Bucket(this, "collections", {
+        //     removalPolicy: RemovalPolicy.DESTROY,
+        //     autoDeleteObjects: true
+        // });
 
         const orchestratorLambda = new LambdaFunction(this, "OrchestratorLambda", props.orchestratorProps);
 
         // add bucket to orchestratorLambda
-        bucket.grantReadWrite(orchestratorLambda);
+        // bucket.grantReadWrite(orchestratorLambda);
 
         // allow orchestrator to cloudformation:ListStackResources
         orchestratorLambda.addToRolePolicy(new PolicyStatement({
@@ -71,7 +71,7 @@ export default class HorizontallyScaledLambda extends Stack {
             }));
 
             lambdaArns.push(lambdaFunction.functionArn);
-            bucket.grantReadWrite(lambdaFunction);
+            // bucket.grantReadWrite(lambdaFunction);
         }
 
         orchestratorLambda.addToRolePolicy(new PolicyStatement({

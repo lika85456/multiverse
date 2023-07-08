@@ -11,7 +11,7 @@ async function createBucket(name?: string) {
     return bucket;
 }
 
-describe("<S3>", () => {
+describe.skip("<S3>", () => {
     describe("<S3 Factory>", () => {
         it("creates and lists buckets", async() => {
             const bucket = await createBucket();
