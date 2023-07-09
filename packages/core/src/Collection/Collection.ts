@@ -1,30 +1,30 @@
-import type { Dataset } from "h5wasm";
+import type { Dataset, File } from "h5wasm";
 import h5wasm from "h5wasm";
 
 const COLLECTION_TEMP_PATH = "/tmp/collections";
 
 export default class Collection {
 
-    private collectionPath: string;
+    private file: File;
+    private initializePromise: Promise<void>;
 
     constructor(
-        public id: string,
         public author: string,
         public name: string,
         public vectors: number,
-        public dimensions: number
+        public dimensions: number,
+        public downloadPath: string,
     ) {
+        this.initializePromise = this.initialize();
     }
 
-    public async upload(fsPath: string): Promise<void> {
-        await this.s3.uploadObjectFile(this.id, fsPath);
-    }
-
-    public async read() {
+    private async initialize() {
         await h5wasm.ready;
-        const f = new h5wasm.File(datasetPath, "r");
+        this.file = new h5wasm.File(this.persistentPath(), "r");
+    }
 
-        console.log(f.keys());
+    public async next() {
+        await this.initializePromise;
 
         const dataset:Dataset = f.get("train");
 
