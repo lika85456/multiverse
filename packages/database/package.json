@@ -4,7 +4,7 @@
   "scripts": {
     "test": "vitest",
     "typecheck": "tsc -noEmit",
-    "build": "tsup src/index.ts --format cjs --minify --treeshake",
+    "build": "tsup src/index.ts --format cjs --minify --treeshake && cp package.dist.json dist/package.json && npm i --prefix dist",
     "zip": "tsx scripts/zip.ts"
   },
   "devDependencies": {

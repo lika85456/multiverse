@@ -1,3 +1,4 @@
 {
-    "app": "tsx stack/index.ts"
+    "app": "tsx stack/index.ts",
+    "region": "eu-central-1"
 }
