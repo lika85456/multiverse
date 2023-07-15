@@ -1,3 +1,4 @@
+/* eslint-disable turbo/no-undeclared-env-vars */
 import type {
     APIGatewayProxyEvent, APIGatewayProxyResult, Context
 } from "aws-lambda";
@@ -5,7 +6,7 @@ import { v4 } from "uuid";
 import { callLambda, getLambdas } from "./CloudFormationManager";
 
 const id = v4();
-// eslint-disable-next-line turbo/no-undeclared-env-vars
+
 const { STACK_ID } = process.env;
 
 export const handler = async(
@@ -18,7 +19,17 @@ export const handler = async(
         const lambdas = await getLambdas(STACK_ID!);
 
         const result = await Promise.all(lambdas.map(async(lambda) => {
-            return callLambda(lambda, { message: "hello from orchestrator" });
+            const start = Date.now();
+            const result = await callLambda({
+                stackResourcesSummary: lambda,
+                payload: { message: "hello from orchestrator" }
+            });
+            const end = Date.now();
+
+            return {
+                ...result,
+                time: end - start
+            };
         }));
 
         return {

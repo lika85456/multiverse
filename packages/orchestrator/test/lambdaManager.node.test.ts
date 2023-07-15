@@ -10,7 +10,7 @@ describe("CloudFormation manager", () => {
     it("calls", async() => {
         const lambdas = await getLambdas("Multiverse-Test");
 
-        const result = await callLambda(lambdas[0], { test: "test" });
+        const result = await callLambda({ stackResourcesSummary: lambdas[0], payload: { test: "test" } });
 
         console.log(result);
     });

@@ -1,0 +1,27 @@
+# *
+# !packages/config
+# !packages/database
+
+# # Common Keep
+# !*.json
+# !*.yaml
+# !pnpm-lock.yaml
+
+# **/.circleci
+# **/.editorconfig
+# **/.dockerignore
+# **/.git
+# **/.DS_Store
+# **/.vscode
+# **/node_modules
+# *.hdf5
+
+*
+!packages/database
+!pnpm-lock.yaml
+!package.json
+!tsconfig.json
+!pnpm-workspace.yaml
+!packages/database/src
+!packages/database/tsconfig.json
+!turbo.json

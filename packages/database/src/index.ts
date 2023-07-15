@@ -1,3 +1,4 @@
+/* eslint-disable turbo/no-undeclared-env-vars */
 import type {
     APIGatewayProxyEvent, APIGatewayProxyResult, Context
 } from "aws-lambda";
@@ -27,7 +28,7 @@ for (let j = 0; j < numDimensions; j++) query[j] = Math.random();
 const numNeighbors = 3;
 
 const id = v4();
-// eslint-disable-next-line turbo/no-undeclared-env-vars
+
 const { REPLICA_ID } = process.env;
 
 export const handler = async(

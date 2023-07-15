@@ -29,9 +29,6 @@
         },
         "cdk:deploy": {
             "cache": false,
-            "dependsOn": [
-                "build"
-            ],
             "inputs": [
                 "cdk/**/*"
             ]

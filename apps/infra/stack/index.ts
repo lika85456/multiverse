@@ -2,7 +2,9 @@ import HorizontallyScaledLambda from "./HSL";
 import ApiGateway from "./ApiGateway";
 import { App, Duration } from "aws-cdk-lib";
 import type { FunctionProps } from "aws-cdk-lib/aws-lambda";
-import { Runtime, Code } from "aws-cdk-lib/aws-lambda";
+import {
+    Runtime, Code, Handler
+} from "aws-cdk-lib/aws-lambda";
 import path from "path";
 
 const app = new App();
@@ -22,9 +24,10 @@ const orchestratorProps: FunctionProps = {
 };
 
 const functionProps: FunctionProps = {
-    runtime: Runtime.NODEJS_18_X,
-    code: Code.fromAsset(path.join(__dirname, "../../../packages/database/dist")),
-    handler: "index.handler",
+    runtime: Runtime.FROM_IMAGE,
+    // code: Code.fromAsset(path.join(__dirname, "../../../packages/database/dist")),
+    code: Code.fromAssetImage(path.join(__dirname, "../../../packages/database")),
+    handler: Handler.FROM_IMAGE,
     memorySize: 512,
     timeout: Duration.seconds(30),
     environment: {

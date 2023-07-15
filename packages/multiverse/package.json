@@ -1,0 +1,20 @@
+{
+  "name": "@multiverse/multiverse",
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "test": "vitest",
+    "typecheck": "tsc -noEmit",
+    "build": "tsup src/index.ts --dts --minify --format cjs,esm --legacy-output --clean --sourcemap --splitting --target es2020 --out-dir dist"
+  },
+  "files": [],
+  "devDependencies": {
+    "@types/jest": "^29.5.2",
+    "@types/node": "^20.3.1",
+    "tsconfig": "workspace:*",
+    "vitest": "^0.32.2"
+  },
+  "dependencies": {
+    "zod": "^3.21.4"
+  }
+}
