@@ -5,7 +5,7 @@ export default defineWorkspace([
   {
     test: {
       include: ['./**/*.node.test.{ts,js}'],
-      exclude: ['**/node_modules/**'],
+      exclude: ['**/node_modules/**', "**/cdk.out/**"],
       name: 'node',
       environment: 'node',
       globals: true,
@@ -13,6 +13,7 @@ export default defineWorkspace([
         minThreads: 4,
         maxThreads: 4
       }),
+      threads:false,
       hookTimeout: 60000,
       testTimeout: 60000
     }

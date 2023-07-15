@@ -1,6 +1,8 @@
 import HorizontallyScaledLambda from "./HSL";
 import ApiGateway from "./ApiGateway";
-import { App, Duration } from "aws-cdk-lib";
+import {
+ App, Duration, aws_dynamodb 
+} from "aws-cdk-lib";
 import type { FunctionProps } from "aws-cdk-lib/aws-lambda";
 import {
     Runtime, Code, Handler

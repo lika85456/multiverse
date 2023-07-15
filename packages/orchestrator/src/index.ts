@@ -9,6 +9,8 @@ const id = v4();
 
 const { STACK_ID } = process.env;
 
+const lambdas = getLambdas(STACK_ID!);
+
 export const handler = async(
     _event: APIGatewayProxyEvent,
     _context: Context
@@ -16,9 +18,7 @@ export const handler = async(
 ): Promise<APIGatewayProxyResult> => {
 
     try {
-        const lambdas = await getLambdas(STACK_ID!);
-
-        const result = await Promise.all(lambdas.map(async(lambda) => {
+        const result = await Promise.all((await lambdas).map(async(lambda) => {
             const start = Date.now();
             const result = await callLambda({
                 stackResourcesSummary: lambda,
@@ -35,7 +35,6 @@ export const handler = async(
         return {
             statusCode: 200,
             body: JSON.stringify({
-                message: "hello from orchestrator",
                 id,
                 env: process.env,
                 lambdas,

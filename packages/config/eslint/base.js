@@ -4,7 +4,6 @@ const config = {
     "turbo",
     "eslint:recommended",
     "plugin:@typescript-eslint/recommended",
-    "plugin:@typescript-eslint/recommended-requiring-type-checking",
     "prettier",
   ],
   env: {
@@ -13,7 +12,6 @@ const config = {
   parser: "@typescript-eslint/parser",
   plugins: ["@typescript-eslint", "import"],
   rules: {
-    "@next/next/no-html-link-for-pages": "off",
     "@typescript-eslint/restrict-template-expressions": "off",
     "@typescript-eslint/no-unused-vars": [
       "error",

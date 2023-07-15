@@ -11,7 +11,7 @@ export async function getLambdas(stackName: string) {
 
     if (!lambdas.StackResourceSummaries) throw new Error("No lambdas (resources) found in stack " + stackName);
 
-    return lambdas.StackResourceSummaries.filter((resource) => (resource.ResourceType === "AWS::Lambda::Function") && (!resource.LogicalResourceId?.includes("Orchestrator") || !resource.LogicalResourceId?.includes("CustomS3AutoDeleteObjectsCustomRes")));
+    return lambdas.StackResourceSummaries.filter((resource) => (resource.ResourceType === "AWS::Lambda::Function") && !resource.LogicalResourceId?.includes("Orchestrator"));
 }
 
 export async function callLambda({ stackResourcesSummary, payload }: { stackResourcesSummary: StackResourceSummary; payload: any; }) {

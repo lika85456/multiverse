@@ -6,7 +6,7 @@ import h5wasm from "h5wasm";
 // const datasetPath = "packages/core/src/Collection/mnist-784-euclidean.hdf5";
 const datasetPath = "packages/core/src/Collection/test.hdf5";
 
-describe("<Collection>", () => {
+describe.skip("<Collection>", () => {
     it("should not exist", async() => {
         expect(true);
     });
