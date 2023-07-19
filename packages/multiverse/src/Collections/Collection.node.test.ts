@@ -1,5 +1,9 @@
+import type { Collection } from "./Collection";
 import { Collections } from "./Collection";
 import https from "https";
+import {
+    createReadStream, unlink, writeFileSync
+} from "fs";
 
 function put(url: string, data: any) {
     return new Promise((resolve, reject) => {
@@ -60,16 +64,17 @@ describe("<Collections>", () => {
     const testCollectionText = testCollection.map(x => JSON.stringify(x)).join("\n");
 
     // in case of test failure, these objects are removed from the bucket afterAll
-    const objectsToRemove: string[] = [];
+    const objectsToRemove: Collection[] = [];
 
     function createCollection() {
         const collectionName = "test" + Math.random();
         const collection = collections.collection({
             name: collectionName,
-            dimensions: 2
+            dimensions: 2,
+            type: "json"
         });
 
-        objectsToRemove.push(collectionName);
+        objectsToRemove.push(collection);
 
         return collection;
     }
@@ -79,7 +84,8 @@ describe("<Collections>", () => {
         it("should generate upload link", async() => {
             const link = await collections.collection({
                 name: "test",
-                dimensions: 2
+                dimensions: 2,
+                type: "json"
             }).uploadLink();
 
             expect(link).toBeDefined();
@@ -101,6 +107,27 @@ describe("<Collections>", () => {
 
             expect(resultCollection).toEqual(testCollection);
 
+        });
+
+        it("should upload with readable stream", async() => {
+            const collection = createCollection();
+
+            const filePath = "/tmp/" + Math.random();
+            writeFileSync(filePath, testCollectionText);
+            const readStream = createReadStream(filePath);
+
+            await collection.upload(readStream);
+
+            // check that contents are there
+            const resultCollection = [];
+
+            for await (const item of collection) {
+                resultCollection.push(item);
+            }
+
+            unlink(filePath, () => { });
+
+            expect(resultCollection).toEqual(testCollection);
         });
     });
 
@@ -124,7 +151,8 @@ describe("<Collections>", () => {
 
     afterAll(async() => {
         for (const object of objectsToRemove) {
-            await collections.delete(object).catch(e => e);
+            await collections.delete(object.name()).catch(e => e);
+            object.cleanup();
         }
     });
 });

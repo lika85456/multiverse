@@ -3,17 +3,15 @@
  */
 
 import type { App, StackProps } from "aws-cdk-lib";
-import {
-    Stack, Aws, RemovalPolicy
-} from "aws-cdk-lib";
+import { Stack, Aws } from "aws-cdk-lib";
 import { PolicyStatement, AccountRootPrincipal } from "aws-cdk-lib/aws-iam";
 import type { FunctionProps } from "aws-cdk-lib/aws-lambda";
 import { Function as LambdaFunction } from "aws-cdk-lib/aws-lambda";
 import type { RestApi } from "aws-cdk-lib/aws-apigateway";
 import { LambdaIntegration } from "aws-cdk-lib/aws-apigateway";
-import { Bucket } from "aws-cdk-lib/aws-s3";
+import type { Bucket } from "aws-cdk-lib/aws-s3";
 
-export type HorizontallyScaledLambdaProps = StackProps & {
+export type DatabaseProps = StackProps & {
     /**
      * The number of replicas in the main region
      */
@@ -32,17 +30,16 @@ export type HorizontallyScaledLambdaProps = StackProps & {
     orchestratorProps: FunctionProps,
 
     apiGateway: RestApi; // Existing API Gateway object
+
+    collectionsBucket: Bucket; // Existing collections bucket
 };
 
-export default class HorizontallyScaledLambda extends Stack {
+export default class DatabaseStack extends Stack {
 
-    constructor(scope: App, id: string, props: HorizontallyScaledLambdaProps) {
+    constructor(scope: App, id: string, props: DatabaseProps) {
         super(scope, id, props);
 
-        const collectionsBucket = new Bucket(this, `collections-bucket-${id}`, {
-            removalPolicy: RemovalPolicy.DESTROY,
-            autoDeleteObjects: true
-        });
+        const { collectionsBucket } = props;
 
         const orchestratorLambda = new LambdaFunction(this, "OrchestratorLambda", {
             ...props.orchestratorProps,

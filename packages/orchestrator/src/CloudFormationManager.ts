@@ -1,9 +1,9 @@
-import type { StackResourceSummary } from "@aws-sdk/client-cloudformation";
 import { CloudFormation } from "@aws-sdk/client-cloudformation";
 import { Lambda } from "@aws-sdk/client-lambda";
+import type { StackResourceSummary } from "@aws-sdk/client-cloudformation";
 
 const cloudFormation = new CloudFormation({ region: "eu-central-1" });
-const lambda = new Lambda({ region: "eu-central-1" });
+export const lambda = new Lambda({ region: "eu-central-1" });
 
 // get all lambdas from cloud formation with id STACK_ID
 export async function getLambdas(stackName: string) {
@@ -11,10 +11,11 @@ export async function getLambdas(stackName: string) {
 
     if (!lambdas.StackResourceSummaries) throw new Error("No lambdas (resources) found in stack " + stackName);
 
-    return lambdas.StackResourceSummaries.filter((resource) => (resource.ResourceType === "AWS::Lambda::Function") && !resource.LogicalResourceId?.includes("Orchestrator"));
+    return lambdas.StackResourceSummaries.filter((resource) => (resource.ResourceType === "AWS::Lambda::Function") && resource.LogicalResourceId?.includes("LambdaFunction"));
 }
 
-export async function callLambda({ stackResourcesSummary, payload }: { stackResourcesSummary: StackResourceSummary; payload: any; }) {
+export async function callLambda({ stackResourcesSummary, payload }:
+    { stackResourcesSummary: StackResourceSummary; payload: any; }):Promise<any> {
     const result = await lambda.invoke({
         FunctionName: stackResourcesSummary.PhysicalResourceId,
         Payload: JSON.stringify(payload)

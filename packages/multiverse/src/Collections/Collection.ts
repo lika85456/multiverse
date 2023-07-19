@@ -5,6 +5,7 @@ import * as readline from "node:readline/promises";
 import z from "zod";
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { Upload } from "@aws-sdk/lib-storage";
 
 const createPresignedUrlWithClient = ({
     region, bucket, key
@@ -22,31 +23,7 @@ const createPresignedUrlWithClient = ({
     return getSignedUrl(client as any, command as any, { expiresIn: 3600 });
 };
 
-// function put(url: string, data: any) {
-//     return new Promise((resolve, reject) => {
-//         const req = https.request(
-//             url,
-//             {
-//                 method: "PUT",
-//                 headers: { "Content-Length": new Blob([data]).size }
-//             },
-//             (res) => {
-//                 let responseBody = "";
-//                 res.on("data", (chunk) => {
-//                     responseBody += chunk;
-//                 });
-//                 res.on("end", () => {
-//                     resolve(responseBody);
-//                 });
-//             }
-//         );
-//         req.on("error", (err) => {
-//             reject(err);
-//         });
-//         req.write(data);
-//         req.end();
-//     });
-// }
+export type CollectionType = "hdf5" | "json";
 
 export class Collections {
 
@@ -62,12 +39,15 @@ export class Collections {
     /**
      * Returns reference to a collection (not necessarily existing)
      */
-    public collection({ name, dimensions }: { name: string; dimensions: number; }) {
+    public collection({
+        name, dimensions, type
+    }: { name: string; dimensions: number; type: CollectionType }) {
         return new Collection({
             name,
             dimensions,
             region: this.options.region,
-            bucket: this.options.bucket
+            bucket: this.options.bucket,
+            type
         });
     }
 
@@ -94,7 +74,7 @@ export class Collection {
     private TEMP_PATH = "/tmp/";
     private s3: S3;
 
-    private readStream?: ReadableStream;
+    private readStream?: Readable;
     private reader?: readline.Interface;
     private readerIterator?: AsyncIterableIterator<string>;
 
@@ -106,6 +86,7 @@ export class Collection {
         bucket: string;
         name: string;
         dimensions: number;
+        type: "hdf5" | "json";
     }) {
         this.s3 = new S3({ region: options.region });
     }
@@ -143,9 +124,6 @@ export class Collection {
     }
 
     /**
-     * @example
-     * const collection = new Collection({ name: "my-collection", dimensions: 3 });
-     *
      * @returns S3 Upload link for the collection
      */
     public async uploadLink(): Promise<string> {
@@ -172,57 +150,111 @@ export class Collection {
         });
     }
 
-    public name(): string {
-        return this.options.name;
+    public async upload(readStream: ReadableStream): Promise<void> {
+        const upload = new Upload({
+            client: this.s3,
+            params: {
+                Bucket: this.options.bucket,
+                Key: this.options.name,
+                Body: readStream
+            },
+        });
+
+        await upload.done();
+    }
+
+    private async initializeReader() {
+        // check if exists in temp storage
+        if (!fs.existsSync(this.TEMP_PATH + this.options.name)) {
+            await this.load();
+        }
+
+        this.readStream = fs.createReadStream(this.TEMP_PATH + this.options.name);
+
+        if (!(this.readStream instanceof Readable)) {
+            throw Error("Unexpected error while downloading blob: Body is not a readable stream");
+        }
+
+        this.reader = readline.createInterface({
+            input: this.readStream,
+            crlfDelay: Infinity
+        });
+
+        this.readerIterator = this.reader[Symbol.asyncIterator]();
+    }
+
+    private async readJSON(): Promise<{
+        value: LabeledVector | undefined;
+        done: boolean;
+    }> {
+        const line = await this.readerIterator!.next();
+
+        if (!line || line.done) {
+            return {
+                done: true,
+                value: undefined
+            };
+        }
+
+        const parsed = LabeledVectorSchema.parse(JSON.parse(line.value));
+
+        return {
+            done: false,
+            value: {
+                label: parsed.label,
+                vector: parsed.vector
+            }
+        };
+    }
+
+    private async readHDF5(): Promise<{
+        value: LabeledVector | undefined;
+        done: boolean;
+    }> {
+        throw Error("Not implemented");
     }
 
     public [Symbol.asyncIterator]() {
         return {
             next: async() => {
-
                 if (!this.readStream) {
-                    // check if exists in temp storage
-                    if (!fs.existsSync(this.TEMP_PATH + this.options.name)) {
-                        await this.load();
-                    }
-
-                    this.readStream = fs.createReadStream(this.TEMP_PATH + this.options.name);
-
-                    if (!(this.readStream instanceof Readable)) {
-                        throw Error("Unexpected error while downloading blob: Body is not a readable stream");
-                    }
-
-                    this.reader = readline.createInterface({
-                        input: this.readStream,
-                        crlfDelay: Infinity
-                    });
-
-                    this.readerIterator = this.reader[Symbol.asyncIterator]();
+                    await this.initializeReader();
                 }
 
-                const line = await this.readerIterator!.next();
-
-                if (!line || line.done) {
-                    return {
-                        done: true,
-                        value: undefined
-                    };
+                if (this.options.type === "json") {
+                    return this.readJSON();
                 }
 
-                const parsed = LabeledVectorSchema.parse(JSON.parse(line.value));
+                if (this.options.type === "hdf5") {
+                    return this.readHDF5();
+                }
 
-                return {
-                    done: false,
-                    value: {
-                        label: parsed.label,
-                        vector: parsed.vector
-                    }
-                };
+                throw Error("Unsupported collection type");
             }
         };
     }
 
     public dimensions(): number {
         return this.options.dimensions;
+    }
+
+    public name(): string {
+        return this.options.name;
+    }
+
+    public cleanup() {
+        if (this.readStream) {
+            this.readStream.destroy();
+            this.readStream = undefined;
+        }
+
+        if (this.reader) {
+            this.reader.close();
+            this.reader = undefined;
+        }
+
+        if (this.readerIterator) {
+            this.readerIterator = undefined;
+        }
     }
 }

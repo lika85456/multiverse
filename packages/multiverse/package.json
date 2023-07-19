@@ -5,7 +5,7 @@
   "scripts": {
     "test": "vitest",
     "typecheck": "tsc -noEmit",
-    "build": "tsup src/index.ts --dts --minify --format cjs,esm --legacy-output --clean --sourcemap --splitting --target es2020 --out-dir dist"
+    "build": "tsup ./src --dts --minify --format cjs,esm --legacy-output --clean --sourcemap --splitting --target es2020 --out-dir dist"
   },
   "files": [],
   "devDependencies": {
@@ -15,8 +15,20 @@
     "vitest": "^0.32.2"
   },
   "dependencies": {
+    "@aws-cdk/aws-apigateway": "^1.204.0",
+    "@aws-cdk/cli-lib-alpha": "2.86.0-alpha.0",
+    "@aws-sdk/client-cloudformation": "^3.363.0",
     "@aws-sdk/client-s3": "^3.362.0",
+    "@aws-sdk/lib-storage": "^3.370.0",
     "@aws-sdk/s3-request-presigner": "^3.370.0",
+    "aws-cdk": "^2.87.0",
+    "aws-cdk-lib": "^2.87.0",
+    "constructs": "^10.2.69",
     "zod": "^3.21.4"
+  },
+  "tsup": {
+    "minify": true,
+    "sourceMap": true,
+    "externalModules": []
   }
 }

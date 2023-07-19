@@ -3,7 +3,7 @@ import type {
     APIGatewayProxyEvent, APIGatewayProxyResult, Context
 } from "aws-lambda";
 import { v4 } from "uuid";
-import { callLambda, getLambdas } from "./CloudFormationManager";
+import { getLambdas, callLambda } from "./CloudFormationManager";
 
 const id = v4();
 

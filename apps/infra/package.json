@@ -6,7 +6,8 @@
     "typecheck": "tsc -noEmit",
     "cdk:deploy": "cdk deploy --require-approval never --all",
     "cdk:destroy": "cdk destroy --force --stack Multiverse-Test",
-    "cdk:synth": "pnpm cdk synth"
+    "cdk:synth": "pnpm cdk synth",
+    "dev": "tsx src/index.ts"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.119",
@@ -17,11 +18,7 @@
     "vitest": "^0.32.2"
   },
   "dependencies": {
-    "@aws-cdk/aws-apigateway": "^1.204.0",
-    "@aws-cdk/cli-lib-alpha": "2.86.0-alpha.0",
-    "aws-cdk": "^2.86.0",
-    "aws-cdk-lib": "^2.86.0",
-    "constructs": "^10.2.69",
+    "@multiverse/multiverse": "workspace:*",
     "uuid": "^9.0.0",
     "zod": "^3.21.4"
   }

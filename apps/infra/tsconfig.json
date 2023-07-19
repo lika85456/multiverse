@@ -15,7 +15,7 @@
     "include": [
       "src/**/*",
       "stack/**/*",
-      "tests/**/*",
+      "tests/**/*", "../../packages/multiverse/src/CommonStack/ApiGateway.ts", "../../packages/multiverse/src/Database/DatabaseStack.ts",
     ],
     "exclude": ["dist", "build", "node_modules"],
   }

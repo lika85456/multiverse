@@ -7,26 +7,22 @@ import * as apigateway from "aws-cdk-lib/aws-apigateway";
  *
  * Path to orchestrator lambdas should be /orchestrator/{lambdaId}
  * where lambdaId is the id of the stack that contains the lambda.
- * It should limit HTTP requests to 1 every 10ms
  */
 export default class ApiGateway extends Stack {
 
-    private gateway: apigateway.RestApi;
+    private gatewayApi: apigateway.RestApi;
 
     constructor(scope: App, id: string) {
         super(scope, id);
 
-        this.gateway = new apigateway.RestApi(this, "MultiverseAPI", {
+        this.gatewayApi = new apigateway.RestApi(this, "MultiverseAPI", {
             restApiName: "MultiverseAPI",
             description: "Gateway for the Multiverse",
-            deployOptions: {
-                stageName: "dev",
-                throttlingRateLimit: 100
-            }
+            deployOptions: { stageName: "dev" }
         });
     }
 
-    public getGateway(): apigateway.RestApi {
-        return this.gateway;
+    public gateway(): apigateway.RestApi {
+        return this.gatewayApi;
     }
 }
