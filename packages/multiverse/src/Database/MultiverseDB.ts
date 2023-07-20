@@ -39,7 +39,7 @@ import {
     Runtime, Code, Handler
 } from "aws-cdk-lib/aws-lambda";
 import path from "path";
-import DatabaseStack from "./DatabaseStack";
+import DatabaseStack from "./StaticDatabaseStack";
 
 type DatabaseDeployOptions = {
     name: string;
@@ -66,31 +66,6 @@ export class Databases {
     }: DatabaseDeployOptions) {
         return await cli(async(context) => {
             const app = new App(context);
-
-            const orchestratorProps: FunctionProps = {
-                runtime: Runtime.NODEJS_18_X,
-                code: Code.fromAsset(path.join(__dirname, "../../../packages/orchestrator/dist")),
-                handler: "index.handler",
-                memorySize: 256,
-                timeout: Duration.seconds(30),
-                environment: {
-                    REGION: region,
-                    STACK_ID: name,
-                    COLLECTION_NAME: collection.name()
-                },
-            };
-
-            const functionProps: FunctionProps = {
-                runtime: Runtime.FROM_IMAGE,
-                code: Code.fromAssetImage(path.join(__dirname, "../../../packages/database")),
-                handler: Handler.FROM_IMAGE,
-                memorySize: 512,
-                timeout: Duration.seconds(30),
-                environment: {
-                    REGION: region,
-                    STACK_ID: name
-                },
-            };
 
             new DatabaseStack(app, name, {
                 apiGateway: this.options.apiGateway,

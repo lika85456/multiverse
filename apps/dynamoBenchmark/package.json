@@ -5,7 +5,7 @@
     "test": "vitest",
     "typecheck": "tsc -noEmit",
     "cdk:deploy": "cdk deploy --require-approval never --all",
-    "cdk:destroy": "cdk destroy --force --stack -all",
+    "cdk:destroy": "cdk destroy --force",
     "cdk:synth": "pnpm cdk synth",
     "build": "tsup runtime.ts --format cjs --minify --treeshake"
   },

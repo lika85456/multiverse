@@ -6,7 +6,7 @@ import {
 } from "aws-cdk-lib/aws-lambda";
 import path from "path";
 import ApiGateway from "./CommonStack/ApiGateway";
-import DatabaseStack from "./Database/DatabaseStack";
+import DatabaseStack from "./Database/StaticDatabaseStack";
 import CollectionsBucket from "./CommonStack/CollectionsBucket";
 
 export function stack(_context: Record<string, any>) {

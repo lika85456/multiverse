@@ -3,7 +3,6 @@ import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import * as cdk from "aws-cdk-lib";
 import * as path from "path";
-import * as iam from "aws-cdk-lib/aws-iam";
 
 export class CdkStarterStack extends cdk.Stack {
     constructor(scope: cdk.App, id: string, props?: cdk.StackProps) {
