@@ -1,7 +1,9 @@
-import { cli as cliGenerator } from "@multiverse/multiverse/src/StackCli";
-
+import { Databases } from "@multiverse/multiverse/dist/Database/MultiverseDB";
+import ApiGateway from "@multiverse/multiverse/src/CommonStack/ApiGateway";
+import CollectionsBucket from "@multiverse/multiverse/src/CommonStack/CollectionsBucket";
 (async() => {
-    const cli = await cliGenerator();
-    const result = await cli.deploy({ requireApproval: "never" as any });
-    console.log(result);
+    const app = new App;
+    const apiGateway = new ApiGateway();
+
+    const databases = new Databases({});
 })();

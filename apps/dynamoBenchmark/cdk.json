@@ -1,0 +1,4 @@
+{
+    "app": "tsx index.ts",
+    "region": "eu-central-1"
+}

@@ -34,7 +34,7 @@ const { REPLICA_ID } = process.env;
 export const handler = async(
     _event: APIGatewayProxyEvent,
     _context: Context
-// eslint-disable-next-line @typescript-eslint/require-await
+
 ): Promise<APIGatewayProxyResult> => {
 
     const result = index.searchKnn(query, numNeighbors);

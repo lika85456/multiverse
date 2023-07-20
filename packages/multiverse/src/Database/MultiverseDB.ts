@@ -133,11 +133,11 @@ export class Databases {
         return database;
     }
 
-    private async destroy(database: Database) {
+    public async destroy(database: Database) {
         await (await this.getCli(database.deployOptions)).destroy();
     }
 
-    private async databaseExists(name: string) {
+    public async databaseExists(name: string) {
         const cloudformation = new CloudFormation({ region: this.options.region });
         const result = await cloudformation.describeStacks({ StackName: name });
         return result.Stacks && result.Stacks.length > 0;

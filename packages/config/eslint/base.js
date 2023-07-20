@@ -21,10 +21,8 @@ const config = {
       "warn",
       { prefer: "type-imports", fixStyle: "separate-type-imports" },
     ],
-    "@typescript-eslint/no-misused-promises": [
-      2,
-      { checksVoidReturn: { attributes: false } },
-    ],
+    // slow as fuck
+    "@typescript-eslint/no-misused-promises": "off",
     "import/consistent-type-specifier-style": ["error", "prefer-top-level"],
     quotes: ["error", "double"],
     "space-before-function-paren": ["error", "never"],
