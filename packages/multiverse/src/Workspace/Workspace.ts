@@ -2,7 +2,7 @@ import { App, RemovalPolicy } from "aws-cdk-lib";
 import type DatabaseStorage from "../DatabaseStorage/DatabaseStorage";
 import { Bucket } from "aws-cdk-lib/aws-s3";
 import StaticDatabaseStack from "../Database/StaticDatabaseStack";
-import { AwsCdkCli } from "@aws-cdk/cli-lib-alpha";
+import { AwsCdkCli, RequireApproval } from "@aws-cdk/cli-lib-alpha";
 import CollectionsBucket from "../CommonStack/CollectionsBucket";
 
 export default class Workspace {
@@ -15,9 +15,13 @@ export default class Workspace {
 
     }
 
-    // stack to be used in cli
+    // stack to be used in clis
     public async deploy() {
-        await this.cli().deploy({ verbose: true });
+        await this.cli().deploy({
+            verbose: true,
+            requireApproval: RequireApproval.NEVER,
+            concurrency: 100
+        });
     }
 
     public async destroy() {
@@ -38,7 +42,7 @@ export default class Workspace {
 
         const collectionsBucket = new CollectionsBucket(app, "collectionsBucket").collectionsBucket();
 
-        const _dbs = (await this.storage.getDatabases(this.name)).map(db => {
+        (await this.storage.getDatabases(this.name)).map(db => {
             if (db.type === "static") {
                 return new StaticDatabaseStack(app, db.name, {
                     apiGatewayARN: this.apiGatewayARN,

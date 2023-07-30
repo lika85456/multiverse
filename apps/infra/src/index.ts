@@ -1,43 +1,32 @@
-// import { Databases } from "@multiverse/multiverse/dist/Database/MultiverseDB";
-// import ApiGateway from "@multiverse/multiverse/src/CommonStack/ApiGateway";
-// import CollectionsBucket from "@multiverse/multiverse/src/CommonStack/CollectionsBucket";
-// (async() => {
-//     const app = new App;
-//     const apiGateway = new ApiGateway();
+import MemoryDatabaseStorage from "@multiverse/multiverse/src/DatabaseStorage/MemoryDatabaseStorage";
+import Workspace from "@multiverse/multiverse/src/Workspace/Workspace";
 
-//     const databases = new Databases({});
-// })();
+const apiGatewayARN = "arn:aws:apigateway:eu-central-1::/restapis/azomjrsy23/stages/test";
 
-// const apiGatewayARN = "arn:aws:apigateway:us-east-1::/restapis/6q2q3q3q3q/stages/dev";
+(async() => {
+    const memoryDbStorage = new MemoryDatabaseStorage();
 
-interface DatabaseStorage {
-    getDatabases(workspaceName: string): Promise<DatabaseSettings[]>;
-}
+    const id = `test-${Math.random()}`;
 
-interface WorkspaceStorage {
-    getWorkspace(workspaceName: string): Promise<Workspace | null>;
-}
+    await memoryDbStorage.addDatabase(id, {
+        apiGatewayARN,
+        collectionName: "my-first-collection",
+        ephemeralStorageSize: 1024,
+        memorySize: 1024,
+        name: "my-first-database",
+        region: "eu-central-1",
+        type: "static"
+    });
 
-class Workspace {
-    constructor(
-        public readonly name: string,
-        public readonly region: string,
-        public readonly apiGatewayARN: string,
-        private readonly storage: DatabaseStorage
-    ) {
+    const workspace = new Workspace(
+        id,
+        "eu-central-1",
+        // azomjrsy23
+        apiGatewayARN,
+        memoryDbStorage
+    );
 
-    }
+    await workspace.deploy();
 
-    // stack to be used in cli
-    public async deploy() {
-
-    }
-
-    public async destroy() {
-
-    }
-
-    private async stack() {
-
-    }
-}
+    // await workspace.destroy();
+})();

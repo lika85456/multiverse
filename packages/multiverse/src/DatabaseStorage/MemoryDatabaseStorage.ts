@@ -9,11 +9,11 @@ export default class MemoryDatabaseStorage implements DatabaseStorage {
         return Promise.resolve(this.databases[workspaceName] || []);
     }
 
-    addDatabase(workspaceName: string, databaseSettings: StaticDatabaseSettings): Promise<void> {
+    addDatabase(workspaceName: string, databaseSettings: Omit<StaticDatabaseSettings, "collectionsBucket">): Promise<void> {
         if (!this.databases[workspaceName]) {
             this.databases[workspaceName] = [];
         }
-        this.databases[workspaceName].push(databaseSettings);
+        this.databases[workspaceName].push(databaseSettings as any);
         return Promise.resolve();
     }
 

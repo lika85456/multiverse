@@ -43,7 +43,7 @@ export default class StaticDatabaseStack extends Stack {
 
         this.orchestratorLambda = new LambdaFunction(this, "orchestrator", {
             runtime: Runtime.NODEJS_18_X,
-            code: Code.fromAsset(path.join(__dirname, "packages/orchestrator/dist")),
+            code: Code.fromAsset(path.join(__dirname, "../../../../packages/orchestrator/dist")),
             handler: "index.handler",
             // todo benchmark memory sizes
             memorySize: 1024,
@@ -83,19 +83,13 @@ export default class StaticDatabaseStack extends Stack {
             .root
             .resourceForPath("/")
             .addResource(`${id}`)
-            .addMethod("GET", new LambdaIntegration(this.orchestratorLambda));
-
-        apiGateway
-            .root
-            .resourceForPath("/")
-            .addResource(`${id}`)
-            .addMethod("POST", new LambdaIntegration(this.orchestratorLambda));
+            .addMethod("ANY", new LambdaIntegration(this.orchestratorLambda));
     }
 
     private defineDatabaseLambda(partition: number): LambdaFunction {
         const lambdaFunction = new LambdaFunction(this, `db-lambda-${partition}`, {
             runtime: Runtime.FROM_IMAGE,
-            code: Code.fromAssetImage(path.join(__dirname, "packages/database")),
+            code: Code.fromAssetImage(path.join(__dirname, "../../../../packages/database")),
             handler: Handler.FROM_IMAGE,
             // TODO: detect collection size and set memory size accordingly
             memorySize: 512,
