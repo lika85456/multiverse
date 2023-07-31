@@ -1,6 +1,7 @@
 import type { Readable } from "stream";
 import type { Collection, LabeledVector } from "./Collection";
 import { DynamoCollection } from "./DynamoCollection";
+import { ENV } from "../env";
 
 async function readAll(collection: Collection): Promise<LabeledVector[]> {
     const stream: Readable = await collection.readStream();
@@ -32,7 +33,7 @@ describe("<DynamoCollection>", () => {
 
     const collection = new DynamoCollection({
         region: "eu-central-1",
-        table: ""
+        table: ENV.TEST_COLLECTIONS_DYNAMO_TABLE
     });
 
     beforeEach(async() => {
