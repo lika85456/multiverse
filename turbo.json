@@ -1,5 +1,8 @@
 {
     "$schema": "https://turbo.build/schema.json",
+    "globalEnv": [
+        "NODE_ENV"
+    ],
     "pipeline": {
         "build": {
             "dependsOn": [
@@ -25,26 +28,6 @@
                 "src/**/*.ts",
                 "test/**/*.ts",
                 "test/**/*.tsx"
-            ]
-        },
-        "cdk:deploy": {
-            "cache": false,
-            "inputs": [
-                "cdk/**/*"
-            ]
-        },
-        "cdk:destroy": {
-            "cache": false,
-            "inputs": [
-                "cdk/**/*"
-            ]
-        },
-        "cdk:synth": {
-            "dependsOn": [
-                "build"
-            ],
-            "outputs": [
-                "cdk/**/*"
             ]
         },
         "lint": {},

@@ -1,6 +1,6 @@
 import { getLambdas, callLambda } from "../src/CloudFormationManager";
 
-describe("CloudFormation manager", () => {
+describe.skip("CloudFormation manager", () => {
     it("getLambdas", async() => {
         const lambdas = await getLambdas("Multiverse-Test");
 

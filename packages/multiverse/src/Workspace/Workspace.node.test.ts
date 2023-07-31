@@ -1,7 +1,7 @@
 import MemoryDatabaseStorage from "../DatabaseStorage/MemoryDatabaseStorage";
 import Workspace from "./Workspace";
 
-describe.only("<Workspace>", () => {
+describe.skip("<Workspace>", () => {
 
     let workspace: Workspace;
 

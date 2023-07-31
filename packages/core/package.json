@@ -7,6 +7,7 @@
     "typecheck": "tsc -noEmit"
   },
   "devDependencies": {
+    "@multiverse/env": "workspace:*",
     "@types/jest": "^29.5.2",
     "@types/node": "^20.3.1",
     "h5wasm": "^0.5.2",
@@ -14,7 +15,11 @@
     "vitest": "^0.32.2"
   },
   "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.379.1",
     "@aws-sdk/client-s3": "^3.362.0",
+    "@aws-sdk/lib-dynamodb": "^3.379.1",
+    "@aws-sdk/lib-storage": "^3.370.0",
+    "dotenv": "^16.3.1",
     "jsfive": "^0.3.14",
     "zod": "^3.21.4"
   }

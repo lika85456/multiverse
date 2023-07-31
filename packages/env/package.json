@@ -1,0 +1,32 @@
+{
+  "name": "@multiverse/env",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "vitest",
+    "build": "tsup ./src --dts --minify --format cjs,esm --legacy-output --clean --sourcemap --splitting --target es2020 --out-dir dist"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/jest": "^29.5.2",
+    "@types/node": "^20.3.1",
+    "tsconfig": "workspace:*",
+    "tsup": "^7.1.0",
+    "vitest": "^0.32.2",
+    "zod": "^3.21.4"
+  },
+  "peerDependencies": {
+    "zod": "^3"
+  },
+  "dependencies": {
+    "zod-error": "^1.5.0"
+  },
+  "tsup": {
+    "minify": true,
+    "sourceMap": true,
+    "externalModules": []
+  }
+}

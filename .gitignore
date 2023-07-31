@@ -20,3 +20,6 @@ dist
 code.zip
 
 cdk.out
+
+.env
+.env.test

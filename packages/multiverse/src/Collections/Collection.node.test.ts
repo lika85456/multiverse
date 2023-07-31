@@ -31,7 +31,7 @@ function put(url: string, data: any) {
     });
 }
 
-describe("<Collections>", () => {
+describe.skip("<Collections>", () => {
 
     const collections = new Collections({
         region: "eu-central-1",

@@ -21,8 +21,13 @@ const config = {
       "warn",
       { prefer: "type-imports", fixStyle: "separate-type-imports" },
     ],
-    // slow as fuck
+    // very slow
     "@typescript-eslint/no-misused-promises": "off",
+    "lines-between-class-members": [
+      "error",
+      "always",
+      { exceptAfterSingleLine: true },
+    ],
     "import/consistent-type-specifier-style": ["error", "prefer-top-level"],
     quotes: ["error", "double"],
     "space-before-function-paren": ["error", "never"],

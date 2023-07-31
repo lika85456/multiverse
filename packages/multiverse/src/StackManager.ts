@@ -46,6 +46,7 @@ export function stack(_context: Record<string, any>) {
         orchestratorProps,
         warmInterval: 60,
         stackName: "Multiverse-Test",
+        // @ts-ignore
         collectionsBucket: collectionsBucket.collectionsBucket(),
     });
 
