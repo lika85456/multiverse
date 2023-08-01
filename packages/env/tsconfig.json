@@ -13,7 +13,7 @@
       "allowJs": true,
     },
     "include": [
-      "src/**/*",
+      "src/**/*", "example.ts",
     ],
     "exclude": ["dist", "build", "node_modules"],
   }

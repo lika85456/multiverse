@@ -18,6 +18,14 @@ export class S3Collection implements Collection {
     }) {
     }
 
+    public async dimensions(): Promise<number> {
+        return this.options.dimensions;
+    }
+
+    public async size(): Promise<number> {
+        return this.options.vectors;
+    }
+
     public async readStream(): Promise<Readable> {
         // check if file exists (it consists of JSON stringified objects split by line)
         if (!fs.existsSync(S3Collection.COLLECTION_PATH)) {

@@ -1,51 +1,33 @@
-/* eslint-disable turbo/no-undeclared-env-vars */
-import type {
-    APIGatewayProxyEvent, APIGatewayProxyResult, Context
-} from "aws-lambda";
 import { v4 } from "uuid";
-import { HierarchicalNSW } from "hnswlib-node";
+import { ENV } from "./env";
+import { handlerGenerator } from "./handler";
+import KNN from "./knn";
+import { DynamoCollection } from "@multiverse/core/src/Collection/DynamoCollection";
 
-const numDataPoints = 1000;
-const numDimensions = 8;
+function initializeCollection() {
+    const {
+        INDEX_TYPE, COLLECTIONS_DYNAMO_TABLE, DIMENSIONS
+    } = ENV;
 
-// loading index.
-const index = new HierarchicalNSW("l2", numDimensions);
-index.initIndex(numDataPoints);
+    if (INDEX_TYPE === "static") {
+        throw new Error("Static collections are not supported yet");
+    }
 
-// add 1000 random data points to index.
+    if (INDEX_TYPE === "dynamic") {
+        if (!COLLECTIONS_DYNAMO_TABLE) throw new Error("COLLECTIONS_DYNAMO_TABLE is not defined");
 
-for (let i = 0; i < numDataPoints; i++) {
-    const dataPoint = new Array(numDimensions) as number[];
-    for (let j = 0; j < numDimensions; j++) dataPoint[j] = Math.random();
-    index.addPoint(dataPoint, Math.random());
+        return new DynamoCollection({
+            region: "eu-central-1",
+            table: COLLECTIONS_DYNAMO_TABLE,
+            dimensions: DIMENSIONS
+        });
+    }
+
+    throw new Error("INDEX_TYPE is not defined or invalid");
 }
 
-// preparing query data points.
-const query = new Array(numDimensions) as number[];
-for (let j = 0; j < numDimensions; j++) query[j] = Math.random();
+const instanceId = v4();
 
-// searching k-nearest neighbor data points.
-const numNeighbors = 3;
+const knn = new KNN({ collection: initializeCollection() });
 
-const id = v4();
-
-const { REPLICA_ID } = process.env;
-
-export const handler = async(
-    _event: APIGatewayProxyEvent,
-    _context: Context
-
-): Promise<APIGatewayProxyResult> => {
-
-    const result = index.searchKnn(query, numNeighbors);
-
-    return {
-        statusCode: 200,
-        body: JSON.stringify({
-            message: "hello world2",
-            id,
-            replicaId: REPLICA_ID,
-            result
-        }),
-    };
-};
+export const handler = handlerGenerator(knn, instanceId);

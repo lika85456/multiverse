@@ -4,8 +4,8 @@ import { defineWorkspace } from 'vitest/config'
 export default defineWorkspace([
   {
     test: {
-      include: ['./**/*.node.test.{ts,js}'],
-      exclude: ['**/node_modules/**', "**/cdk.out/**"],
+      include: ['./**/*.node.test.ts'],
+      exclude: ['**/node_modules/**', "**/cdk.out/**", "**/dist/**"],
       name: 'node',
       environment: 'node',
       globals: true,

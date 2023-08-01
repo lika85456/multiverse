@@ -2,9 +2,14 @@
   "name": "@multiverse/core",
   "version": "0.0.0",
   "type": "module",
+  "main": "dist/index.js",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "test": "vitest",
-    "typecheck": "tsc -noEmit"
+    "typecheck": "tsc -noEmit",
+    "build": "tsup"
   },
   "devDependencies": {
     "@multiverse/env": "workspace:*",
@@ -22,5 +27,25 @@
     "dotenv": "^16.3.1",
     "jsfive": "^0.3.14",
     "zod": "^3.21.4"
+  },
+  "tsup": {
+    "minify": true,
+    "sourceMap": true,
+    "externalModules": [],
+    "entry": [
+      "src",
+      "!src/**/*.test.ts"
+    ],
+    "format": [
+      "cjs",
+      "esm"
+    ],
+    "legacyOutput": true,
+    "clean": true,
+    "target": "es6",
+    "dts": true,
+    "splitting": true,
+    "treeshake": true,
+    "outdir": "dist"
   }
 }

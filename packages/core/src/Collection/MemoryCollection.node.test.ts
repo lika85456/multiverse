@@ -17,21 +17,24 @@ describe("<MemoryCollection>", () => {
 
     const collectionData = () => [
         {
-            label: "a",
+            label: 1,
             vector: [1, 2, 3]
         },
         {
-            label: "b",
+            label: 2,
             vector: [4, 5, 6]
         },
         {
-            label: "c",
+            label: 3,
             vector: [7, 8, 9]
         },
     ];
 
     it("should read", async() => {
-        const collection = new MemoryCollection(collectionData());
+        const collection = new MemoryCollection({
+            vectors: collectionData(),
+            dimensions: 3
+        });
 
         const vectors = await readAll(collection);
 
@@ -39,10 +42,13 @@ describe("<MemoryCollection>", () => {
     });
 
     it("should add", async() => {
-        const collection = new MemoryCollection(collectionData());
+        const collection = new MemoryCollection({
+            vectors: collectionData(),
+            dimensions: 3
+        });
 
         const newVector = {
-            label: "d",
+            label: 4,
             vector: [10, 11, 12]
         };
 
@@ -54,12 +60,15 @@ describe("<MemoryCollection>", () => {
     });
 
     it("should remove", async() => {
-        const collection = new MemoryCollection(collectionData());
+        const collection = new MemoryCollection({
+            vectors: collectionData(),
+            dimensions: 3
+        });
 
-        await collection.remove(["b"]);
+        await collection.remove([2]);
 
         const vectors = await readAll(collection);
 
-        expect(vectors).toEqual(collectionData().filter(v => v.label !== "b"));
+        expect(vectors).toEqual(collectionData().filter(v => v.label !== 2));
     });
 });

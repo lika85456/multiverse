@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "test": "vitest",
-    "build": "tsup ./src --dts --minify --format cjs,esm --legacy-output --clean --sourcemap --splitting --target es2020 --out-dir dist"
+    "build": "tsup"
   },
   "keywords": [],
   "author": "",
@@ -27,6 +27,20 @@
   "tsup": {
     "minify": true,
     "sourceMap": true,
-    "externalModules": []
+    "externalModules": [],
+    "entry": [
+      "src/index.ts",
+      "!src/**/*.test.ts"
+    ],
+    "format": [
+      "cjs",
+      "esm"
+    ],
+    "legacyOutput": true,
+    "clean": true,
+    "target": "es2020",
+    "dts": true,
+    "splitting": true,
+    "outdir": "dist"
   }
 }
