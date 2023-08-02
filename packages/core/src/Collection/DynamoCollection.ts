@@ -4,28 +4,29 @@ import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import {
     UpdateCommand, DynamoDBDocumentClient, ScanCommand, BatchWriteCommand
 } from "@aws-sdk/lib-dynamodb";
+import type { CollectionConfig, DatabaseConfig } from "../DatabaseConfig";
 
 export class DynamoCollection implements DynamicCollection {
 
     private client: DynamoDBClient;
     private docClient: DynamoDBDocumentClient;
 
-    constructor(private options: {
-        table: string;
-        region: string;
-        dimensions: number;
-    }) {
-        this.client = new DynamoDBClient({ region: this.options.region });
+    constructor(private databaseConfig: DatabaseConfig, private collectionConfig: CollectionConfig) {
+        this.client = new DynamoDBClient({ region: this.databaseConfig.mainRegion });
         this.docClient = DynamoDBDocumentClient.from(this.client);
     }
 
     public async dimensions(): Promise<number> {
-        return this.options.dimensions;
+        return this.collectionConfig.dimensions;
+    }
+
+    public tableName() {
+        return `multiverse-${this.databaseConfig.databaseName}-${this.collectionConfig.collectionName}`;
     }
 
     public async size(): Promise<number> {
         const items = await this.docClient.send(new ScanCommand({
-            TableName: this.options.table,
+            TableName: this.tableName(),
             Select: "COUNT"
         }));
 
@@ -34,7 +35,7 @@ export class DynamoCollection implements DynamicCollection {
 
     public async changesAfter(timestamp: number): Promise<(LabeledVector & {deactivated?: true})[]> {
         const items = await this.docClient.send(new ScanCommand({
-            TableName: this.options.table,
+            TableName: this.tableName(),
             FilterExpression: "#timestamp > :timestamp",
             ExpressionAttributeNames: { "#timestamp": "timestamp" },
             ExpressionAttributeValues: { ":timestamp": timestamp }
@@ -48,7 +49,7 @@ export class DynamoCollection implements DynamicCollection {
     }
 
     public async add(vectors: LabeledVector[], timestamp = Date.now()): Promise<void> {
-        console.info(`Adding ${vectors.length} vectors to ${this.options.table}`);
+        console.info(`Adding ${vectors.length} vectors to ${this.tableName()}`);
 
         const items = vectors.map(v => ({
             PutRequest: {
@@ -60,15 +61,15 @@ export class DynamoCollection implements DynamicCollection {
             }
         }));
 
-        await this.docClient.send(new BatchWriteCommand({ RequestItems: { [this.options.table]: items } }));
+        await this.docClient.send(new BatchWriteCommand({ RequestItems: { [this.tableName()]: items } }));
     }
 
     public async remove(labels: number[]): Promise<void> {
-        console.info(`Deactivating ${labels.length} vectors from ${this.options.table}`);
+        console.info(`Deactivating ${labels.length} vectors from ${this.tableName()}`);
 
         for (const label of labels) {
             await this.docClient.send(new UpdateCommand({
-                TableName: this.options.table,
+                TableName: this.tableName(),
                 Key: { label },
                 UpdateExpression: "SET deactivated = :deactivated, #timestamp = :timestamp",
                 ExpressionAttributeNames: { "#timestamp": "timestamp" },
@@ -83,7 +84,7 @@ export class DynamoCollection implements DynamicCollection {
     public async cleanupRemoved() {
         // delete all where deactivated = true
         const items = await this.docClient.send(new ScanCommand({
-            TableName: this.options.table,
+            TableName: this.tableName(),
             FilterExpression: "deactivated = :deactivated",
             ExpressionAttributeValues: { ":deactivated": true }
         }));
@@ -91,17 +92,17 @@ export class DynamoCollection implements DynamicCollection {
         const labels = items.Items?.map(item => item.label) ?? [];
 
         if (labels.length > 0) {
-            console.info(`Deleting ${labels.length} vectors from ${this.options.table}`);
+            console.info(`Deleting ${labels.length} vectors from ${this.tableName()}`);
 
             const items = labels.map(label => ({ DeleteRequest: { Key: { label } } }));
 
-            await this.docClient.send(new BatchWriteCommand({ RequestItems: { [this.options.table]: items } }));
+            await this.docClient.send(new BatchWriteCommand({ RequestItems: { [this.tableName()]: items } }));
         }
     }
 
     public async readStream(): Promise<Readable> {
         // download all items from DynamoDB
-        const items = await this.docClient.send(new ScanCommand({ TableName: this.options.table }));
+        const items = await this.docClient.send(new ScanCommand({ TableName: this.tableName() }));
 
         // return a readable stream
         return new Readable({

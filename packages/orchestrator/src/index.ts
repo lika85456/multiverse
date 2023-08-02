@@ -1,55 +1,31 @@
-/* eslint-disable turbo/no-undeclared-env-vars */
-import type {
-    APIGatewayProxyEvent, APIGatewayProxyResult, Context
-} from "aws-lambda";
-import { v4 } from "uuid";
-import { getLambdas, callLambda } from "./CloudFormationManager";
+import type { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
+import type { Context } from "vitest";
+import StateMemory from "./StateMemory";
+import { ENV } from "./env";
+import wake from "./wake";
+import DatabaseDeployer from "@multiverse/multiverse/dist/DatabaseDeployer/DatabaseDeployer";
 
-const id = v4();
+const { DATABASE_CONFIG, COLLECTION_CONFIG } = ENV;
 
-const { STACK_ID } = process.env;
+const databaseFnArn = new DatabaseDeployer({
+    collection: COLLECTION_CONFIG,
+    database: DATABASE_CONFIG
+}).functionName();
 
-const lambdas = getLambdas(STACK_ID!);
+// initialize state memory
+const stateMemory = new StateMemory();
 
 export const handler = async(
-    _event: APIGatewayProxyEvent,
-    _context: Context
-
+    event: APIGatewayProxyEvent,
+    context: Context
 ): Promise<APIGatewayProxyResult> => {
 
-    try {
-        const result = await Promise.all((await lambdas).map(async(lambda) => {
-            const start = Date.now();
-            const result = await callLambda({
-                stackResourcesSummary: lambda,
-                payload: { message: "hello from orchestrator" }
-            });
-            const end = Date.now();
-
-            return {
-                ...result,
-                time: end - start
-            };
-        }));
+    if (event.path === "/wake") {
+        const result = await wake(databaseFnArn, DATABASE_CONFIG.awakeInstances);
 
         return {
             statusCode: 200,
-            body: JSON.stringify({
-                id,
-                env: process.env,
-                lambdas,
-                result
-            }),
+            body: JSON.stringify({ awaken: result })
         };
     }
-    catch (e) {
-        return {
-            statusCode: 500,
-            body: JSON.stringify({
-                message: "error",
-                error: e
-            }),
-        };
-    }
-
 };

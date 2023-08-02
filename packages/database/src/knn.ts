@@ -1,7 +1,6 @@
-import type { DynamicCollection } from "@multiverse/core/src/Collection/Collection";
 import type {
     Collection, LabeledVector, Vector
-} from "@multiverse/core/src/Collection/Collection";
+} from "@multiverse/core/dist/Collection/Collection";
 import { HierarchicalNSW } from "hnswlib-node";
 
 export default class KNN {
@@ -10,7 +9,7 @@ export default class KNN {
     private lastTimeUpdatedTimestamp: number;
 
     constructor(private options: {
-        collection: Collection | DynamicCollection
+        collection: Collection
     }) {
         this.index = this.initializeIndex();
         this.lastTimeUpdatedTimestamp = Date.now();
@@ -57,7 +56,7 @@ export default class KNN {
         return this.lastTimeUpdatedTimestamp;
     }
 
-    public async update(changes: (LabeledVector & {deactivated?: true})[]) {
+    public async update(changes: (LabeledVector & {deactivated?: true})[], updateTimestamp: number) {
         const index = await this.index;
         // TODO: potentional bug - what if the vector is already there (but deactivated?)
         changes.forEach(change => {
@@ -68,16 +67,6 @@ export default class KNN {
             }
         });
 
-        this.lastTimeUpdatedTimestamp = Date.now();
+        this.lastTimeUpdatedTimestamp = updateTimestamp;
     }
-
-    // public async add(vectors: LabeledVector[]) {
-    //     const index = await this.index;
-    //     vectors.forEach(v => index.addPoint(v.vector, v.label));
-    // }
-
-    // public async remove(labels: number[]) {
-    //     const index = await this.index;
-    //     labels.forEach(l => index.markDelete(l));
-    // }
 }

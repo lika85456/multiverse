@@ -16,12 +16,19 @@
 # **/node_modules
 # *.hdf5
 
-*
-!packages/database
-!pnpm-lock.yaml
-!package.json
-!tsconfig.json
-!pnpm-workspace.yaml
-!packages/database/src
-!packages/database/tsconfig.json
-!turbo.json
+apps
+dist
+.turbo
+node_modules
+packages/orchestrator
+
+# *
+# !pnpm-lock.yaml
+# !package.json
+# !tsconfig.json
+# !pnpm-workspace.yaml
+# !turbo.json
+# !packages/database/**/*
+# !packages/core/**/*
+# !packages/config/**/*
+# !packages/env/**/*

@@ -2,25 +2,17 @@ import { v4 } from "uuid";
 import { ENV } from "./env";
 import { handlerGenerator } from "./handler";
 import KNN from "./knn";
-import { DynamoCollection } from "@multiverse/core/src/Collection/DynamoCollection";
+import { DynamoCollection } from "@multiverse/core/dist/Collection/DynamoCollection";
 
 function initializeCollection() {
-    const {
-        INDEX_TYPE, COLLECTIONS_DYNAMO_TABLE, DIMENSIONS
-    } = ENV;
+    const { COLLECTION_CONFIG, DATABASE_CONFIG } = ENV;
 
-    if (INDEX_TYPE === "static") {
+    if (COLLECTION_CONFIG.type === "static") {
         throw new Error("Static collections are not supported yet");
     }
 
-    if (INDEX_TYPE === "dynamic") {
-        if (!COLLECTIONS_DYNAMO_TABLE) throw new Error("COLLECTIONS_DYNAMO_TABLE is not defined");
-
-        return new DynamoCollection({
-            region: "eu-central-1",
-            table: COLLECTIONS_DYNAMO_TABLE,
-            dimensions: DIMENSIONS
-        });
+    if (COLLECTION_CONFIG.type === "dynamic") {
+        return new DynamoCollection(DATABASE_CONFIG, COLLECTION_CONFIG);
     }
 
     throw new Error("INDEX_TYPE is not defined or invalid");

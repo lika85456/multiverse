@@ -30,7 +30,8 @@ export const handlerGenerator = (knn: KNN, instanceId: string) => {
                     vector: z.array(z.number()).optional(),
                     // true optional
                     deactivated: z.boolean().optional()
-                })).optional()
+                })).optional(),
+                updateTimestamp: z.number().optional()
             });
 
             const result = knnBodySchema.safeParse(JSON.parse(event.body ?? "{}"));
@@ -44,12 +45,20 @@ export const handlerGenerator = (knn: KNN, instanceId: string) => {
             }
 
             const {
-                query, k, updates
+                query, k, updates, updateTimestamp
             } = result.data;
 
             // TODO: updating should be done asynchronously after search
             if (updates?.length) {
-                await knn.update(updates as any);
+
+                if (!updateTimestamp) {
+                    return {
+                        statusCode: 400,
+                        body: JSON.stringify({ message: "Missing update timestamp" })
+                    };
+                }
+
+                await knn.update(updates as any, updateTimestamp);
             }
 
             const searchResult = await knn.search(query, k);
@@ -58,7 +67,8 @@ export const handlerGenerator = (knn: KNN, instanceId: string) => {
                 statusCode: 200,
                 body: JSON.stringify({
                     searchResult,
-                    instanceId: instanceId
+                    instanceId: instanceId,
+                    lastUpdateTimestamp: knn.lastTimeUpdated()
                 })
             };
         }
@@ -69,7 +79,10 @@ export const handlerGenerator = (knn: KNN, instanceId: string) => {
 
             return {
                 statusCode: 200,
-                body: JSON.stringify({ message: "OK" })
+                body: JSON.stringify({
+                    message: "OK",
+                    instanceId
+                })
             };
         }
 
