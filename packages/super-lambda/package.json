@@ -12,8 +12,10 @@
   "license": "ISC",
   "devDependencies": {
     "@aws-sdk/client-lambda": "^3.363.0",
+    "@types/adm-zip": "^0.5.0",
     "@types/jest": "^29.5.2",
     "@types/node": "^20.3.1",
+    "adm-zip": "^0.5.10",
     "tsconfig": "workspace:*",
     "tsup": "^7.1.0",
     "vitest": "^0.32.2"

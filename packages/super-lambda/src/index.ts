@@ -7,7 +7,8 @@ export type SuperLambdaConfig = {
     mainRegionFallbacks: number;
     secondaryRegions: string[];
     name: string;
-    // awaking should not be a responsibility of SuperLambda
+    // awaking should not be a responsibility of SuperLambda, since it's not a
+    // concern of the lambda itself. It's a concern of the orchestrator.
     // awakeInstances: number;
 };
 

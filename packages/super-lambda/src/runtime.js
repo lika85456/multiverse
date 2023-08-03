@@ -23,15 +23,12 @@ const handler = async(event, context) => {
     if (event.path === "/setup-error") {
         // eslint-disable-next-line turbo/no-undeclared-env-vars
         const fnName = process.env.AWS_LAMBDA_FUNCTION_NAME;
-        const isMainFunction = fnName.split("-").pop().startsWith("m");
-        const fnIndex = isMainFunction
-            ? fnName.split("-").pop()
-            : fnName.split("-").slice(-3).join("-");
-
         const body = JSON.parse(event.body);
 
-        if (body.errorSettings[fnIndex])
-            errorSettings = body.errorSettings[fnIndex];
+        if (body.errorSettings[fnName])
+            errorSettings = body.errorSettings[fnName];
+        else
+            throw new Error("No error settings for this function");
     }
 
     if (event.path === "/test-error") {
@@ -47,7 +44,10 @@ const handler = async(event, context) => {
             message: "Hello from Super Lambda!",
             event,
             context,
-            id
+            id,
+            // eslint-disable-next-line turbo/no-undeclared-env-vars
+            name: process.env.AWS_LAMBDA_FUNCTION_NAME,
+            errorSettings
         }),
     };
 };

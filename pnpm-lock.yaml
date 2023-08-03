@@ -405,12 +405,18 @@ importers:
       '@aws-sdk/client-lambda':
         specifier: ^3.363.0
         version: 3.363.0
+      '@types/adm-zip':
+        specifier: ^0.5.0
+        version: 0.5.0
       '@types/jest':
         specifier: ^29.5.2
         version: 29.5.2
       '@types/node':
         specifier: ^20.3.1
         version: 20.3.1
+      adm-zip:
+        specifier: ^0.5.10
+        version: 0.5.10
       tsconfig:
         specifier: workspace:*
         version: link:../config/tsconfig
@@ -3484,6 +3490,12 @@ packages:
       tslib: 2.6.0
     dev: false
 
+  /@types/adm-zip@0.5.0:
+    resolution: {integrity: sha512-FCJBJq9ODsQZUNURo5ILAQueuA8WJhRvuihS3ke2iI25mJlfV2LK8jG2Qj2z2AWg8U0FtWWqBHVRetceLskSaw==}
+    dependencies:
+      '@types/node': 20.3.1
+    dev: true
+
   /@types/aws-lambda@8.10.119:
     resolution: {integrity: sha512-Vqm22aZrCvCd6I5g1SvpW151jfqwTzEZ7XJ3yZ6xaZG31nUEOEyzzVImjRcsN8Wi/QyPxId/x8GTtgIbsy8kEw==}
     dev: true
@@ -3732,6 +3744,11 @@ packages:
     resolution: {integrity: sha512-F0SAmZ8iUtS//m8DmCTA0jlh6TDKkHQyK6xc6V4KDTyZKA9dnvX9/3sRTVQrWm79glUAZbnmmNcdYwUIHWVybw==}
     engines: {node: '>=0.4.0'}
     hasBin: true
+
+  /adm-zip@0.5.10:
+    resolution: {integrity: sha512-x0HvcHqVJNTPk/Bw8JbLWlWoo6Wwnsug0fnYYro1HBrjxZ3G7/AZk7Ahv8JwDe1uIcz8eBqvu86FuF1POiG7vQ==}
+    engines: {node: '>=6.0'}
+    dev: true
 
   /ajv@6.12.6:
     resolution: {integrity: sha512-j3fVLgvTo527anyYyJOGTYJbG+vnnQYvE0m5mmkc1TK+nxAppkCLMIL0aZ4dblVCNoGShhm+kzE4ZUykBoMg4g==}
