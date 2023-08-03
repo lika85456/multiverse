@@ -4,18 +4,47 @@ import { defineWorkspace } from 'vitest/config'
 export default defineWorkspace([
   {
     test: {
-      include: ['./**/*.node.test.ts'],
+      include: ['./**/*.unit.test.ts'],
       exclude: ['**/node_modules/**', "**/cdk.out/**", "**/dist/**"],
-      name: 'node',
+      name: 'Unit tests',
       environment: 'node',
       globals: true,
       ...(process.env.CI && {
         minThreads: 4,
         maxThreads: 4
       }),
-      threads:false,
-      hookTimeout: 600000,
-      testTimeout: 600000
+      hookTimeout: 10000,
+      testTimeout: 10000
     }
-  }
+  },
+  {
+    test: {
+      include: ['./**/*.integration.test.ts'],
+      exclude: ['**/node_modules/**', "**/cdk.out/**", "**/dist/**"],
+      name: 'Integration tests',
+      environment: 'node',
+      globals: true,
+      ...(process.env.CI && {
+        minThreads: 4,
+        maxThreads: 4
+      }),
+      hookTimeout: 60000,
+      testTimeout: 60000
+    }
+  },
+  {
+    test: {
+      include: ['./**/*.single-thread.test.ts'],
+      exclude: ['**/node_modules/**', "**/cdk.out/**", "**/dist/**"],
+      name: 'Single threaded tests',
+      environment: 'node',
+      globals: true,
+      ...(process.env.CI && {
+        minThreads: 4,
+        maxThreads: 4
+      }),
+      hookTimeout: 60000,
+      testTimeout: 60000
+    }
+  },
 ])

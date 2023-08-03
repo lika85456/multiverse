@@ -50,7 +50,7 @@ describe("<KNN>", () => {
         const query = [1, 2, 3];
 
         const changes = await collection.changesAfter(0);
-        await knn.update(changes);
+        await knn.update(changes, 0);
         const result = await knn.search(query, 3);
 
         expect(result.distances).toEqual([0, 108]);

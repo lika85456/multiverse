@@ -57,7 +57,8 @@ describe("<Handler>", () => {
                             label: 2,
                             vector: [4, 5, 6]
                         }
-                    ]
+                    ],
+                    updateTimestamp: 0
                 })
             } as any, {} as any);
 
@@ -79,7 +80,8 @@ describe("<Handler>", () => {
                             label: 1,
                             deactivated: true
                         }
-                    ]
+                    ],
+                    updateTimestamp: 0
                 })
             } as any, {} as any);
 

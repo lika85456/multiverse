@@ -51,7 +51,7 @@ export const handlerGenerator = (knn: KNN, instanceId: string) => {
             // TODO: updating should be done asynchronously after search
             if (updates?.length) {
 
-                if (!updateTimestamp) {
+                if (updateTimestamp === undefined) {
                     return {
                         statusCode: 400,
                         body: JSON.stringify({ message: "Missing update timestamp" })
