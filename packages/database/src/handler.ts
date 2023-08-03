@@ -19,7 +19,7 @@ export const handlerGenerator = (knn: KNN, instanceId: string) => {
             };
         }
 
-        console.info(event, context);
+        console.debug(event, context);
 
         if (event.path === "/knn") {
             const knnBodySchema = z.object({

@@ -44,7 +44,7 @@ export default class DynamoDeployer {
             BillingMode: "PAY_PER_REQUEST"
         });
 
-        console.info(`Dynamo ${this.tableName()} initialized`);
+        console.debug(`Dynamo ${this.tableName()} initialized`);
     }
 
     private async waitUntilActive(tableName: string) {
@@ -54,7 +54,7 @@ export default class DynamoDeployer {
             await new Promise(resolve => setTimeout(resolve, 1000));
             const { Table } = await dynamo.describeTable({ TableName: tableName });
             state = Table?.TableStatus;
-            console.info(`${tableName} state: ${state}`);
+            console.debug(`${tableName} state: ${state}`);
         }
     }
 

@@ -44,7 +44,7 @@ export default class SuperLambda {
         maxTimeout?: number;
         retry?: number;
     }): Promise<InvokeCommandOutput> {
-        console.info(`Invoking ${this.config.name} try: ${options?.retry ?? 0}`);
+        console.debug(`Invoking ${this.config.name} try: ${options?.retry ?? 0}`);
 
         const states = await this.getStates();
 
@@ -66,7 +66,7 @@ export default class SuperLambda {
         const canRetry = retry < maxRetries;
 
         if (activeStates.length === 0 && canRetry) {
-            console.info("No active instances found, retrying");
+            console.debug("No active instances found, retrying");
             await new Promise(resolve => setTimeout(resolve, 50));
             return await this.invoke(event, {
                 ...options,
@@ -82,14 +82,14 @@ export default class SuperLambda {
 
         // start invoking first active instance and after maxTimeout invoke the next one
         for (const activeFn of activeStates) {
-            console.log(`Invoking physical function ${activeFn.name} in region ${activeFn.region}`);
+            console.debug(`Invoking physical function ${activeFn.name} in region ${activeFn.region}`);
             const result = await Promise.any([
                 this.invokeFunction(activeFn.name, activeFn.region, event),
                 new Promise((resolve) => setTimeout(() => resolve(new Error("Timeout")), maxTimeout))
             ]);
 
             if (result instanceof Error) {
-                console.info(`Invocation of ${activeFn.name} timed out`);
+                console.debug(`Invocation of ${activeFn.name} timed out`);
                 continue;
             }
 
@@ -152,12 +152,12 @@ export default class SuperLambda {
     // TODO update function configuration, update function code
 
     private async createFunction(input: CreateFunctionCommandInput, region: string) {
-        console.info(`Creating function ${input.FunctionName}`);
+        console.debug(`Creating function ${input.FunctionName}`);
 
         const lambda = new Lambda({ region });
         const result = await lambda.createFunction(input);
 
-        console.info(`Function ${input.FunctionName} created`);
+        console.debug(`Function ${input.FunctionName} created`);
 
         let functionState = await lambda.getFunction({ FunctionName: input.FunctionName });
         while (functionState.Configuration?.State !== "Active") {
@@ -168,7 +168,7 @@ export default class SuperLambda {
                 throw new Error("Function creation failed");
             }
 
-            console.info(`Function ${input.FunctionName} state: ${functionState.Configuration?.State}`);
+            console.debug(`Function ${input.FunctionName} state: ${functionState.Configuration?.State}`);
         }
 
         if (!input.FunctionName) {
@@ -185,12 +185,12 @@ export default class SuperLambda {
     }
 
     private async destroyFunction(name: string, region: string) {
-        console.info(`Destroying function ${name}`);
+        console.debug(`Destroying function ${name}`);
 
         const lambda = new Lambda({ region });
         await lambda.deleteFunction({ FunctionName: name });
 
-        console.info(`Function ${name} destroyed`);
+        console.debug(`Function ${name} destroyed`);
     }
 
     private async getStates(): Promise<SuperLambdaInstanceState[]> {
@@ -221,7 +221,7 @@ export default class SuperLambda {
     }
 
     private async createStateTable() {
-        console.info(`Creating state table ${this.config.name}-state`);
+        console.debug(`Creating state table ${this.config.name}-state`);
 
         const dynamo = new DynamoDB({ region: this.config.mainRegion });
 
@@ -259,17 +259,17 @@ export default class SuperLambda {
                 throw new Error("State table creation failed");
             }
 
-            console.info(`State table ${this.config.name}-state state: ${state}`);
+            console.debug(`State table ${this.config.name}-state state: ${state}`);
         }
     }
 
     private async destroyTable() {
-        console.info(`Destroying state table ${this.config.name}-state`);
+        console.debug(`Destroying state table ${this.config.name}-state`);
 
         const dynamo = new DynamoDB({ region: this.config.mainRegion });
 
         await dynamo.deleteTable({ TableName: `${this.config.name}-state` });
 
-        console.info(`State table ${this.config.name}-state destroyed`);
+        console.debug(`State table ${this.config.name}-state destroyed`);
     }
 }

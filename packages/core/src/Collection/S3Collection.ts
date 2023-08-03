@@ -49,7 +49,7 @@ export class S3Collection implements Collection {
     }
 
     public async upload(readStream: Readable): Promise<void> {
-        console.info(`Uploading collection to S3: ${this.options.bucket}/${this.options.name}`);
+        console.debug(`Uploading collection to S3: ${this.options.bucket}/${this.options.name}`);
 
         const s3 = this.s3();
 
@@ -65,14 +65,14 @@ export class S3Collection implements Collection {
         });
 
         parallelUploads3.on("httpUploadProgress", (progress) => {
-            console.info(`Uploaded ${progress.loaded} bytes of ${progress.total}`);
+            console.debug(`Uploaded ${progress.loaded} bytes of ${progress.total}`);
         });
 
         await parallelUploads3.done();
     }
 
     public async delete(): Promise<void> {
-        console.info(`Deleting collection from S3: ${this.options.bucket}/${this.options.name}`);
+        console.debug(`Deleting collection from S3: ${this.options.bucket}/${this.options.name}`);
 
         const s3 = this.s3();
 
@@ -89,7 +89,7 @@ export class S3Collection implements Collection {
     }
 
     private async save(): Promise<void> {
-        console.info(`Downloading collection from S3: ${this.options.bucket}/${this.options.name}`);
+        console.debug(`Downloading collection from S3: ${this.options.bucket}/${this.options.name}`);
 
         const file = fs.createWriteStream(S3Collection.COLLECTION_PATH);
         const object = await this.s3().getObject({

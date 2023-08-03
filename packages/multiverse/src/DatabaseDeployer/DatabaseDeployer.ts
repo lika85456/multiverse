@@ -32,7 +32,7 @@ export default class DatabaseDeployer {
             throw new Error("Database initialization failed");
         }
 
-        console.info(`Database ${this.options.database.databaseName} initialized`);
+        console.debug(`Database ${this.options.database.databaseName} initialized`);
 
     }
 
@@ -55,13 +55,13 @@ export default class DatabaseDeployer {
             await new Promise(resolve => setTimeout(resolve, 1000));
             const { Configuration } = await lambda.getFunction({ FunctionName: lambdaARN });
             state = Configuration?.State;
-            console.info(`${lambdaARN} state: ${state}`);
+            console.debug(`${lambdaARN} state: ${state}`);
         }
     }
 
     private async createDatabaseLambda() {
 
-        console.info(`Creating function ${this.functionName()}`);
+        console.debug(`Creating function ${this.functionName()}`);
         const { FunctionArn } = await lambda.createFunction({
             FunctionName: this.functionName(),
             Role: "arn:aws:iam::529734186765:role/multiverse-database-lambda-role",
@@ -81,7 +81,7 @@ export default class DatabaseDeployer {
             throw new Error("Database creation failed");
         }
 
-        console.info(`Function ${this.functionName()} created`);
+        console.debug(`Function ${this.functionName()} created`);
 
         return FunctionArn;
     }
@@ -95,6 +95,6 @@ export default class DatabaseDeployer {
 
     private async destroyDatabaseLambda() {
         await lambda.deleteFunction({ FunctionName: this.functionName() });
-        console.info(`Function ${this.functionName()} deleted`);
+        console.debug(`Function ${this.functionName()} deleted`);
     }
 }

@@ -49,7 +49,7 @@ export class DynamoCollection implements DynamicCollection {
     }
 
     public async add(vectors: LabeledVector[], timestamp = Date.now()): Promise<void> {
-        console.info(`Adding ${vectors.length} vectors to ${this.tableName()}`);
+        console.debug(`Adding ${vectors.length} vectors to ${this.tableName()}`);
 
         const items = vectors.map(v => ({
             PutRequest: {
@@ -65,7 +65,7 @@ export class DynamoCollection implements DynamicCollection {
     }
 
     public async remove(labels: number[]): Promise<void> {
-        console.info(`Deactivating ${labels.length} vectors from ${this.tableName()}`);
+        console.debug(`Deactivating ${labels.length} vectors from ${this.tableName()}`);
 
         for (const label of labels) {
             await this.docClient.send(new UpdateCommand({
@@ -92,7 +92,7 @@ export class DynamoCollection implements DynamicCollection {
         const labels = items.Items?.map(item => item.label) ?? [];
 
         if (labels.length > 0) {
-            console.info(`Deleting ${labels.length} vectors from ${this.tableName()}`);
+            console.debug(`Deleting ${labels.length} vectors from ${this.tableName()}`);
 
             const items = labels.map(label => ({ DeleteRequest: { Key: { label } } }));
 

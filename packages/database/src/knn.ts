@@ -32,7 +32,7 @@ export default class KNN {
 
         index.initIndex(maxSize);
 
-        console.info(`Initializing index with ${dimensions} dimensions and ${maxSize} max size`);
+        console.debug(`Initializing index with ${dimensions} dimensions and ${maxSize} max size`);
 
         this.lastTimeUpdatedTimestamp = Date.now();
 
@@ -42,7 +42,7 @@ export default class KNN {
             index.addPoint(vector.vector, vector.label);
         }
 
-        console.info(`Index initialized with ${index.getCurrentCount()} vectors`);
+        console.debug(`Index initialized with ${index.getCurrentCount()} vectors`);
 
         return index;
     }
