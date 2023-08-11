@@ -1,5 +1,5 @@
 import { unlink } from "fs";
-import { ENV } from "../env";
+import { ENV } from "../../../core/src/env";
 import type { Collection, LabeledVector } from "./Collection";
 import { S3Collection } from "./S3Collection";
 import { Readable } from "stream";

@@ -1,4 +1,4 @@
-lockfileVersion: '6.1'
+lockfileVersion: '6.0'
 
 settings:
   autoInstallPeers: true
@@ -186,6 +186,9 @@ importers:
       '@aws-sdk/lib-storage':
         specifier: ^3.370.0
         version: 3.370.0(@aws-sdk/client-s3@3.362.0)
+      '@multiverse/env':
+        specifier: workspace:*
+        version: link:../env
       dotenv:
         specifier: ^16.3.1
         version: 16.3.1
@@ -196,9 +199,6 @@ importers:
         specifier: ^3.21.4
         version: 3.21.4
     devDependencies:
-      '@multiverse/env':
-        specifier: workspace:*
-        version: link:../env
       '@types/jest':
         specifier: ^29.5.2
         version: 29.5.2
@@ -220,12 +220,12 @@ importers:
       '@aws-sdk/client-s3':
         specifier: ^3.362.0
         version: 3.362.0
-      '@multiverse/core':
-        specifier: workspace:*
-        version: link:../core
       '@multiverse/env':
         specifier: workspace:*
         version: link:../env
+      '@multiverse/multiverse':
+        specifier: workspace:*
+        version: link:../multiverse
       aws-lambda:
         specifier: ^1.0.7
         version: 1.0.7
@@ -306,15 +306,21 @@ importers:
       '@aws-sdk/client-s3':
         specifier: ^3.362.0
         version: 3.362.0
+      '@aws-sdk/lib-dynamodb':
+        specifier: ^3.388.0
+        version: 3.388.0(@aws-sdk/client-dynamodb@3.379.1)
       '@aws-sdk/lib-storage':
         specifier: ^3.370.0
         version: 3.370.0(@aws-sdk/client-s3@3.362.0)
       '@aws-sdk/s3-request-presigner':
         specifier: ^3.370.0
         version: 3.370.0
-      '@multiverse/core':
+      '@multiverse/env':
         specifier: workspace:^
-        version: link:../core
+        version: link:../env
+      dotenv:
+        specifier: ^16.3.1
+        version: 16.3.1
       zod:
         specifier: ^3.21.4
         version: 3.21.4
@@ -349,9 +355,6 @@ importers:
       '@aws-sdk/s3-request-presigner':
         specifier: ^3.370.0
         version: 3.370.0
-      '@multiverse/core':
-        specifier: workspace:^
-        version: link:../core
       '@multiverse/env':
         specifier: workspace:^
         version: link:../env
@@ -1477,6 +1480,17 @@ packages:
       tslib: 2.6.0
     dev: false
 
+  /@aws-sdk/lib-dynamodb@3.388.0(@aws-sdk/client-dynamodb@3.379.1):
+    resolution: {integrity: sha512-rZHancDnS8CEaIE1RMqhePqdvEZyGUwjmd9d2DKnpCdzIGv+gc/qPzXECnjjoA35ygIwYI8nJfvNRDlrI3LfVw==}
+    engines: {node: '>=14.0.0'}
+    peerDependencies:
+      '@aws-sdk/client-dynamodb': ^3.0.0
+    dependencies:
+      '@aws-sdk/client-dynamodb': 3.379.1
+      '@aws-sdk/util-dynamodb': 3.388.0
+      tslib: 2.6.0
+    dev: false
+
   /@aws-sdk/lib-storage@3.370.0(@aws-sdk/client-s3@3.362.0):
     resolution: {integrity: sha512-vUdvd8jvusl81A0OdCz3y2E7Nhqwa57cxJviK6P262zqL2Ge5WlfR9djjv78sqdclvm7iXTxj7o1djMu1aScNg==}
     engines: {node: '>=14.0.0'}
@@ -2071,6 +2085,13 @@ packages:
 
   /@aws-sdk/util-dynamodb@3.379.1:
     resolution: {integrity: sha512-789tTjt0yd8Uf8fBr4I56dYfLysncx3NlvuNhLqdLRWBpsGvfIixNZ9OSKxDpdJ0GASXMJklmyGadvGx/vXKZg==}
+    engines: {node: '>=14.0.0'}
+    dependencies:
+      tslib: 2.6.0
+    dev: false
+
+  /@aws-sdk/util-dynamodb@3.388.0:
+    resolution: {integrity: sha512-NFwzcfK06UHvhzyu/XXZucXN/0cvvTsXppxDmWH+w5OROOT4pM2CLd9FGhS5IwLwORtUA8JNyx1PpGe65DkJIg==}
     engines: {node: '>=14.0.0'}
     dependencies:
       tslib: 2.6.0

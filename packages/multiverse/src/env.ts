@@ -7,8 +7,7 @@ config({ path: path.join(__dirname, "..", "..", "..", process.env.NODE_ENV === "
 
 const envSchema = z.object({
     NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
-    TEST_COLLECTIONS_BUCKET: z.string(),
-    TEST_COLLECTIONS_DYNAMO_TABLE: z.string(),
+    COLLECTIONS_TABLE: z.string().default("multiverse-collections"),
 });
 
 export const getEnvIssues = (): z.ZodIssue[] => {
