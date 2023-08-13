@@ -1,5 +1,5 @@
 import SuperLambda from ".";
-import { Lambda, Runtime } from "@aws-sdk/client-lambda";
+import { Runtime } from "@aws-sdk/client-lambda";
 import path from "path";
 import adm from "adm-zip";
 
@@ -14,50 +14,6 @@ async function readCode(): Promise<Uint8Array> {
 
     return buffer;
 };
-
-/**
- * Updates the error states of all the lambdas
- * @see packages/super-lambda/src/runtime.js
- */
-async function updateErrorStates(body: {
-    errorSettings: { [lambdaName: string]: { failed: number, toFail: number, time: number }}
-}, superLambda: SuperLambda) {
-    const functions = await superLambda.functions();
-
-    const settings = functions.reduce((acc, fn) => {
-        acc[fn.name] = {
-            // @ts-ignore
-            failed: 0,
-            // @ts-ignore
-            toFail: 0,
-            // @ts-ignore
-            time: 0,
-            ...body.errorSettings[fn.name]
-        };
-
-        return acc;
-    }, {} as Record<string, { failed: number, toFail: number, time: number }>);
-
-    await Promise.all(functions.map(async(fn) => {
-        const lambda = new Lambda({ region: fn.region });
-
-        // setup 5 instances of each lambda
-        await Promise.all(new Array(5).fill(0).map(async() => {
-            const res = await lambda.invoke({
-                FunctionName: fn.name,
-                InvocationType: "RequestResponse",
-                Payload: JSON.stringify({
-                    path: "/setup-error",
-                    body: JSON.stringify({ errorSettings: settings })
-                })
-            });
-
-            if (res.StatusCode !== 200) {
-                throw new Error("Error setting up error states");
-            }
-        }));
-    }));
-}
 
 describe("<Super Lambda>", () => {
     const superLambda = new SuperLambda({
@@ -80,6 +36,10 @@ describe("<Super Lambda>", () => {
     it("should output functions in correct order", async() => {
         const functions = await superLambda.functions();
 
+        if (!functions[0].name.endsWith("m0")) {
+            console.error(functions);
+        }
+
         expect(functions.length).toBe(3);
 
         expect(functions[0].name.endsWith("m0")).toBe(true);
@@ -87,31 +47,38 @@ describe("<Super Lambda>", () => {
         expect(functions[2].name.endsWith("eu-west-1")).toBe(true);
     });
 
+    it("should wake up multiple instances", async() => {
+        const functions = await superLambda.functions();
+
+        // this should invoke each function atleast 5 times
+        await Promise.all(functions.map(async functionToInvoke => {
+            const body = { errorSettings: { [functionToInvoke.name]: { time: 500 }, } };
+
+            return await superLambda.invoke({
+                body: JSON.stringify(body),
+                path: "/timeout"
+            }, {
+                maxRetries: 5,
+                maxTimeout: 10
+            }).catch(e => e);
+        }));
+    });
+
     describe("Invoke falling back", () => {
 
-        it("should invoke", async() => {
+        it.concurrent("should invoke", async() => {
             const result = await superLambda.invoke({});
             expect(result.StatusCode).toBe(200);
         });
 
-        it("should fail over first main region lambda", async() => {
+        it.concurrent("should fail over first main region lambda", async() => {
             const functions = await superLambda.functions();
 
-            const body = {
-                errorSettings: {
-                    [functions[0].name]: {
-                        failed: 0,
-                        toFail: 3,
-                        time: 3000
-                    },
-                }
-            };
-
-            await updateErrorStates(body, superLambda);
+            const body = { errorSettings: { [functions[0].name]: { time: 5000 }, } };
 
             const result = await superLambda.invoke({
                 body: JSON.stringify(body),
-                path: "/test-error"
+                path: "/timeout"
             }, {
                 maxRetries: 5,
                 maxTimeout: 500
@@ -123,29 +90,19 @@ describe("<Super Lambda>", () => {
             expect(calledFunctionName.split("-").pop()).toBe("m1");
         });
 
-        it("should fail over both main regions", async() => {
+        it.concurrent("should fail over both main regions", async() => {
             const functions = await superLambda.functions();
 
             const body = {
                 errorSettings: {
-                    [functions[0].name]: {
-                        failed: 0,
-                        toFail: 5,
-                        time: 5000
-                    },
-                    [functions[1].name]: {
-                        failed: 0,
-                        toFail: 5,
-                        time: 5000
-                    }
+                    [functions[0].name]: { time: 5000 },
+                    [functions[1].name]: { time: 5000 }
                 }
             };
 
-            await updateErrorStates(body, superLambda);
-
             const result = await superLambda.invoke({
                 body: JSON.stringify(body),
-                path: "/test-error"
+                path: "/timeout"
             }, {
                 maxRetries: 3,
                 maxTimeout: 500
@@ -158,24 +115,14 @@ describe("<Super Lambda>", () => {
             expect(calledFunctionName.endsWith("eu-west-1")).toBe(true);
         });
 
-        it("should not fail over if secondary region is offline", async() => {
+        it.concurrent("should not fail over if secondary region is offline", async() => {
             const functions = await superLambda.functions();
 
-            const body = {
-                errorSettings: {
-                    [functions[2].name]: {
-                        failed: 0,
-                        toFail: 5,
-                        time: 5000
-                    }
-                }
-            };
-
-            await updateErrorStates(body, superLambda);
+            const body = { errorSettings: { [functions[2].name]: { time: 5000 } } };
 
             const result = await superLambda.invoke({
                 body: JSON.stringify(body),
-                path: "/test-error"
+                path: "/timeout"
             });
 
             const parsedBody = JSON.parse(Buffer.from(result.Payload!).toString());
@@ -185,39 +132,51 @@ describe("<Super Lambda>", () => {
             expect(calledFunctionName.endsWith("eu-west-1")).toBe(false);
         });
 
-        it("should fail if all lambdas timing out", async() => {
+        it.concurrent("should fail if all lambdas timing out", async() => {
             const functions = await superLambda.functions();
 
             const body = {
                 errorSettings: {
-                    [functions[0].name]: {
-                        failed: 0,
-                        toFail: 50,
-                        time: 5000
-                    },
-                    [functions[1].name]: {
-                        failed: 0,
-                        toFail: 50,
-                        time: 5000
-                    },
-                    [functions[2].name]: {
-                        failed: 0,
-                        toFail: 50,
-                        time: 5000
-                    }
+                    [functions[0].name]: { time: 5000 },
+                    [functions[1].name]: { time: 5000 },
+                    [functions[2].name]: { time: 5000 }
                 }
             };
 
-            await updateErrorStates(body, superLambda);
-
             expect(superLambda.invoke({
                 body: JSON.stringify(body),
-                path: "/test-error"
+                path: "/timeout"
             }, {
                 maxRetries: 3,
-                maxTimeout: 200
+                maxTimeout: 500
             })).rejects.toThrow();
         });
+    });
+
+    it("should not hit cold start in at least 30 burst requests", async() => {
+        const requests = [];
+
+        let fallbacks = 0;
+
+        async function request() {
+            const start = Date.now();
+            const result = await superLambda.invoke({});
+            expect(result.StatusCode).toBe(200);
+            const end = Date.now();
+
+            fallbacks += result.fallbacks;
+
+            if (end - start > 1000) {
+                throw new Error("Cold start detected");
+            }
+        }
+
+        for (let i = 0; i < 100; i++) {
+            requests.push(request());
+        }
+
+        await Promise.all(requests);
+        console.log(`Fallbacks: ${fallbacks}`);
     });
 
     afterAll(async() => {

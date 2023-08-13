@@ -36,7 +36,7 @@ export default class SuperLambda {
                     return 1;
                 }
 
-                return a.region.localeCompare(b.region);
+                return a.name.localeCompare(b.name);
             });
     }
 
@@ -44,7 +44,10 @@ export default class SuperLambda {
         maxRetries?: number;
         maxTimeout?: number;
         retry?: number;
-    }): Promise<InvokeCommandOutput> {
+        fallbacks?: number;
+    }): Promise<InvokeCommandOutput & {
+        fallbacks: number;
+    }> {
         console.debug(`Invoking ${this.config.name} try: ${options?.retry ?? 0}`);
 
         const states = await this.getStates();
@@ -65,14 +68,20 @@ export default class SuperLambda {
         const maxRetries = options?.maxRetries ?? 5;
         const retry = options?.retry ?? 0;
         const canRetry = retry < maxRetries;
+        let fallbacks = options?.fallbacks ?? 0;
 
         if (activeStates.length === 0 && canRetry) {
             console.debug("No active instances found, retrying");
             await new Promise(resolve => setTimeout(resolve, 50));
-            return await this.invoke(event, {
+            const result = await this.invoke(event, {
                 ...options,
                 retry: retry + 1
             });
+
+            return {
+                ...result,
+                fallbacks: result.fallbacks + 1
+            };
         }
 
         if (activeStates.length === 0 && !canRetry) {
@@ -91,10 +100,14 @@ export default class SuperLambda {
 
             if (result instanceof Error) {
                 console.debug(`Invocation of ${activeFn.name} timed out`);
+                fallbacks++;
                 continue;
             }
 
-            return result as InvokeCommandOutput;
+            return {
+                ...(result as InvokeCommandOutput),
+                fallbacks
+            };
         }
 
         if (canRetry) {
