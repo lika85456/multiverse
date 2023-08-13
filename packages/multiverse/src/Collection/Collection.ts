@@ -1,17 +1,3 @@
-export type Vector = number[];
-
-export type LabeledVector = {
-    label: string;
-    vector: Vector;
-    uid: number;
-};
-
-export type StoredVector = LabeledVector & {
-    updated: number; // timestamp
-    deactivated?: true;
-    // partition index is a random number between 0 and 1
-    pid: number;
-};
 
 export interface Collection {
     next(partitionIndex: number, totalPartitions: number): AsyncGenerator<StoredVector, void, unknown>

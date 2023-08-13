@@ -1,44 +1,36 @@
 import { DynamoDB } from "@aws-sdk/client-dynamodb";
-import { ENV } from "../../env";
-
-const dynamo = new DynamoDB({ region: "eu-central-1" });
-
-const tableName = ENV.COLLECTIONS_TABLE;
-
-// | PrimaryKey     |                                |                 |              |          |             |           |
-// | -------------- | ------------------------------ | --------------- | ------------ | -------- | ----------- | --------- |
-// | PK - Partition | SK                             |                 |              |          |             |           |
-// | USER#          | STAT#my-database               | activeVectors   | totalVectors |          |             |           |
-// |                |                                | 2               | 3            |          |             |           |
-// |                |                                | vector (base64) | label        | updated  | deactivated | pid       |
-// |                | V#my-database#2505c14d25ba5b07 | [1,2,3]         | My text      | 80846484 |             | 0.9819884 |
-// |                | V#my-database#7c740b1da30d969a | [4,5,6]         | My test      | 80846485 | true        | 0.2135415 |
-// |                | V#my-database#dafaf99efe354835 | [6,7,8]         | My car       | 80846485 |             | 0.0518498 |
-// |                |                                |                 |              |          |             |           |
-// |                |                                |                 |              |          |             |           |
 
 export default class DynamoDeployer {
 
+    private dynamo: DynamoDB;
+
+    constructor(private options: {
+        region: string;
+        tableName: string;
+    }) {
+        this.dynamo = new DynamoDB({ region: options.region });
+    }
+
     public async deploy() {
         await this.createDatabaseTable();
-        await this.waitUntilActive(tableName);
-        await this.testTable(tableName);
+        await this.waitUntilActive(this.options.tableName);
+        await this.testTable(this.options.tableName);
     }
 
     public async destroy() {
-        await dynamo.deleteTable({ TableName: tableName });
+        await this.dynamo.deleteTable({ TableName: this.options.tableName });
     }
 
     private async createDatabaseTable() {
-        await dynamo.createTable({
-            TableName: tableName,
+        await this.dynamo.createTable({
+            TableName: this.options.tableName,
             KeySchema: [
                 {
                     AttributeName: "PK",
                     KeyType: "HASH"
                 },
                 {
-                    AttributeName: "SK",
+                    AttributeName: "id",
                     KeyType: "RANGE"
                 },
             ],
@@ -48,17 +40,17 @@ export default class DynamoDeployer {
                     AttributeType: "S"
                 },
                 {
-                    AttributeName: "SK",
+                    AttributeName: "id",
+                    AttributeType: "N"
+                },
+                {
+                    AttributeName: "label",
                     AttributeType: "S"
                 },
-                // {
-                //     AttributeName: "label",
-                //     AttributeType: "S"
-                // },
-                // {
-                //     AttributeName: "updated",
-                //     AttributeType: "N"
-                // },
+                {
+                    AttributeName: "lastUpdate",
+                    AttributeType: "N"
+                },
                 // {
                 //     AttributeName: "deactivated",
                 //     AttributeType: "N"
@@ -76,18 +68,69 @@ export default class DynamoDeployer {
                 //     AttributeType: "B"
                 // },
             ],
-            BillingMode: "PAY_PER_REQUEST"
+            BillingMode: "PAY_PER_REQUEST",
+            GlobalSecondaryIndexes: [
+                // {
+                //     IndexName: "PK-deactivated-index",
+                //     KeySchema: [
+                //         {
+                //             AttributeName: "PK",
+                //             KeyType: "HASH"
+                //         },
+                //         {
+                //             AttributeName: "deactivated",
+                //             KeyType: "RANGE"
+                //         },
+                //     ],
+                //     Projection: {
+                //         ProjectionType: "INCLUDE",
+                //         NonKeyAttributes: [
+                //             "id",
+                //             "lastUpdate"
+                //         ]
+                //     }
+                // },
+                {
+                    IndexName: "PK-label-index",
+                    KeySchema: [
+                        {
+                            AttributeName: "PK",
+                            KeyType: "HASH"
+                        },
+                        {
+                            AttributeName: "label",
+                            KeyType: "RANGE"
+                        },
+                    ],
+                    Projection: { ProjectionType: "ALL", }
+                },
+                {
+                    IndexName: "PK-lastUpdate-index",
+                    KeySchema: [
+                        {
+                            AttributeName: "PK",
+                            KeyType: "HASH"
+                        },
+                        {
+                            AttributeName: "lastUpdate",
+                            KeyType: "RANGE"
+                        }
+                    ],
+                    Projection: { ProjectionType: "ALL", }
+
+                }
+            ]
         });
 
-        console.debug(`Dynamo ${tableName} initialized`);
+        console.debug(`Dynamo ${this.options.tableName} initialized`);
     }
 
     private async waitUntilActive(tableName: string) {
-        let state = (await dynamo.describeTable({ TableName: tableName }))?.Table?.TableStatus;
+        let state = (await this.dynamo.describeTable({ TableName: tableName }))?.Table?.TableStatus;
 
         while (state !== "ACTIVE") {
             await new Promise(resolve => setTimeout(resolve, 1000));
-            const { Table } = await dynamo.describeTable({ TableName: tableName });
+            const { Table } = await this.dynamo.describeTable({ TableName: tableName });
             state = Table?.TableStatus;
             console.debug(`${tableName} state: ${state}`);
         }
@@ -95,7 +138,7 @@ export default class DynamoDeployer {
 
     private async testTable(tableName: string) {
         // scan and read 0
-        const scanResult = await dynamo.scan({
+        const scanResult = await this.dynamo.scan({
             TableName: tableName,
             Limit: 1
         });

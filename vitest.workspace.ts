@@ -14,7 +14,18 @@ export default defineWorkspace([
         maxThreads: 4
       }),
       hookTimeout: 10000,
-      testTimeout: 10000
+      testTimeout: 10000,
+    }
+  },
+  {
+    test: {
+      include: ['./**/*.bench.ts'],
+      exclude: ['**/node_modules/**', "**/cdk.out/**", "**/dist/**"],
+      name: 'Benchmarks',
+      environment: 'node',
+      globals: true,
+      hookTimeout: 60000,
+      testTimeout: 60000,
     }
   },
   {

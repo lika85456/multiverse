@@ -25,6 +25,7 @@
     "@aws-sdk/s3-request-presigner": "^3.370.0",
     "@multiverse/env": "workspace:^",
     "dotenv": "^16.3.1",
+    "hnswlib-node": "^2.0.0",
     "zod": "^3.21.4"
   },
   "tsup": {
