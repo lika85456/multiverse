@@ -3,7 +3,7 @@ import {
     DynamoDBDocumentClient, GetCommand, QueryCommand, BatchWriteCommand, UpdateCommand
 } from "@aws-sdk/lib-dynamodb";
 import type { StoredVector } from "../../Database/Vector";
-import { Base64Vector, Vector } from "../../Database/Vector";
+import { Vector } from "../../Database/Vector";
 import type { Partition } from "../../Database/VectorDatabase";
 import type VectorStore from "../VectorStore";
 import type { Stats, PartitionStats } from "./TableTypes";
@@ -181,21 +181,21 @@ export default class DynamoVectorStore implements VectorStore {
         const partition = await this.partitionToAddTo();
         // transaction writes are expensive, so we batch write them and
         // retry updating stats if it fails.
-        // const batch = vectors.map(vector => ({
-        //     Put: {
-        //         TableName: this.options.tableName,
-        //         Item: {
-        //             PK: `${this.options.databaseName}#${partition}`,
-        //             SK: vector.id.toString(),
-        //             label: vector.label,
-        //             vector: vector.vector,
-        //             lastUpdate: vector.lastUpdate,
-        //             deactivated: vector.deactivated,
-        //         }
-        //     }
-        // }));
+        const batch = vectors.map(vector => ({
+            PutRequest: {
+                Item: {
+                    PK: `${this.options.databaseName}#${partition}`,
+                    SK: vector.id.toString(),
+                    label: vector.label,
+                    vector: vector.vector.toArray(),
+                    lastUpdate: vector.lastUpdate,
+                    // deactivated: vector.deactivated,
+                    ...(vector.deactivated ? { deactivated: vector.deactivated } : {})
+                }
+            }
+        }));
 
-        // const result = await this.docClient.send(new BatchWriteCommand({ RequestItems: { [this.options.tableName]: batch } }));
+        const result = await this.docClient.send(new BatchWriteCommand({ RequestItems: { [this.options.tableName]: batch } }));
 
         const unproccessedItemsLength = result.UnprocessedItems?.[this.options.tableName]?.length ?? 0;
         const processedItemsLength = vectors.length - unproccessedItemsLength;
@@ -251,26 +251,37 @@ export default class DynamoVectorStore implements VectorStore {
             throw new Error("Not implemented removing vectors from multiple partitions");
         }
 
-        const batch = ids.map(id => ({
-            Update: {
-                TableName: this.options.tableName,
-                Key: {
-                    PK: `${this.options.databaseName}#0`,
-                    SK: id.toString(),
-                },
-                UpdateExpression: "SET deactivated = :deactivated",
-                ExpressionAttributeValues: { ":deactivated": Date.now(), }
-            }
-        }));
+        // const batch = ids.map(id => ({
+        //     UpdateRequest: {
+        //         Key: {
+        //             PK: `${this.options.databaseName}#0`,
+        //             SK: id.toString(),
+        //         },
+        //         UpdateExpression: "SET deactivated = :deactivated",
+        //         ExpressionAttributeValues: { ":deactivated": Date.now(), }
+        //     }
+        // }));
 
-        const result = await this.docClient.send(new BatchWriteCommand({ RequestItems: { [this.options.tableName]: batch } }));
+        // const result = await this.docClient.send(new BatchWriteCommand({ RequestItems: { [this.options.tableName]: batch } }));
 
-        const unproccessedItemsLength = result.UnprocessedItems?.[this.options.tableName]?.length ?? 0;
-        const processedItemsLength = ids.length - unproccessedItemsLength;
+        // const unproccessedItemsLength = result.UnprocessedItems?.[this.options.tableName]?.length ?? 0;
+        // const processedItemsLength = ids.length - unproccessedItemsLength;
 
-        if (unproccessedItemsLength > 0) {
-            await new Promise(resolve => setTimeout(resolve, 500));
-        }
+        // if (unproccessedItemsLength > 0) {
+        //     await new Promise(resolve => setTimeout(resolve, 500));
+        // }
+
+        await Promise.all(ids.map(id => this.docClient.send(new UpdateCommand({
+            TableName: this.options.tableName,
+            Key: {
+                PK: `${this.options.databaseName}#0`,
+                SK: id.toString(),
+            },
+            UpdateExpression: "SET deactivated = :deactivated",
+            ExpressionAttributeValues: { ":deactivated": Date.now(), }
+        }))));
+
+        const processedItemsLength = ids.length;
 
         // update stats
         await Promise.all([
@@ -295,9 +306,9 @@ export default class DynamoVectorStore implements VectorStore {
         ]);
 
         // if there are some unprocessed items, throw error
-        if (unproccessedItemsLength > 0) {
-            throw new UnprocessedItemsError(result.UnprocessedItems);
-        }
+        // if (unproccessedItemsLength > 0) {
+        //     throw new UnprocessedItemsError(result.UnprocessedItems);
+        // }
     }
 
     public async getByLabel(label: string): Promise<StoredVector | undefined> {
@@ -324,11 +335,23 @@ export default class DynamoVectorStore implements VectorStore {
 
         const item = items[0];
 
+        const finalVector = await this.docClient.send(new GetCommand({
+            TableName: this.options.tableName,
+            Key: {
+                PK: item.PK,
+                SK: item.SK,
+            }
+        }));
+
+        if (finalVector.Item?.deactivated) {
+            return undefined;
+        }
+
         return {
-            id: item.id,
-            label: item.label,
-            vector: new Vector(item.vector),
-            lastUpdate: item.lastUpdate,
+            id: finalVector.Item?.SK,
+            label: finalVector.Item?.label,
+            vector: new Vector(finalVector.Item?.vector),
+            lastUpdate: finalVector.Item?.lastUpdate,
         };
     }
 
@@ -346,7 +369,7 @@ export default class DynamoVectorStore implements VectorStore {
             if (result.Items) {
                 for (const item of result.Items) {
                     // eslint-disable-next-line max-depth
-                    if (item.deactivated) {
+                    if (item.deactivated || item.SK.includes("STAT")) {
                         continue;
                     }
 
@@ -397,34 +420,61 @@ export default class DynamoVectorStore implements VectorStore {
 
     public async deleteStore() {
         // delete everything that starts with databaseName
-        // let lastEvaluatedKey: any = undefined;
+        let lastEvaluatedKey: any = undefined;
 
-        // do {
-        //     const result = await this.docClient.send(new QueryCommand({
-        //         TableName: this.options.tableName,
-        //         KeyConditionExpression: "PK = :databaseName",
-        //         ExpressionAttributeValues: { ":databaseName": `${this.options.databaseName}`, },
-        //         ExclusiveStartKey: lastEvaluatedKey,
-        //     }));
+        do {
+            const result = await this.docClient.send(new QueryCommand({
+                TableName: this.options.tableName,
+                KeyConditionExpression: "PK = :databaseName",
+                ExpressionAttributeValues: { ":databaseName": `${this.options.databaseName}`, },
+                ExclusiveStartKey: lastEvaluatedKey,
+            }));
 
-        //     if (result.Items) {
-        //         const batch = result.Items.map(item => ({
-        //             Delete: {
-        //                 TableName: this.options.tableName,
-        //                 Key: {
-        //                     PK: item.PK,
-        //                     SK: item.SK,
-        //                 }
-        //             }
-        //         }));
+            if (result.Items) {
+                const batch = result.Items.map(item => ({
+                    DeleteRequest: {
+                        Key: {
+                            PK: item.PK,
+                            SK: item.SK,
+                        }
+                    }
+                }));
 
-        //         await this.docClient.send(new BatchWriteCommand({ RequestItems: { [this.options.tableName]: batch } }));
-        //     }
+                await this.docClient.send(new BatchWriteCommand({ RequestItems: { [this.options.tableName]: batch } }));
+            }
 
-        //     lastEvaluatedKey = result.LastEvaluatedKey;
+            lastEvaluatedKey = result.LastEvaluatedKey;
 
-        // } while (lastEvaluatedKey);
+        } while (lastEvaluatedKey);
 
-        // TODO implement me
+        const { stats } = await this.getStats();
+
+        for (let partition = 0;partition < stats.partitions;partition++) {
+            do {
+                const result = await this.docClient.send(new QueryCommand({
+                    TableName: this.options.tableName,
+                    KeyConditionExpression: "PK = :databaseName",
+                    ExpressionAttributeValues: { ":databaseName": `${this.options.databaseName}#${partition}`, },
+                    ExclusiveStartKey: lastEvaluatedKey,
+                }));
+
+                if (result.Items) {
+                    const batch = result.Items.map(item => ({
+                        DeleteRequest: {
+                            Key: {
+                                PK: item.PK,
+                                SK: item.SK,
+                            }
+                        }
+                    }));
+
+                    await this.docClient.send(new BatchWriteCommand({ RequestItems: { [this.options.tableName]: batch } }));
+                }
+
+                lastEvaluatedKey = result.LastEvaluatedKey;
+
+            } while (lastEvaluatedKey);
+        }
+
     }
 }
