@@ -11,7 +11,6 @@ export const DatabaseConfigSchema = z.object({
     awakeInstances: z.number().positive().default(1),
 
     // collection
-    collectionType: z.enum(["dynamic", "static"]),
     dimensions: z.number().positive(),
 });
 

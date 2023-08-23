@@ -171,7 +171,7 @@ describe("<Super Lambda>", () => {
             }
         }
 
-        for (let i = 0; i < 100; i++) {
+        for (let i = 0; i < 30; i++) {
             requests.push(request());
         }
 

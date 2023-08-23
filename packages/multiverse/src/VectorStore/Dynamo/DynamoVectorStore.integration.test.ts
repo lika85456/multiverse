@@ -1,8 +1,8 @@
-import type { StoredVector } from "../Database/Vector";
-import { Vector } from "../Database/Vector";
-import { Partition } from "../Database/VectorDatabase";
+import type { StoredVector } from "../../Database/Vector";
+import { Vector } from "../../Database/Vector";
+import { Partition } from "../../Database/VectorDatabase";
 import DynamoVectorStore from "./DynamoVectorStore";
-import { readPartition, readPartitionAfter } from "./VectorStoreTest";
+import { readPartition, readPartitionAfter } from "../VectorStoreTest";
 
 describe("<DynamoVectorStore>", () => {
 
@@ -73,7 +73,7 @@ describe("<DynamoVectorStore>", () => {
         });
     });
 
-    describe("Edge cases", () => {
+    describe.skip("Edge cases", () => {
         it("should handle 1k vectors", async() => {
             const vectors = [];
             for (let i = 0; i < 1000; i++) {

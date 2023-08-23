@@ -33,7 +33,7 @@ export type LabeledVector = {
 
 export type StoredVector = LabeledVector & {
     lastUpdate: number;
-    deactivated?: true;
+    deactivated?: boolean | number;
     id: number;
 };
 

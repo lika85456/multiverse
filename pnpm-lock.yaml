@@ -7,10 +7,6 @@ settings:
 importers:
 
   .:
-    dependencies:
-      eslint:
-        specifier: ^8.41.0
-        version: 8.41.0
     devDependencies:
       '@types/jest':
         specifier: ^29.5.2
@@ -18,6 +14,9 @@ importers:
       '@typescript-eslint/eslint-plugin':
         specifier: ^5.59.7
         version: 5.59.7(@typescript-eslint/parser@5.59.7)(eslint@8.41.0)(typescript@5.1.3)
+      eslint:
+        specifier: ^8.41.0
+        version: 8.41.0
       eslint-config-custom:
         specifier: workspace:*
         version: link:packages/config/eslint
@@ -172,49 +171,6 @@ importers:
         specifier: ^20.3.1
         version: 20.3.1
 
-  packages/core:
-    dependencies:
-      '@aws-sdk/client-dynamodb':
-        specifier: ^3.379.1
-        version: 3.379.1
-      '@aws-sdk/client-s3':
-        specifier: ^3.362.0
-        version: 3.362.0
-      '@aws-sdk/lib-dynamodb':
-        specifier: ^3.379.1
-        version: 3.379.1(@aws-sdk/client-dynamodb@3.379.1)
-      '@aws-sdk/lib-storage':
-        specifier: ^3.370.0
-        version: 3.370.0(@aws-sdk/client-s3@3.362.0)
-      '@multiverse/env':
-        specifier: workspace:*
-        version: link:../env
-      dotenv:
-        specifier: ^16.3.1
-        version: 16.3.1
-      jsfive:
-        specifier: ^0.3.14
-        version: 0.3.14
-      zod:
-        specifier: ^3.21.4
-        version: 3.21.4
-    devDependencies:
-      '@types/jest':
-        specifier: ^29.5.2
-        version: 29.5.2
-      '@types/node':
-        specifier: ^20.3.1
-        version: 20.3.1
-      h5wasm:
-        specifier: ^0.5.2
-        version: 0.5.2
-      tsconfig:
-        specifier: workspace:*
-        version: link:../config/tsconfig
-      vitest:
-        specifier: ^0.32.2
-        version: 0.32.2
-
   packages/database:
     dependencies:
       '@aws-sdk/client-s3':
@@ -315,6 +271,9 @@ importers:
       '@aws-sdk/s3-request-presigner':
         specifier: ^3.370.0
         version: 3.370.0
+      '@isaacs/ttlcache':
+        specifier: ^1.4.1
+        version: 1.4.1
       '@multiverse/env':
         specifier: workspace:^
         version: link:../env
@@ -1472,17 +1431,6 @@ packages:
       tslib: 2.6.0
     dev: false
 
-  /@aws-sdk/lib-dynamodb@3.379.1(@aws-sdk/client-dynamodb@3.379.1):
-    resolution: {integrity: sha512-SdHuRk9Jo0G9icW5uh36w1+RQ2U1c+dBBBVJSH7a17DzWAEsmcYYDUJ96PaA61clUgC7DI1a3jwSmgZnOszPhg==}
-    engines: {node: '>=14.0.0'}
-    peerDependencies:
-      '@aws-sdk/client-dynamodb': ^3.0.0
-    dependencies:
-      '@aws-sdk/client-dynamodb': 3.379.1
-      '@aws-sdk/util-dynamodb': 3.379.1
-      tslib: 2.6.0
-    dev: false
-
   /@aws-sdk/lib-dynamodb@3.388.0(@aws-sdk/client-dynamodb@3.379.1):
     resolution: {integrity: sha512-rZHancDnS8CEaIE1RMqhePqdvEZyGUwjmd9d2DKnpCdzIGv+gc/qPzXECnjjoA35ygIwYI8nJfvNRDlrI3LfVw==}
     engines: {node: '>=14.0.0'}
@@ -2083,13 +2031,6 @@ packages:
       '@aws-sdk/node-config-provider': 3.357.0
       '@aws-sdk/property-provider': 3.357.0
       '@aws-sdk/types': 3.357.0
-      tslib: 2.6.0
-    dev: false
-
-  /@aws-sdk/util-dynamodb@3.379.1:
-    resolution: {integrity: sha512-789tTjt0yd8Uf8fBr4I56dYfLysncx3NlvuNhLqdLRWBpsGvfIixNZ9OSKxDpdJ0GASXMJklmyGadvGx/vXKZg==}
-    engines: {node: '>=14.0.0'}
-    dependencies:
       tslib: 2.6.0
     dev: false
 
@@ -2747,6 +2688,11 @@ packages:
 
   /@humanwhocodes/object-schema@1.2.1:
     resolution: {integrity: sha512-ZnQMnLV4e7hDlUvw8H+U8ASL02SS2Gn6+9Ac3wGGLIe7+je2AeAOxPY+izIPJDfFDb7eDjev0Us8MO1iFRN8hA==}
+
+  /@isaacs/ttlcache@1.4.1:
+    resolution: {integrity: sha512-RQgQ4uQ+pLbqXfOmieB91ejmLwvSgv9nLx6sT6sD83s7umBypgg+OIBOBbEUiJXrfpnp9j0mRhYYdzp9uqq3lA==}
+    engines: {node: '>=12'}
+    dev: false
 
   /@jest/expect-utils@29.6.1:
     resolution: {integrity: sha512-o319vIf5pEMx0LmzSxxkYYxo4wrRLKHq9dP1yJU7FoPTB0LfAKSz8SWD6D/6U3v/O52t9cF5t+MeJiRsfk7zMw==}
@@ -4976,10 +4922,6 @@ packages:
   /graphemer@1.4.0:
     resolution: {integrity: sha512-EtKwoO6kxCL9WO5xipiHTZlSzBm7WLT627TqC/uVRd0HKmq8NXyebnNYxDoBi7wt8eTWrUrKXCOVaFq9x1kgag==}
 
-  /h5wasm@0.5.2:
-    resolution: {integrity: sha512-5hceMJnleFgkLir7WUjRqcKasIaB0kU1ro/wexBOG5HI/Q27Jx3QnKUdyVfatgzTFnU9iicNILI9zxfOAVrRrQ==}
-    dev: true
-
   /has-bigints@1.0.2:
     resolution: {integrity: sha512-tSvCKtBr9lkF0Ex0aQiP9N+OpV4zi2r/Nee5VkRDbaqv35RLYMzbwQfFSZZH0kR+Rd6302UJZ2p/bJCEoR3VoQ==}
     dev: false
@@ -5310,12 +5252,6 @@ packages:
     dependencies:
       argparse: 2.0.1
 
-  /jsfive@0.3.14:
-    resolution: {integrity: sha512-CptUQRZw1JHgQKhuZX6ozL/5PndJWetPz3K/Raeh5U/ise8FO84BIcBwbUBq2WsCl/zrnu3phnwazL+IuvaQ5A==}
-    dependencies:
-      pako: 2.1.0
-    dev: false
-
   /json-schema-traverse@0.4.1:
     resolution: {integrity: sha512-xbbCH5dCYU5T8LcEhhuh7HJ88HXuW3qsI3Y0zOZFKfZEHcpWiHU/Jxzk629Brsab/mMiHQti9wMP+845RPe3Vg==}
 
@@ -5629,10 +5565,6 @@ packages:
     engines: {node: '>=10'}
     dependencies:
       p-limit: 3.1.0
-
-  /pako@2.1.0:
-    resolution: {integrity: sha512-w+eufiZ1WuJYgPXbV/PO3NCMEc3xqylkKHzp8bxp1uW4qaSNQUkwmLLEc3kKsfz8lpV1F8Ht3U1Cm+9Srog2ug==}
-    dev: false
 
   /parent-module@1.0.1:
     resolution: {integrity: sha512-GQ2EWRpQV8/o+Aw8YqtfZZPfNRWZYkbidE9k5rpl/hC3vtHHBfGm2Ifi6qWV+coDGkrUKZAxE3Lot5kcsRlh+g==}

@@ -23,6 +23,7 @@
     "@aws-sdk/lib-dynamodb": "^3.388.0",
     "@aws-sdk/lib-storage": "^3.370.0",
     "@aws-sdk/s3-request-presigner": "^3.370.0",
+    "@isaacs/ttlcache": "^1.4.1",
     "@multiverse/env": "workspace:^",
     "dotenv": "^16.3.1",
     "hnswlib-node": "^2.0.0",

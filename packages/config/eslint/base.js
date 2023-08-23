@@ -28,6 +28,13 @@ const config = {
       "always",
       { exceptAfterSingleLine: true },
     ],
+    // new line at the start of function or method body
+    "padding-line-between-statements": [
+      "error",
+      { blankLine: "always", prev: "*", next: "return" },
+      { blankLine: "always", prev: "*", next: "function" },
+      { blankLine: "always", prev: "*", next: "class" },
+    ],
     "import/consistent-type-specifier-style": ["error", "prefer-top-level"],
     quotes: ["error", "double"],
     "space-before-function-paren": ["error", "never"],

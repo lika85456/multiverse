@@ -1,6 +1,6 @@
-import type { StoredVector } from "../Database/Vector";
-import type { Partition } from "../Database/VectorDatabase";
-import type VectorStore from "./VectorStore";
+import type { StoredVector } from "../../Database/Vector";
+import type { Partition } from "../../Database/VectorDatabase";
+import type VectorStore from "../VectorStore";
 
 export default class MemoryVectorStore implements VectorStore {
 

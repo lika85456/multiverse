@@ -9,8 +9,6 @@ export type Query = {
 };
 
 export class Partition {
-    // partitionIndex: number;
-    // partitionCount: number;
 
     constructor(public partitionIndex: number, public partitionCount: number) {
         if (partitionIndex < 0 || partitionIndex >= partitionCount) {

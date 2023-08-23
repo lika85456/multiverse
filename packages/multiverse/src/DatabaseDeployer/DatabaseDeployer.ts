@@ -1,12 +1,9 @@
 import { Lambda, PackageType } from "@aws-sdk/client-lambda";
-import type { DatabaseConfig, CollectionConfig } from "@multiverse/core/dist/DatabaseConfig";
-
-const lambda = new Lambda({ region: "eu-central-1" });
+import { DatabaseConfig } from "../DatabaseConfig";
 
 export default class DatabaseDeployer {
     constructor(private options: {
-        database: DatabaseConfig,
-        collection: CollectionConfig
+        database: DatabaseConfig
     }) {
 
     }
