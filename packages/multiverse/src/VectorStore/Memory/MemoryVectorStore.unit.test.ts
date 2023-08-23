@@ -1,6 +1,5 @@
 import type { StoredVector } from "../../Database/Vector";
-import { Vector } from "../../Database/Vector";
-import { Partition } from "../../Database/VectorDatabase";
+import { Partition, Vector } from "../../Database/Vector";
 import { readPartition, readPartitionAfter } from "../VectorStoreTest";
 import MemoryVectorStore from "./MemoryVectorStore";
 

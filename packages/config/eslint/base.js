@@ -76,6 +76,8 @@ const config = {
     "comma-style": "error",
     "func-call-spacing": "error",
     "function-paren-newline": ["error", "multiline"],
+    "@typescript-eslint/type-annotation-spacing": "error",
+    "no-mixed-spaces-and-tabs": "error",
     "max-len": [
         "error",
         {

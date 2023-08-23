@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 export class Vector {
     constructor(private vector: number[]) {
 
@@ -40,4 +42,58 @@ export type StoredVector = LabeledVector & {
 export type SearchResultVector = {
     id: number;
     distance: number;
+};
+
+export class Partition {
+
+    constructor(public partitionIndex: number, public partitionCount: number) {
+        if (partitionIndex < 0 || partitionIndex >= partitionCount) {
+            throw new Error("Invalid partition index: must be >= 0 and < partitionCount");
+        }
+
+        // whole number
+        if (partitionIndex % 1 !== 0) {
+            throw new Error("Invalid partition index: must be a whole number");
+        }
+    }
+
+    public normalize(): number {
+        return this.partitionIndex / this.partitionCount;
+    }
+
+    public start(): number {
+        return this.partitionIndex / this.partitionCount;
+    }
+
+    public end(): number {
+        return (this.partitionIndex + 1) / this.partitionCount;
+    }
+
+};
+
+export const querySchema = z.object({
+    vector: z.instanceof(Vector),
+    k: z.number()
+});
+
+export type Query = z.infer<typeof querySchema>;
+
+export const vectorDatabaseQuerySchema = z.object({
+    query: querySchema,
+    updates: z.array(z.object({
+        id: z.number(),
+        label: z.string(),
+        lastUpdate: z.number(),
+        vector: z.instanceof(Vector),
+        deactivated: z.boolean().optional()
+    })).optional()
+});
+
+export type VectorDatabaseQuery = z.infer<typeof vectorDatabaseQuerySchema>;
+
+export type VectorDatabaseQueryResult = {
+    partition: Partition;
+    result: SearchResultVector[];
+    instanceId: string;
+    lastUpdateTimestamp: number;
 };

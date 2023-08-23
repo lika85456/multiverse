@@ -82,7 +82,7 @@ export default class DynamoDeployer {
                     AttributeType: "S"
                 },
                 {
-                    AttributeName: "updated",
+                    AttributeName: "lastUpdate",
                     AttributeType: "N"
                 },
                 {
@@ -93,14 +93,14 @@ export default class DynamoDeployer {
             BillingMode: "PAY_PER_REQUEST",
             GlobalSecondaryIndexes: [
                 {
-                    IndexName: "PK-updated-index",
+                    IndexName: "PK-lastUpdate-index",
                     KeySchema: [
                         {
                             AttributeName: "PK",
                             KeyType: "HASH"
                         },
                         {
-                            AttributeName: "updated",
+                            AttributeName: "lastUpdate",
                             KeyType: "RANGE"
                         },
                     ],

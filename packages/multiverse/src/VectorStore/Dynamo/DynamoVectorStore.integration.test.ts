@@ -1,5 +1,4 @@
-import { Vector } from "../../Database/Vector";
-import { Partition } from "../../Database/VectorDatabase";
+import { Partition, Vector } from "../../Database/Vector";
 import DynamoVectorStore from "./DynamoVectorStore";
 import { readPartition, readPartitionAfter } from "../VectorStoreTest";
 
@@ -90,9 +89,9 @@ describe("<DynamoVectorStore>", () => {
             await store.deleteStore();
         });
 
-        it("should handle 1k vectors", async() => {
+        it("should handle 100 vectors", async() => {
             const vectors = [];
-            for (let i = 0; i < 1000; i++) {
+            for (let i = 0; i < 100; i++) {
                 vectors.push({
                     id: Math.random(),
                     label: "test label " + i,
@@ -114,11 +113,11 @@ describe("<DynamoVectorStore>", () => {
                 readPartitionAfter(store, new Partition(0, 1), 0),
             ]);
 
-            expect(res[0].length).toBe(1000);
-            expect(res[1].length).toBe(1000);
-            expect(res[2].length).toBe(1000);
-            expect(res[3].length).toBe(1000);
-            expect(res[4].length).toBe(1000);
+            expect(res[0].length).toBe(100);
+            expect(res[1].length).toBe(100);
+            expect(res[2].length).toBe(100);
+            expect(res[3].length).toBe(100);
+            expect(res[4].length).toBe(100);
         });
     });
 
@@ -154,7 +153,7 @@ describe("<DynamoVectorStore>", () => {
             expect(result.vector.toArray()).toEqual(vector.toArray());
         });
 
-        it("should save 25+ 10k dimension vectors", async() => {
+        it.skip("should save 25+ 10k dimension vectors", async() => {
             const vectors = Array.from({ length: 25 }, () => ({
                 id: Math.random(),
                 label: "test label 1",

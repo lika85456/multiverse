@@ -1,4 +1,4 @@
-import type { Partition } from "../Database/VectorDatabase";
+import type { Partition } from "../Database/Vector";
 import type VectorStore from "./VectorStore";
 
 export async function readPartition(store: VectorStore, partition: Partition) {

@@ -1,58 +1,14 @@
 import type Index from "../Index";
 import type {
-    SearchResultVector, StoredVector, Vector
+    Partition, VectorDatabaseQuery, VectorDatabaseQueryResult
 } from "./Vector";
-
-export type Query = {
-    vector: Vector;
-    k: number;
-};
-
-export class Partition {
-
-    constructor(public partitionIndex: number, public partitionCount: number) {
-        if (partitionIndex < 0 || partitionIndex >= partitionCount) {
-            throw new Error("Invalid partition index: must be >= 0 and < partitionCount");
-        }
-
-        // whole number
-        if (partitionIndex % 1 !== 0) {
-            throw new Error("Invalid partition index: must be a whole number");
-        }
-    }
-
-    public normalize(): number {
-        return this.partitionIndex / this.partitionCount;
-    }
-
-    public start(): number {
-        return this.partitionIndex / this.partitionCount;
-    }
-
-    public end(): number {
-        return (this.partitionIndex + 1) / this.partitionCount;
-    }
-
-};
-
-export type VectorDatabaseQuery = {
-    query: Query;
-    updates: StoredVector[];
-};
-
-export type VectorDatabaseQueryResult = {
-    partition: Partition;
-    result: SearchResultVector[];
-    instanceId: string;
-    lastUpdateTimestamp: number;
-};
 
 export default class VectorDatabase {
 
     private lastUpdateTimestamp = 0;
 
     constructor(private index: Index, private options: {
-        partition:Partition,
+        partition: Partition,
         instanceId?: string,
     }) {
         if (!options.instanceId) {
@@ -65,15 +21,17 @@ export default class VectorDatabase {
     public async query(query: VectorDatabaseQuery): Promise<VectorDatabaseQueryResult> {
 
         // update the index
-        await Promise.all(query.updates.map(update => {
-            if (update.deactivated) {
-                return this.index.remove([update.id]);
-            }
+        if (query.updates && query.updates.length > 0) {
+            await Promise.all(query.updates.map(update => {
+                if (update.deactivated) {
+                    return this.index.remove([update.id]);
+                }
 
-            return this.index.add([update]);
-        }));
+                return this.index.add([update]);
+            }));
+        }
 
-        const lastUpdateTimestamp = Math.max(...query.updates.map(update => update.lastUpdate), this.lastUpdateTimestamp);
+        const lastUpdateTimestamp = Math.max(...(query.updates ?? []).map(update => update.lastUpdate), this.lastUpdateTimestamp);
 
         const result = await this.index.knn(query.query);
 

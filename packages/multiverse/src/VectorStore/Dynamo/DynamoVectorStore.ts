@@ -2,9 +2,8 @@ import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import {
     DynamoDBDocumentClient, GetCommand, QueryCommand, BatchWriteCommand, UpdateCommand
 } from "@aws-sdk/lib-dynamodb";
-import type { StoredVector } from "../../Database/Vector";
+import type { Partition, StoredVector } from "../../Database/Vector";
 import { Vector } from "../../Database/Vector";
-import type { Partition } from "../../Database/VectorDatabase";
 import type VectorStore from "../VectorStore";
 import type { Stats, PartitionStats } from "./TableTypes";
 import TTLCache from "@isaacs/ttlcache";
@@ -47,7 +46,7 @@ export class UnprocessedItemsError extends Error {
 //     SK: string; // random long id
 //     label: string;
 //     vector: number[]; // or binary data?
-//     updated: number; // timestamp
+//     lastUpdate: number; // timestamp
 //     deactivated?: number | boolean;
 //     metadata: string; // anything
 // };
@@ -405,13 +404,13 @@ export default class DynamoVectorStore implements VectorStore {
         do {
             const result = await this.docClient.send(new QueryCommand({
                 TableName: this.options.tableName,
-                KeyConditionExpression: "PK = :partitionKey AND updated >= :lastUpdate",
+                KeyConditionExpression: "PK = :partitionKey AND lastUpdate >= :lastUpdate",
                 ExpressionAttributeValues: {
                     ":partitionKey": `${this.options.databaseName}#${partition.partitionIndex}`,
                     ":lastUpdate": timestamp,
                 },
                 ExclusiveStartKey: lastEvaluatedKey,
-                IndexName: "PK-updated-index"
+                IndexName: "PK-lastUpdate-index"
             }));
 
             if (result.Items) {

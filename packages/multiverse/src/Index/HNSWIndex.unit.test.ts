@@ -53,7 +53,7 @@ describe("<HNSWIndex>", () => {
 
         const path = "/tmp/" + Math.random().toString(36).substring(2, 10) + ".hnsw";
         it("should save", async() => {
-            await index.saveIndex(path);
+            await index.save(path);
         });
 
         it("should load", async() => {
@@ -63,10 +63,43 @@ describe("<HNSWIndex>", () => {
                 spaceName: "l2"
             });
 
-            await newIndex.loadIndex(path);
+            await newIndex.load(path);
 
             expect(newIndex.physicalSize()).toBe(2);
         });
+    });
+
+    describe("Query with thousand vectors", () => {
+
+        const index = new HNSWIndex({
+            dimensions: 3,
+            size: 1000,
+            spaceName: "l2"
+        });
+
+        beforeAll(async() => {
+            const vectors = Array.from({ length: 1000 }, (_, i) => ({
+                id: i,
+                label: "test label " + i,
+                lastUpdate: 0,
+                vector: new Vector([i, i, i])
+            }));
+
+            await index.add(vectors);
+        });
+
+        it("should query", async() => {
+            const query = [3, 3, 3];
+            const result = await index.knn({
+                k: 10,
+                vector: new Vector(query)
+            });
+
+            expect(result.length).toBe(10);
+            expect(result[0].id).toBe(3);
+            expect(result[0].distance).toBe(0);
+        });
+
     });
 
     describe("Edge cases", () => {

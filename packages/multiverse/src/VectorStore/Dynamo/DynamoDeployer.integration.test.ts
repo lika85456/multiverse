@@ -5,6 +5,7 @@ describe("<DynamoDeployer>", () => {
 
     const dynamo = new DynamoDB({ region: "eu-central-1" });
 
+    // const tableName = "multiverse-collections-test";
     const tableName = "multiverse-collections-test" + Math.random().toString(36).substring(2, 10);
 
     const deployer = new DynamoDeployer({

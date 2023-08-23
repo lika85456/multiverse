@@ -13,6 +13,7 @@ const envSchema = z.object({
 export const getEnvIssues = (): z.ZodIssue[] => {
     const result = envSchema.safeParse(process.env);
     if (!result.success) return result.error.issues;
+
     return [];
 };
 

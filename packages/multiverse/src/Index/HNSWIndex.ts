@@ -1,7 +1,8 @@
 import { HierarchicalNSW, } from "hnswlib-node";
 import type Index from ".";
-import type { SearchResultVector, StoredVector } from "../Database/Vector";
-import type { Query } from "../Database/VectorDatabase";
+import type {
+    Query, SearchResultVector, StoredVector
+} from "../Database/Vector";
 
 export default class HNSWIndex implements Index {
 
@@ -18,11 +19,13 @@ export default class HNSWIndex implements Index {
     private initializeIndex() {
         const index = new HierarchicalNSW(this.options.spaceName, this.options.dimensions);
         index.initIndex(this.options.size * 2, undefined, undefined, undefined, true);
+
         return index;
     }
 
     public async knn(query: Query): Promise<SearchResultVector[]> {
         const index = this.index;
+
         const result = index.searchKnn(query.vector.toArray(), query.k);
 
         const results: SearchResultVector[] = [];
@@ -40,6 +43,11 @@ export default class HNSWIndex implements Index {
     public async add(vectors: StoredVector[]): Promise<void> {
         const index = this.index;
         vectors.forEach(vector => {
+
+            if (!Number.isInteger(vector.id)) {
+                throw new Error("Vector id must be an integer");
+            }
+
             index.addPoint(vector.vector.toArray(), vector.id, true);
         });
 
@@ -60,7 +68,7 @@ export default class HNSWIndex implements Index {
         index.resizeIndex(newSize);
     }
 
-    public async saveIndex(path: string) {
+    public async save(path: string) {
         const index = this.index;
         const result = await index.writeIndex(path);
 
@@ -69,7 +77,7 @@ export default class HNSWIndex implements Index {
         }
     }
 
-    public async loadIndex(path: string) {
+    public async load(path: string) {
         const index = this.index;
         const result = await index.readIndex(path, true);
 
@@ -80,6 +88,11 @@ export default class HNSWIndex implements Index {
 
     public physicalSize() {
         const index = this.index;
+
         return index.getCurrentCount();
+    }
+
+    public async size() {
+        return this.physicalSize();
     }
 }

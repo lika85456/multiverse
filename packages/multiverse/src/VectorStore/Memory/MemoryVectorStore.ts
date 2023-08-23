@@ -1,5 +1,4 @@
-import type { StoredVector } from "../../Database/Vector";
-import type { Partition } from "../../Database/VectorDatabase";
+import type { Partition, StoredVector } from "../../Database/Vector";
 import type VectorStore from "../VectorStore";
 
 export default class MemoryVectorStore implements VectorStore {
@@ -12,6 +11,7 @@ export default class MemoryVectorStore implements VectorStore {
         }
 
         this.vectors.push(...vectors);
+
         return Promise.resolve();
     }
 

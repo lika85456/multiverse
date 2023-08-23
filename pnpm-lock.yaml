@@ -1,4 +1,4 @@
-lockfileVersion: '6.1'
+lockfileVersion: '6.0'
 
 settings:
   autoInstallPeers: true
@@ -277,6 +277,12 @@ importers:
       '@multiverse/env':
         specifier: workspace:^
         version: link:../env
+      '@trpc/client':
+        specifier: ^10.37.1
+        version: 10.37.1(@trpc/server@10.37.1)
+      '@trpc/server':
+        specifier: ^10.37.1
+        version: 10.37.1
       dotenv:
         specifier: ^16.3.1
         version: 16.3.1
@@ -3458,6 +3464,18 @@ packages:
       '@smithy/abort-controller': 2.0.1
       '@smithy/types': 2.0.2
       tslib: 2.6.0
+    dev: false
+
+  /@trpc/client@10.37.1(@trpc/server@10.37.1):
+    resolution: {integrity: sha512-OSblNfeI0Z9ERn3usgLV2x63CwwPoNOHf1FQK85cOT7F8MNaWyEHoEv7tHUwNGJwyzKXmpU+ockZ0movzX3D0g==}
+    peerDependencies:
+      '@trpc/server': 10.37.1
+    dependencies:
+      '@trpc/server': 10.37.1
+    dev: false
+
+  /@trpc/server@10.37.1:
+    resolution: {integrity: sha512-r3VeA319/braYMBIzj+XLgLKQ9lJSVglvPvP9HUv4kr5w6Y5grQMxMcExhTiZWltE9bnSJHKtBBzHafOo7KC8A==}
     dev: false
 
   /@types/adm-zip@0.5.0:
