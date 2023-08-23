@@ -5,18 +5,19 @@ import { readPartition, readPartitionAfter } from "../VectorStoreTest";
 
 describe("<DynamoVectorStore>", () => {
 
-    const store = new DynamoVectorStore({
-        databaseName: "test-" + Math.random().toString(36).substring(7),
-        dimensions: 3,
-        region: "eu-central-1",
-        tableName: "multiverse-collections-test"
-    });
-
-    afterAll(async() => {
-        await store.deleteStore();
-    });
-
     describe("Basic functionality", () => {
+
+        const store = new DynamoVectorStore({
+            databaseName: "test-" + Math.random().toString(36).substring(7),
+            dimensions: 3,
+            region: "eu-central-1",
+            tableName: "multiverse-collections-test"
+        });
+
+        afterAll(async() => {
+            await store.deleteStore();
+        });
+
         it("should be empty", async() => {
             const vectors = store.partition(new Partition(0, 1));
 
@@ -76,7 +77,19 @@ describe("<DynamoVectorStore>", () => {
         });
     });
 
-    describe.skip("Edge cases", () => {
+    describe("Performance edge cases", () => {
+
+        const store = new DynamoVectorStore({
+            databaseName: "test-" + Math.random().toString(36).substring(7),
+            dimensions: 3,
+            region: "eu-central-1",
+            tableName: "multiverse-collections-test"
+        });
+
+        afterAll(async() => {
+            await store.deleteStore();
+        });
+
         it("should handle 1k vectors", async() => {
             const vectors = [];
             for (let i = 0; i < 1000; i++) {
@@ -93,13 +106,77 @@ describe("<DynamoVectorStore>", () => {
 
         it("should read all vectors in parallel", async() => {
             // read whole partition 5 times
-            await Promise.all([
+            const res = await Promise.all([
                 readPartitionAfter(store, new Partition(0, 1), 0),
                 readPartitionAfter(store, new Partition(0, 1), 0),
                 readPartitionAfter(store, new Partition(0, 1), 0),
                 readPartitionAfter(store, new Partition(0, 1), 0),
                 readPartitionAfter(store, new Partition(0, 1), 0),
             ]);
+
+            expect(res[0].length).toBe(1000);
+            expect(res[1].length).toBe(1000);
+            expect(res[2].length).toBe(1000);
+            expect(res[3].length).toBe(1000);
+            expect(res[4].length).toBe(1000);
+        });
+    });
+
+    describe("Vector edge cases", () => {
+
+        const store = new DynamoVectorStore({
+            databaseName: "test-" + Math.random().toString(36).substring(7),
+            dimensions: 10000,
+            region: "eu-central-1",
+            tableName: "multiverse-collections-test"
+        });
+
+        afterAll(async() => {
+            await store.deleteStore();
+        });
+
+        it("should save 10k dimension vector", async() => {
+            const vector = new Vector(Array.from({ length: 10000 }, () => Math.random()));
+
+            await store.add([{
+                id: Math.random(),
+                label: "test label 1",
+                lastUpdate: 0,
+                vector
+            }]);
+
+            const result = await store.getByLabel("test label 1");
+
+            if (!result) {
+                throw new Error("Vector not found");
+            }
+
+            expect(result.vector.toArray()).toEqual(vector.toArray());
+        });
+
+        it("should save 25+ 10k dimension vectors", async() => {
+            const vectors = Array.from({ length: 25 }, () => ({
+                id: Math.random(),
+                label: "test label 1",
+                lastUpdate: 0,
+                vector: new Vector(Array.from({ length: 10000 }, () => Math.random()))
+            }));
+
+            await store.add(vectors);
+
+            const result = await store.getByLabel("test label 1");
+
+            if (!result) {
+                throw new Error("Vector not found");
+            }
+
+            expect(result.vector.toArray()).toEqual(vectors[0].vector.toArray());
+
+            const stats = await store.getStats();
+
+            expect(stats.stats.totalVectors).toBe(26);
+            expect(stats.stats.activeVectors).toBe(26);
+            expect(stats.partitionStats[0].totalVectors).toBe(26);
         });
     });
 });

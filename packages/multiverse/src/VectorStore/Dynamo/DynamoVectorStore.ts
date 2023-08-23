@@ -94,6 +94,16 @@ export default class DynamoVectorStore implements VectorStore {
 
             cache.set(this.options.tableName, stats as any);
 
+            // write stats
+            await this.docClient.send(new BatchWriteCommand({
+                RequestItems: {
+                    [this.options.tableName]: [
+                        { PutRequest: { Item: stats.stats } },
+                        { PutRequest: { Item: stats.partitionStats[0] } }
+                    ]
+                }
+            }));
+
             return stats as any;
         }
 
@@ -120,7 +130,7 @@ export default class DynamoVectorStore implements VectorStore {
         };
     }
 
-    private async getStats(): Promise<{stats: Stats, partitionStats: PartitionStats[]}> {
+    public async getStats(): Promise<{stats: Stats, partitionStats: PartitionStats[]}> {
 
         const cached = cache.get(this.options.tableName);
 
@@ -176,6 +186,8 @@ export default class DynamoVectorStore implements VectorStore {
             await Promise.all(Array.from({ length: Math.ceil(vectors.length / MAXIMUM_BATCH_SIZE) }, (_, i) => i).map(async(i) => {
                 await this.add(vectors.slice(i * MAXIMUM_BATCH_SIZE, (i + 1) * MAXIMUM_BATCH_SIZE));
             }));
+
+            return;
         }
 
         const partition = await this.partitionToAddTo();
@@ -456,6 +468,8 @@ export default class DynamoVectorStore implements VectorStore {
                     KeyConditionExpression: "PK = :databaseName",
                     ExpressionAttributeValues: { ":databaseName": `${this.options.databaseName}#${partition}`, },
                     ExclusiveStartKey: lastEvaluatedKey,
+                    Limit: 25,
+                    ProjectionExpression: "PK, SK"
                 }));
 
                 if (result.Items) {
