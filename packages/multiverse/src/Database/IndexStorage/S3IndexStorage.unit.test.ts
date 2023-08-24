@@ -1,7 +1,7 @@
 import type Index from "../../Index";
 import HNSWIndex from "../../Index/HNSWIndex";
 import { Vector } from "../Vector";
-import { FSIndexStorage } from "./FSIndexStorage";
+import { S3IndexStorage } from "./S3IndexStorage";
 
 function randomVector(dimensions: number): Vector {
     return new Vector(Array.from({ length: dimensions }, () => Math.random()));
@@ -20,13 +20,16 @@ async function fillWithRandomVectors(index: Index, vectors: number) {
     return index.add(randomVectors);
 }
 
-describe("<FSIndexStorage>", () => {
+describe("<S3IndexStorage>", () => {
 
-    const indexStorage = new FSIndexStorage();
-
-    afterAll(async() => {
-        await indexStorage.clean();
+    const indexStorage = new S3IndexStorage({
+        bucket: "multiverse-test-collections",
+        region: "eu-central-1"
     });
+
+    // afterAll(async() => {
+    //     await indexStorage.clean();
+    // });
 
     describe("Basic functions", () => {
         const indexName = Math.random().toString();
@@ -138,6 +141,18 @@ describe("<FSIndexStorage>", () => {
             });
 
             expect(result[0].id).not.toBe(69);
+        });
+
+        it.skip("should upload big vector indexes", async() => {
+            const index = new HNSWIndex({
+                dimensions: 5000,
+                size: 1000,
+                spaceName: "l2"
+            });
+
+            await fillWithRandomVectors(index, 1000);
+
+            await indexStorage.saveIndex(index, "big");
         });
     });
 });

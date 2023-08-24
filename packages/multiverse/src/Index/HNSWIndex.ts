@@ -95,4 +95,8 @@ export default class HNSWIndex implements Index {
     public async size() {
         return this.physicalSize();
     }
+
+    public async dimensions() {
+        return this.options.dimensions;
+    }
 }
