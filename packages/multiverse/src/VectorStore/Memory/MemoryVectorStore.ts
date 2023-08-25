@@ -6,10 +6,6 @@ export default class MemoryVectorStore implements VectorStore {
     private vectors: StoredVector[] = [];
 
     add(vectors: StoredVector[]): Promise<void> {
-        if (vectors.some(v => v.id >= 1 || v.id < 0)) {
-            throw new Error("Id must be a number <0,1)");
-        }
-
         this.vectors.push(...vectors);
 
         return Promise.resolve();
@@ -37,25 +33,21 @@ export default class MemoryVectorStore implements VectorStore {
         return Promise.resolve(this.vectors.find(vector => vector.label === label && !vector.deactivated));
     }
 
-    public async* partition(partition: Partition): AsyncGenerator<StoredVector, void, unknown> {
-        const start = partition.start();
-        const end = partition.end();
+    public async* partition(_partition: Partition): AsyncGenerator<StoredVector, void, unknown> {
 
         for (let i = 0; i < this.vectors.length; i++) {
             const vector = this.vectors[i];
-            if (vector.id >= start && vector.id < end && !vector.deactivated) {
+            if (!vector.deactivated) {
                 yield vector;
             }
         }
     }
 
-    public async* changesAfter(timestamp: number, partition: Partition): AsyncGenerator<StoredVector, void, unknown> {
-        const start = partition.start();
-        const end = partition.end();
+    public async* changesAfter(timestamp: number, _partition: Partition): AsyncGenerator<StoredVector, void, unknown> {
 
         for (let i = 0; i < this.vectors.length; i++) {
             const vector = this.vectors[i];
-            if (vector.id >= start && vector.id < end && vector.lastUpdate >= timestamp && !vector.deactivated) {
+            if (vector.lastUpdate >= timestamp && !vector.deactivated) {
                 yield vector;
             }
         }

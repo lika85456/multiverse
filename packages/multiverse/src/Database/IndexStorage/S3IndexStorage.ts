@@ -27,6 +27,7 @@ export class S3IndexStorage extends IndexStorage {
     }
 
     async saveIndex(index: Index, name: string): Promise<void> {
+
         const fileName = this.nameFromIdentifier({
             name,
             size: await index.size(),
@@ -91,13 +92,8 @@ export class S3IndexStorage extends IndexStorage {
                 if (!file.Key) {
                     throw new Error("File key is undefined");
                 }
-                const [name, timestamp, size] = file.Key.split("-");
 
-                return {
-                    name,
-                    timestamp: parseInt(timestamp),
-                    size: parseInt(size)
-                };
+                return this.identifierFromName(file.Key);
             })
             .sort((a, b) => b.timestamp - a.timestamp);
 

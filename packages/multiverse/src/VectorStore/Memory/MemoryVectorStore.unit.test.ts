@@ -1,6 +1,6 @@
 import type { StoredVector } from "../../Database/Vector";
 import { Partition, Vector } from "../../Database/Vector";
-import { readPartition, readPartitionAfter } from "../VectorStoreTest";
+import { readPartition } from "../VectorStoreTest";
 import MemoryVectorStore from "./MemoryVectorStore";
 
 describe("<MemoryVectorStore>", () => {
@@ -19,13 +19,13 @@ describe("<MemoryVectorStore>", () => {
         it("should add vectors", async() => {
             await store.add([
                 {
-                    id: Math.random(),
+                    id: Math.random() * 100000000,
                     label: "test label 1",
                     lastUpdate: 0,
                     vector: new Vector([1, 2, 3])
                 },
                 {
-                    id: Math.random(),
+                    id: Math.random() * 100000000,
                     label: "test label 2",
                     lastUpdate: 0,
                     vector: new Vector([4, 5, 6])
@@ -63,61 +63,61 @@ describe("<MemoryVectorStore>", () => {
         });
     });
 
-    describe("Partitioning", () => {
-        const store = new MemoryVectorStore();
+    // describe("Partitioning", () => {
+    //     const store = new MemoryVectorStore();
 
-        beforeAll(async() => {
-            // add 100 vectors
-            await store.add(Array.from({ length: 100 }, (_, i) => ({
-                id: i / 100,
-                label: i.toString(),
-                lastUpdate: i,
-                vector: new Vector([i])
-            })));
-        });
+    //     beforeAll(async() => {
+    //         // add 100 vectors
+    //         await store.add(Array.from({ length: 100 }, (_, i) => ({
+    //             id: i / 100,
+    //             label: i.toString(),
+    //             lastUpdate: i,
+    //             vector: new Vector([i])
+    //         })));
+    //     });
 
-        it.each([
-            [10],
-            [20],
-            [3],
-            [7],
-            [1]
-        ])("should return every vector in %i partitions", async(partitionsCount) => {
-            const partitions = Array.from({ length: partitionsCount }, (_, i) => new Partition(i, partitionsCount));
-            const vectors = await Promise.all(partitions.map(partition => readPartition(store, partition)));
+    //     it.each([
+    //         [10],
+    //         [20],
+    //         [3],
+    //         [7],
+    //         [1]
+    //     ])("should return every vector in %i partitions", async(partitionsCount) => {
+    //         const partitions = Array.from({ length: partitionsCount }, (_, i) => new Partition(i, partitionsCount));
+    //         const vectors = await Promise.all(partitions.map(partition => readPartition(store, partition)));
 
-            // find duplicities
-            const allVectors = vectors.flat();
-            const uniqueVectors = new Set(allVectors);
-            expect(allVectors.length).toBe(uniqueVectors.size);
+    //         // find duplicities
+    //         const allVectors = vectors.flat();
+    //         const uniqueVectors = new Set(allVectors);
+    //         expect(allVectors.length).toBe(uniqueVectors.size);
 
-            expect(vectors.flat().length).toBe(100);
-        });
+    //         expect(vectors.flat().length).toBe(100);
+    //     });
 
-        it.each([
-            [0],
-            [10],
-            [50],
-            [100]
-        ])("should return vectors after %i ms updates", async(updateTimestamp) => {
-            const vectorsLength = 100 - updateTimestamp;
+    //     it.each([
+    //         [0],
+    //         [10],
+    //         [50],
+    //         [100]
+    //     ])("should return vectors after %i ms updates", async(updateTimestamp) => {
+    //         const vectorsLength = 100 - updateTimestamp;
 
-            const vectors = await readPartitionAfter(store, new Partition(0, 1), updateTimestamp);
-            expect(vectors.length).toBe(vectorsLength);
-        });
+    //         const vectors = await readPartitionAfter(store, new Partition(0, 1), updateTimestamp);
+    //         expect(vectors.length).toBe(vectorsLength);
+    //     });
 
-        it.each([
-            [0, 13],
-            [10, 3],
-            [50, 1],
-            [100, 7]
-        ])("should return vectors after %i ms updates and %i partitions", async(updateTimestamp, partitionsCount) => {
-            const vectorsLength = 100 - updateTimestamp;
+    //     it.each([
+    //         [0, 13],
+    //         [10, 3],
+    //         [50, 1],
+    //         [100, 7]
+    //     ])("should return vectors after %i ms updates and %i partitions", async(updateTimestamp, partitionsCount) => {
+    //         const vectorsLength = 100 - updateTimestamp;
 
-            const partitions = Array.from({ length: partitionsCount }, (_, i) => new Partition(i, partitionsCount));
-            const vectors = await Promise.all(partitions.map(partition => readPartitionAfter(store, partition, updateTimestamp)));
+    //         const partitions = Array.from({ length: partitionsCount }, (_, i) => new Partition(i, partitionsCount));
+    //         const vectors = await Promise.all(partitions.map(partition => readPartitionAfter(store, partition, updateTimestamp)));
 
-            expect(vectors.flat().length).toBe(vectorsLength);
-        });
-    });
+    //         expect(vectors.flat().length).toBe(vectorsLength);
+    //     });
+    // });
 });

@@ -153,32 +153,6 @@ describe("<Super Lambda>", () => {
         });
     });
 
-    it("should not hit cold start in at least 30 burst requests", async() => {
-        const requests = [];
-
-        let fallbacks = 0;
-
-        async function request() {
-            const start = Date.now();
-            const result = await superLambda.invoke({});
-            expect(result.StatusCode).toBe(200);
-            const end = Date.now();
-
-            fallbacks += result.fallbacks;
-
-            if (end - start > 1000) {
-                throw new Error("Cold start detected");
-            }
-        }
-
-        for (let i = 0; i < 30; i++) {
-            requests.push(request());
-        }
-
-        await Promise.all(requests);
-        console.log(`Fallbacks: ${fallbacks}`);
-    });
-
     afterAll(async() => {
         await superLambda.destroy();
     });

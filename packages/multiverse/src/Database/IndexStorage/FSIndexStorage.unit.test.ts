@@ -29,7 +29,7 @@ describe("<FSIndexStorage>", () => {
     });
 
     describe("Basic functions", () => {
-        const indexName = Math.random().toString();
+        const indexName = Math.random().toString() + "-test--";
 
         const indexToStore = new HNSWIndex({
             dimensions: 3,

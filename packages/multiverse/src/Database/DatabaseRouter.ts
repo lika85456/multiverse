@@ -21,7 +21,16 @@ export const generateAppRouter = (vdb: VectorDatabase) => router({
                 instanceId: result.instanceId,
                 lastUpdateTimestamp: result.lastUpdateTimestamp
             };
-        })
+        }),
+    indexCollection: publicProcedure
+        .query(async() => {
+            await vdb.indexCollection();
+        }),
+
+    loadIndexCollection: publicProcedure
+        .query(async() => {
+            await vdb.loadIndexCollection();
+        }),
 
 });
 

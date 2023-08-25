@@ -1,4 +1,7 @@
+import type { DatabaseConfig } from "../DatabaseConfig";
 import type Index from "../Index";
+import type VectorStore from "../VectorStore/VectorStore";
+import type IndexStorage from "./IndexStorage/IndexStorage";
 import type {
     Partition, VectorDatabaseQuery, VectorDatabaseQueryResult
 } from "./Vector";
@@ -10,6 +13,9 @@ export default class VectorDatabase {
     constructor(private index: Index, private options: {
         partition: Partition,
         instanceId?: string,
+        vectorStore: VectorStore,
+        database: DatabaseConfig,
+        indexStorage: IndexStorage
     }) {
         if (!options.instanceId) {
             options.instanceId = Math.random().toString(36).substring(2, 10);
@@ -43,4 +49,27 @@ export default class VectorDatabase {
         };
     }
 
+    public async indexCollection() {
+        const iterator = this.options.vectorStore.partition(this.options.partition);
+
+        for await (const item of iterator) {
+            await this.index.add([item]);
+        }
+
+        const { indexStorage, database: { databaseName, owner } } = this.options;
+
+        await indexStorage.saveIndex(this.index, `${owner}_${databaseName}_${this.options.partition}`);
+    }
+
+    public async loadIndexCollection() {
+        const { indexStorage, database: { databaseName, owner } } = this.options;
+
+        const lastSnapshot = await indexStorage.findLatestIndexSave(`${owner}_${databaseName}_${this.options.partition}`);
+
+        if (!lastSnapshot) {
+            throw new Error("No stored index found");
+        }
+
+        await indexStorage.loadIndex(this.index, lastSnapshot);
+    }
 }

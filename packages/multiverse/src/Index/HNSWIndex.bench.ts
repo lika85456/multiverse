@@ -9,7 +9,7 @@ describe.skip("HNSWIndex initializations", () => {
     for (const size of SIZES) {
         for (const dimensions of DIMENSIONS) {
             for (const spaceName of SPACE_NAMES) {
-                bench(`Initializing index with ${size} vector size and ${dimensions} dimensions in ${spaceName}.`, () => {
+                bench.skip(`Initializing index with ${size} vector size and ${dimensions} dimensions in ${spaceName}.`, () => {
                     new HNSWIndex({
                         dimensions,
                         size,

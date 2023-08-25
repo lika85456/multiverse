@@ -19,13 +19,7 @@ export class FSIndexStorage extends IndexStorage {
         const files = (await readdir(INDEX_STORAGE_PATH))
             .filter(file => file.startsWith(name))
             .map(file => {
-                const [name, timestamp, size] = file.split("-");
-
-                return {
-                    name,
-                    timestamp: parseInt(timestamp),
-                    size: parseInt(size)
-                };
+                return this.identifierFromName(file);
             })
             .sort((a, b) => b.timestamp - a.timestamp);
 
@@ -33,10 +27,6 @@ export class FSIndexStorage extends IndexStorage {
     }
 
     async saveIndex(index: Index, name: string): Promise<void> {
-        if (name.includes("-")) {
-            throw new Error("Index name cannot contain -");
-        }
-
         const fileName = this.nameFromIdentifier({
             name,
             size: await index.size(),
@@ -61,10 +51,6 @@ export class FSIndexStorage extends IndexStorage {
             }
 
             return;
-        }
-
-        if (name.includes("-")) {
-            throw new Error("Index name cannot contain -");
         }
 
         // delete all files that start with name
