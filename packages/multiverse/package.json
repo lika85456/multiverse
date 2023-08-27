@@ -25,6 +25,7 @@
     "@aws-sdk/s3-request-presigner": "^3.370.0",
     "@isaacs/ttlcache": "^1.4.1",
     "@multiverse/env": "workspace:^",
+    "@multiverse/log": "workspace:^",
     "@trpc/client": "^10.37.1",
     "@trpc/server": "^10.37.1",
     "dotenv": "^16.3.1",

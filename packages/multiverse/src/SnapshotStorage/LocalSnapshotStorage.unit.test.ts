@@ -1,0 +1,3 @@
+describe("LocalSnapshotStorage", () => {
+    // todo
+});
