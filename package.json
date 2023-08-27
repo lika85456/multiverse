@@ -31,5 +31,8 @@
   "workspaces": [
     "packages/**/*",
     "apps/*"
-  ]
+  ],
+  "dependencies": {
+    "pnpm": "^8.6.12"
+  }
 }

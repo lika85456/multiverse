@@ -26,8 +26,11 @@
     "@isaacs/ttlcache": "^1.4.1",
     "@multiverse/env": "workspace:^",
     "@multiverse/log": "workspace:^",
+    "@multiverse/super-lambda": "workspace:^",
     "@trpc/client": "^10.37.1",
     "@trpc/server": "^10.37.1",
+    "@types/aws-lambda": "^8.10.119",
+    "aws-lambda": "^1.0.7",
     "dotenv": "^16.3.1",
     "hnswlib-node": "^2.0.0",
     "zod": "^3.21.4"

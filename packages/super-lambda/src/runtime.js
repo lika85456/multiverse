@@ -23,8 +23,7 @@ const handler = async(event, context) => {
         const fnName = process.env.AWS_LAMBDA_FUNCTION_NAME;
         const body = JSON.parse(event.body);
 
-        if (body.errorSettings[fnName])
-        {
+        if (body.errorSettings[fnName]) {
             const time = body.errorSettings[fnName].time ?? 0;
             await new Promise(resolve => setTimeout(resolve, time));
         }

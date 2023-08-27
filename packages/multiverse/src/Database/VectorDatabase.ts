@@ -1,12 +1,14 @@
 import type { DatabaseConfig } from "../DatabaseConfig";
 import type Index from "../Index";
 import type VectorStore from "../VectorStore/VectorStore";
+import type DatabaseClient from "./DatabaseClient";
 import type IndexStorage from "./IndexStorage/IndexStorage";
+import { vectorDatabaseQuerySchema } from "./Vector";
 import type {
     Partition, VectorDatabaseQuery, VectorDatabaseQueryResult
 } from "./Vector";
 
-export default class VectorDatabase {
+export default class VectorDatabase implements DatabaseClient {
 
     private lastUpdateTimestamp = 0;
 
@@ -25,6 +27,11 @@ export default class VectorDatabase {
     // TODO: This can be optimized by returing a output stream instead of an array and
     // streaming the result, meanwhile updating the index
     public async query(query: VectorDatabaseQuery): Promise<VectorDatabaseQueryResult> {
+
+        const parsedQuery = vectorDatabaseQuerySchema.safeParse(query);
+        if (!parsedQuery.success) {
+            throw new Error(`Invalid query: ${parsedQuery.error.message}`);
+        }
 
         // update the index
         if (query.updates && query.updates.length > 0) {

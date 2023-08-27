@@ -18,7 +18,8 @@
     "adm-zip": "^0.5.10",
     "tsconfig": "workspace:*",
     "tsup": "^7.1.0",
-    "vitest": "^0.32.2"
+    "vitest": "^0.32.2",
+    "@aws-sdk/client-dynamodb": "^3.379.1"
   },
   "tsup": {
     "minify": true,
@@ -26,9 +27,8 @@
     "externalModules": []
   },
   "peerDependencies": {
-    "@aws-sdk/client-lambda": "^3.363.0"
-  },
-  "dependencies": {
+    "@aws-sdk/client-lambda": "^3.363.0",
     "@aws-sdk/client-dynamodb": "^3.379.1"
-  }
+  },
+  "dependencies": {}
 }

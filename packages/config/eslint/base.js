@@ -92,6 +92,7 @@ const config = {
         maxEOF: 1,
         maxBOF: 0
     }],
+    "brace-style": ["error", "1tbs", { allowSingleLine: true }],
     "no-multi-spaces": "error",
     "no-whitespace-before-property": "error",
     "no-irregular-whitespace": "error",

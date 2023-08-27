@@ -1,19 +1,31 @@
 import SuperLambda from ".";
 import { Runtime } from "@aws-sdk/client-lambda";
 import path from "path";
-import adm from "adm-zip";
+import { compileCode, readCode } from "./codeUtils";
+import { exec } from "child_process";
 
-async function readCode(): Promise<Uint8Array> {
-    const codePath = path.join(__dirname, "runtime.js");
+it("should run npm", (done) => {
+    exec("npm build", (error: any, stdout: any, stderr: any) => {
+        if (error) {
+            console.error(error);
+            done(error);
 
-    // start zipping to buffer
-    const zip = new adm();
+            return;
+        }
 
-    zip.addLocalFile(codePath);
-    const buffer = zip.toBuffer();
+        if (stderr) {
+            console.error(stderr);
+            done(stderr);
 
-    return buffer;
-};
+            return;
+        }
+
+        // stdout
+        console.log(stdout);
+
+        done();
+    });
+});
 
 describe("<Super Lambda>", () => {
     const superLambda = new SuperLambda({
@@ -24,9 +36,19 @@ describe("<Super Lambda>", () => {
     });
 
     beforeAll(async() => {
+        // await superLambda.deploy({
+        //     Code: { ZipFile: await readCode(path.join(__dirname)) },
+        //     Handler: "runtime.handler",
+        //     Role: "arn:aws:iam::529734186765:role/multiverse-database-lambda-role",
+        //     Runtime: Runtime.nodejs18x,
+        //     Timeout: 30,
+        // });
+
+        await compileCode();
+
         await superLambda.deploy({
             Code: { ZipFile: await readCode() },
-            Handler: "runtime.handler",
+            Handler: "packages.super-lambda.src.runtime.handler",
             Role: "arn:aws:iam::529734186765:role/multiverse-database-lambda-role",
             Runtime: Runtime.nodejs18x,
             Timeout: 30,
