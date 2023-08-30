@@ -1,25 +1,43 @@
 import {
     mkdir, readFile, writeFile
 } from "fs/promises";
-import LocalSnapshotStorage from "./LocalSnapshotStorage";
+import S3SnapshotStorage, { S3SnapshotStorageDeployer } from "./S3SnapshotStorage";
 
-describe("LocalSnapshotStorage", () => {
-    const snapshotStorage = new LocalSnapshotStorage("test");
+describe("<S3SnapshotStorage>", () => {
+
+    const bucketName = "snapshot-storage-test-" + Date.now();
+
+    const deployer = new S3SnapshotStorageDeployer({
+        bucketName,
+        region: "eu-central-1"
+    });
+
+    const snapshotStorage = new S3SnapshotStorage({
+        bucketName,
+        region: "eu-central-1",
+        indexName: "test"
+    });
 
     beforeAll(async() => {
-        // create test file in /tmp/snapshots/test
+        await deployer.deploy();
+
+        // prepare testfile
         await mkdir("/tmp/snapshots/test", { recursive: true });
-        await writeFile("/tmp/snapshots/test/1.snapshot", "test");
         await writeFile("/tmp/snapshots/testfile", "test");
+    });
+
+    afterAll(async() => {
+        await deployer.destroy();
     });
 
     it("should create", async() => {
         const snapshot = await snapshotStorage.create("/tmp/snapshots/testfile");
 
         expect(snapshot).toBeDefined();
-        expect(snapshot.filePath.startsWith("/tmp/snapshots/test/")).toBe(true);
+        expect(snapshot.filePath).toBe("/tmp/snapshots/testfile");
         expect(snapshot.timestamp).toBeGreaterThan(0);
         expect(snapshot.indexName).toBe("test");
+        expect(readFile(snapshot.filePath, "utf-8")).resolves.toBe("test");
     });
 
     it("should load latest", async() => {
@@ -30,7 +48,7 @@ describe("LocalSnapshotStorage", () => {
         }
 
         expect(snapshot).toBeDefined();
-        expect(snapshot.filePath.startsWith("/tmp/snapshots/test/")).toBe(true);
+        expect(snapshot.filePath.startsWith("/tmp/s3-snapshots/")).toBe(true);
         expect(snapshot.timestamp).toBeGreaterThan(1);
         expect(snapshot.indexName).toBe("test");
         expect(readFile(snapshot.filePath, "utf-8")).resolves.toBe("test");

@@ -19,7 +19,7 @@ export default class LocalSnapshotStorage implements SnapshotStorage {
         await cp(filePath, `${this.path}/${this.indexName}/${now}.snapshot`);
 
         return {
-            filePath,
+            filePath: `${this.path}/${this.indexName}/${now}.snapshot`,
             timestamp: now,
             indexName: this.indexName
         };
