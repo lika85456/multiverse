@@ -1,31 +1,51 @@
-import type { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
-import type { Context } from "vitest";
-import StateMemory from "./StateMemory";
-import { ENV } from "./env";
-import wake from "./wake";
-import DatabaseDeployer from "@multiverse/multiverse/dist/DatabaseDeployer/DatabaseDeployer";
+import type {
+    APIGatewayProxyEvent, APIGatewayProxyResult, Context
+} from "aws-lambda";
+import ChangesStorage from "@multiverse/multiverse/src/ChangesStorage/DynamoChangesStorage";
+import { Vector } from "@multiverse/multiverse/src/Vector";
 
-const { DATABASE_CONFIG, COLLECTION_CONFIG } = ENV;
-
-const databaseFnArn = new DatabaseDeployer({
-    collection: COLLECTION_CONFIG,
-    database: DATABASE_CONFIG
-}).functionName();
-
-// initialize state memory
-const stateMemory = new StateMemory();
+const changesStorage = new ChangesStorage({
+    indexName: "mama",
+    owner: "papa",
+    partition: 1,
+    region: "eu-central-1",
+    // eslint-disable-next-line turbo/no-undeclared-env-vars
+    tableName: process.env.CHANGES_TABLE_NAME!
+});
 
 export const handler = async(
-    event: APIGatewayProxyEvent,
-    context: Context
+    _event: APIGatewayProxyEvent,
+    _context: Context
 ): Promise<APIGatewayProxyResult> => {
 
-    if (event.path === "/wake") {
-        const result = await wake(databaseFnArn, DATABASE_CONFIG.awakeInstances);
+    const writePromise = changesStorage.add([{
+        action: "add",
+        timestamp: Date.now(),
+        vector: {
+            vector: new Vector([1, 2, 3]),
+            label: "Maaalabel",
+            metadata: { xd: "?" }
+        }
+    }]);
 
-        return {
-            statusCode: 200,
-            body: JSON.stringify({ awaken: result })
-        };
+    let check = 0;
+    const changes = [];
+    for await (const change of changesStorage.changesAfter(0)) {
+        changes.push(change);
+        check++;
+
+        if (check > 50) {
+            throw "WTFFFF?";
+        }
     }
+
+    await writePromise;
+
+    return {
+        statusCode: 200,
+        body: JSON.stringify({
+            message: "Hello World",
+            changes
+        })
+    };
 };

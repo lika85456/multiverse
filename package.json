@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "dev": "turbo dev",
+    "dev": "sst bind next dev",
     "build": "turbo build",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -13,14 +13,18 @@
     "typecheck": "tsc --noEmit",
     "db:build": "docker build -t multiverse-database .",
     "db:run": "docker run -p 9000:8080 multiverse-database:latest",
-    "db:deploy": "docker tag multiverse-database:latest 529734186765.dkr.ecr.eu-central-1.amazonaws.com/multiverse && docker push 529734186765.dkr.ecr.eu-central-1.amazonaws.com/multiverse"
+    "db:deploy": "docker tag multiverse-database:latest 529734186765.dkr.ecr.eu-central-1.amazonaws.com/multiverse && docker push 529734186765.dkr.ecr.eu-central-1.amazonaws.com/multiverse",
+    "cdk:deploy": "sst deploy "
   },
   "devDependencies": {
     "@types/jest": "^29.5.2",
     "@typescript-eslint/eslint-plugin": "^5.59.7",
     "@vitest/coverage-v8": "^0.34.2",
+    "aws-cdk-lib": "2.91.0",
+    "constructs": "10.2.69",
     "eslint": "^8.41.0",
     "eslint-config-custom": "workspace:*",
+    "sst": "^2.24.21",
     "tsconfig": "workspace:*",
     "tsup": "^7.1.0",
     "tsx": "^3.12.7",
@@ -33,6 +37,7 @@
     "apps/*"
   ],
   "dependencies": {
+    "@multiverse/multiverse": "workspace:^",
     "pnpm": "^8.6.12"
   }
 }
