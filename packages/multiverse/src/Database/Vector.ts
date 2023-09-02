@@ -73,7 +73,9 @@ export class Partition {
 
 export const querySchema = z.object({
     vector: z.instanceof(Vector),
-    k: z.number()
+    k: z.number(),
+    // TODO: implement metadata expression
+    metadataExpression: z.any()
 });
 
 export type Query = z.infer<typeof querySchema>;
