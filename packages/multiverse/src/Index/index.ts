@@ -1,11 +1,10 @@
-import type {
-    Query, SearchResultVector, StoredVector
-} from "../Database/Vector";
+import type { Query, SearchResultVector } from "../Database/Query";
+import type { NewVector } from "../Vector";
 
 export default interface Index {
     knn(query: Query): Promise<SearchResultVector[]>;
-    add(vectors: StoredVector[]): Promise<void>;
-    remove(ids: number[]): Promise<void>;
+    add(vectors: NewVector[]): Promise<void>;
+    remove(labels: string[]): Promise<void>;
 
     size(): Promise<number>;
     dimensions(): Promise<number>;

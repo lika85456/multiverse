@@ -1,5 +1,6 @@
-import { Vector } from "../Database/Vector";
+import { Vector } from "../Vector";
 import HNSWIndex from "./HNSWIndex";
+import { execSync } from "child_process";
 
 describe("<HNSWIndex>", () => {
     describe("Basic functions", () => {
@@ -16,15 +17,11 @@ describe("<HNSWIndex>", () => {
         it("should add vectors", async() => {
             await index.add([
                 {
-                    id: 1,
                     label: "test label 1",
-                    lastUpdate: 0,
                     vector: new Vector([1, 2, 3])
                 },
                 {
-                    id: 2,
                     label: "test label 2",
-                    lastUpdate: 0,
                     vector: new Vector([4, 5, 6])
                 }
             ]);
@@ -33,7 +30,7 @@ describe("<HNSWIndex>", () => {
         });
 
         it("should remove vectors", async() => {
-            await index.remove([1]);
+            await index.remove(["test label 1"]);
 
             // physical size should remain the same
             expect(index.physicalSize()).toBe(2);
@@ -47,25 +44,8 @@ describe("<HNSWIndex>", () => {
             });
 
             expect(result.length).toBe(1);
-            expect(result[0].id).toBe(2);
+            expect(result[0].label).toBe("test label 2");
             expect(result[0].distance).toBe(14);
-        });
-
-        const path = "/tmp/" + Math.random().toString(36).substring(2, 10) + ".hnsw";
-        it("should save", async() => {
-            await index.save(path);
-        });
-
-        it("should load", async() => {
-            const newIndex = new HNSWIndex({
-                dimensions: 3,
-                size: 100,
-                spaceName: "l2"
-            });
-
-            await newIndex.load(path);
-
-            expect(newIndex.physicalSize()).toBe(2);
         });
     });
 
@@ -79,9 +59,7 @@ describe("<HNSWIndex>", () => {
 
         beforeAll(async() => {
             const vectors = Array.from({ length: 1000 }, (_, i) => ({
-                id: i,
                 label: "test label " + i,
-                lastUpdate: 0,
                 vector: new Vector([i, i, i])
             }));
 
@@ -96,7 +74,7 @@ describe("<HNSWIndex>", () => {
             });
 
             expect(result.length).toBe(10);
-            expect(result[0].id).toBe(3);
+            expect(result[0].label).toBe("test label 3");
             expect(result[0].distance).toBe(0);
         });
 
@@ -128,9 +106,7 @@ describe("<HNSWIndex>", () => {
             for (let i = 0; i < 200; i++) {
                 await index.add([
                     {
-                        id: i,
                         label: "test label " + i,
-                        lastUpdate: 0,
                         vector: new Vector([i, i, i])
                     }
                 ]);
@@ -160,9 +136,7 @@ describe("<HNSWIndex>", () => {
                 for (const instance of instances) {
                     await instance.add([
                         {
-                            id: i,
                             label: "test label " + i,
-                            lastUpdate: 0,
                             vector: new Vector([i, i, i])
                         }
                     ]);
@@ -172,6 +146,61 @@ describe("<HNSWIndex>", () => {
             for (const instance of instances) {
                 expect(instance.physicalSize()).toBe(200);
             }
+        });
+    });
+
+    describe("Saving & Loading", () => {
+        const index = new HNSWIndex({
+            dimensions: 3,
+            size: 100,
+            spaceName: "l2"
+        });
+
+        const path = "/tmp/multiverse-test-index";
+
+        beforeAll(async() => {
+            await index.add([
+                {
+                    label: "test label 1",
+                    vector: new Vector([1, 2, 3]),
+                    metadata: { somsing: "smoozie" }
+                },
+                {
+                    label: "test label 2",
+                    vector: new Vector([4, 5, 6])
+                }
+            ]);
+        });
+
+        afterAll(async() => {
+            execSync(`rm -rf ${path}`);
+        });
+
+        it("should save", async() => {
+            await index.save(path);
+        });
+
+        it("should load", async() => {
+            const newIndex = new HNSWIndex({
+                dimensions: 3,
+                size: 100,
+                spaceName: "l2"
+            });
+
+            await newIndex.load(path);
+
+            expect(newIndex.physicalSize()).toBe(2);
+            expect(await newIndex.dimensions()).toBe(3);
+
+            const query = {
+                k: 10,
+                vector: new Vector([3, 3, 3])
+            };
+
+            const newQueryResult = await newIndex.knn(query);
+            const oldQueryResult = await index.knn(query);
+
+            expect(newQueryResult).toEqual(oldQueryResult);
         });
     });
 });
