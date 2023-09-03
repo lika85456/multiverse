@@ -1,22 +1,20 @@
-import type { NewVector } from "../Vector";
+import { z } from "zod";
+import { newVectorSchema } from "../Vector";
 
-// updates in these types need to be reflected in the changes storage implementations
-type StoredVectorChangeBase = {
-    action: "add" | "remove";
-    timestamp: number;
-};
+export const storedVectorChangeSchema = z.union([
+    z.object({
+        action: z.literal("add"),
+        timestamp: z.number(),
+        vector: newVectorSchema,
+    }),
+    z.object({
+        action: z.literal("remove"),
+        timestamp: z.number(),
+        label: z.string(),
+    }),
+]);
 
-type StoredVectorAddChange = StoredVectorChangeBase & {
-    action: "add";
-    vector: NewVector;
-};
-
-type StoredVectorRemoveChange = StoredVectorChangeBase & {
-    action: "remove";
-    label: string;
-};
-
-export type StoredVectorChange = StoredVectorAddChange | StoredVectorRemoveChange;
+export type StoredVectorChange = z.infer<typeof storedVectorChangeSchema>;
 
 export default interface ChangesStorage {
     add(changes: StoredVectorChange[]): Promise<void>;

@@ -24,10 +24,29 @@ export class S3SnapshotStorageDeployer {
     }
 
     public async destroy(): Promise<void> {
-        // this won't work because the bucket is not empty
-        await this.s3.deleteBucket({ Bucket: this.options.bucketName });
+        try {
+            await this.s3.deleteBucket({ Bucket: this.options.bucketName });
+        } catch (e) {
+            // bucket is probably not empty, so empty it
 
-        // so we have to delete all objects first
+            // eslint-disable-next-line no-constant-condition
+            while (true) {
+                const objects = await this.s3.listObjectsV2({ Bucket: this.options.bucketName });
+
+                if (!objects.Contents || objects.Contents.length === 0) {
+                    break;
+                }
+
+                const objectsToDelete = objects.Contents.map(object => ({ Key: object.Key }));
+
+                await this.s3.deleteObjects({
+                    Bucket: this.options.bucketName,
+                    Delete: { Objects: objectsToDelete }
+                });
+            }
+
+            await this.s3.deleteBucket({ Bucket: this.options.bucketName });
+        }
     }
 }
 
