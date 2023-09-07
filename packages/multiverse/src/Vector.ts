@@ -15,6 +15,16 @@ export class Vector {
     public static fromBase64(base64: string): Vector {
         return new Vector(Array.from(Buffer.from(base64, "base64")));
     }
+
+    public static random(size: number): Vector {
+        const vector = [];
+
+        for (let i = 0; i < size; i++) {
+            vector.push(Math.random());
+        }
+
+        return new Vector(vector);
+    }
 }
 
 export const newVectorSchema = z.object({

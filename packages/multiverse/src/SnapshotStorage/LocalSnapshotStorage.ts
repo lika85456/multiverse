@@ -53,4 +53,8 @@ export default class LocalSnapshotStorage implements SnapshotStorage {
         // return the latest
         return snapshots[snapshots.length - 1];
     }
+
+    public async directoryPath(): Promise<string> {
+        return `${this.path}/${this.indexName}`;
+    }
 }

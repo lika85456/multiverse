@@ -8,6 +8,7 @@ import {
 } from "fs/promises";
 import adm from "adm-zip";
 import logger from "@multiverse/log";
+import type { IndexConfiguration } from "../IndexConfiguration";
 
 const log = logger.getSubLogger({ name: "HNSWIndex" });
 
@@ -17,18 +18,14 @@ export default class HNSWIndex implements Index {
     private idMap: {[id: number]: string} = {};
     private metadata: {[id: number]: Record<string, string>} = {};
 
-    constructor(private options: {
-        dimensions: number;
-        spaceName: "l2" | "ip" | "cosine";
-        size: number;
-    }) {
+    constructor(private config: IndexConfiguration) {
         this.index = this.initializeIndex();
     }
 
     private initializeIndex() {
         log.debug("Initializing index");
-        const index = new HierarchicalNSW(this.options.spaceName, this.options.dimensions);
-        index.initIndex(this.options.size * 2, undefined, undefined, undefined, true);
+        const index = new HierarchicalNSW(this.config.space, this.config.dimensions);
+        index.initIndex(1000, undefined, undefined, undefined, true);
 
         return index;
     }
@@ -188,6 +185,6 @@ export default class HNSWIndex implements Index {
     }
 
     public async dimensions() {
-        return this.options.dimensions;
+        return this.config.dimensions;
     }
 }

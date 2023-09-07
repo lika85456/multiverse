@@ -141,4 +141,7 @@ export default class S3SnapshotStorage implements SnapshotStorage {
         };
     }
 
+    public async directoryPath(): Promise<string> {
+        return `${this.options.downloadPath}/${this.options.indexName}`;
+    }
 }

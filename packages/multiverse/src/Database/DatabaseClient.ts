@@ -5,7 +5,7 @@ import { storedVectorChangeSchema } from "../ChangesStorage";
 
 export const databaseQuerySchema = z.object({
     query: querySchema,
-    updates: z.array(storedVectorChangeSchema),
+    updates: z.array(storedVectorChangeSchema).optional(),
 });
 
 export type DatabaseQuery = z.infer<typeof databaseQuerySchema>;

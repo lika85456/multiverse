@@ -2,11 +2,17 @@ import type ChangesStorage from "../ChangesStorage";
 import type Index from "../Index";
 import type { IndexConfiguration } from "../IndexConfiguration";
 import type SnapshotStorage from "../SnapshotStorage";
-import type { DatabaseQuery, DatabaseQueryResult } from "./DatabaseClient";
+import type {
+    DatabaseClientState, DatabaseQuery, DatabaseQueryResult
+} from "./DatabaseClient";
 import type DatabaseClient from "./DatabaseClient";
+import os from "node-os-utils";
+import fs from "fs/promises";
+import log from "@multiverse/log";
 
 export default class DatabaseWorker implements DatabaseClient {
 
+    private instanceId = Math.random().toString(36).slice(2);
     private lastUpdate = 0;
 
     constructor(private options: {
@@ -14,7 +20,37 @@ export default class DatabaseWorker implements DatabaseClient {
         snapshotStorage: SnapshotStorage,
         changesStorage: ChangesStorage,
         index: Index,
+        memoryLimit: number,
+        ephemeralLimit: number,
     }) {
+    }
+
+    private async directorySize(path: string): Promise<number> {
+        const files = await fs.readdir(path);
+        let size = 0;
+
+        for (const file of files) {
+            const stats = await fs.stat(`${path}/${file}`);
+
+            if (stats.isDirectory()) {
+                size += await this.directorySize(`${path}/${file}`);
+            } else {
+                size += stats.size;
+            }
+        }
+
+        return size / 1024 / 1024;
+    }
+
+    public async state(): Promise<DatabaseClientState> {
+        return {
+            instanceId: this.instanceId,
+            lastUpdate: this.lastUpdate,
+            memoryUsed: (await os.mem.used()).usedMemMb,
+            memoryLimit: this.options.memoryLimit,
+            ephemeralUsed: -1, // TODO implement
+            ephemeralLimit: this.options.ephemeralLimit
+        };
     }
 
     public async query(query: DatabaseQuery): Promise<DatabaseQueryResult> {
@@ -33,18 +69,39 @@ export default class DatabaseWorker implements DatabaseClient {
                 }
             }
         }
+
+        const result = await this.options.index.knn(query.query);
+
+        return {
+            result: { result },
+            state: await this.state()
+        };
     }
 
     public async wake(wait: number): Promise<void> {
-        throw new Error("Method not implemented.");
+        await new Promise((resolve) => setTimeout(resolve, wait));
     }
 
     public async saveSnapshot(): Promise<void> {
-        throw new Error("Method not implemented.");
+        const randomId = Math.random().toString(36).slice(2);
+        const path = `/tmp/${randomId}`;
+        await this.options.index.save(path);
+
+        const snapshot = await this.options.snapshotStorage.create(path);
+
+        log.debug(`Saved snapshot ${snapshot.filePath}`, { snapshot });
     }
 
     public async loadLatestSnapshot(): Promise<void> {
-        throw new Error("Method not implemented.");
+        const snapshot = await this.options.snapshotStorage.loadLatest();
+
+        if (!snapshot) {
+            return;
+        }
+
+        await this.options.index.load(snapshot.filePath);
+
+        log.debug(`Loaded snapshot ${snapshot.filePath}`, { snapshot });
     }
 
 }
