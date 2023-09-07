@@ -3,8 +3,8 @@ import {
     AttributeType, BillingMode, Table
 } from "aws-cdk-lib/aws-dynamodb";
 
-export default function DynamoChangesStorageStack(stack: Stack) {
-    const table = new Table(stack, "multiverse-changes", {
+export function DynamoChangesStorageStack(stack: Stack) {
+    const table = new Table(stack, "changes", {
         partitionKey: {
             name: "PK",
             type: AttributeType.STRING
@@ -14,8 +14,7 @@ export default function DynamoChangesStorageStack(stack: Stack) {
             type: AttributeType.NUMBER
         },
         billingMode: BillingMode.PAY_PER_REQUEST,
-        // todo!: add time to live attribute
-        // timeToLiveAttribute
+        timeToLiveAttribute: "ttl"
     });
 
     return table;

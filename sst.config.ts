@@ -1,13 +1,13 @@
 import { Bucket, Function } from "sst/constructs";
+import { DynamoChangesStorageStack } from "./packages/multiverse/src/ChangesStorage/DynamoChangesStorageStack";
 import type { StackContext } from "sst/constructs";
 import { RemovalPolicy } from "aws-cdk-lib/core";
 import type { SSTConfig } from "sst";
-import DynamoChangesStorageStack from "@multiverse/multiverse/src/ChangesStorage/DynamoChangesStorageStack";
 
 function MultiverseStack({ stack }: StackContext) {
     const changesTable = DynamoChangesStorageStack(stack);
 
-    const snapshotStorage = new Bucket(stack, "multiverse-snapshots", { cdk: { bucket: { removalPolicy: RemovalPolicy.DESTROY } } });
+    const snapshotStorage = new Bucket(stack, "snapshots", { cdk: { bucket: { removalPolicy: RemovalPolicy.DESTROY } } });
 
     // orchestrator function
     const orchestratorLambda = new Function(stack, "orchestrator", {
@@ -16,8 +16,8 @@ function MultiverseStack({ stack }: StackContext) {
         memorySize: 256,
         timeout: 10,
         environment: {
-            CHANGES_TABLE_NAME: changesTable.tableName,
-            SNAPSHOT_STORAGE_BUCKET_NAME: snapshotStorage.bucketName
+            CHANGES_TABLE: changesTable.tableName,
+            SNAPSHOT_BUCKET: snapshotStorage.bucketName
         }
     });
 
@@ -27,7 +27,11 @@ function MultiverseStack({ stack }: StackContext) {
         snapshotStorage
     ]);
 
-    stack.addOutputs({ orchestratorLambdaArn: orchestratorLambda.functionArn });
+    stack.addOutputs({
+        orchestratorLambdaArn: orchestratorLambda.functionArn,
+        changesTable: changesTable.tableName,
+        snapshotStorage: snapshotStorage.bucketName
+    });
 }
 
 // https://docs.sst.dev/configuring-sst
@@ -37,7 +41,7 @@ export default {
             name: "multiverse",
             // region: input.region,
             region: "eu-central-1",
-            // stage: input.stage
+            stage: input.stage ?? "dev"
         };
     },
     stacks(app) {

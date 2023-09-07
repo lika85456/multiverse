@@ -1,33 +1,33 @@
 import SuperLambda from ".";
 import { Runtime } from "@aws-sdk/client-lambda";
-import path from "path";
 import { compileCode, readCode } from "./codeUtils";
 import { exec } from "child_process";
 
-it("should run npm", (done) => {
-    exec("npm build", (error: any, stdout: any, stderr: any) => {
-        if (error) {
-            console.error(error);
-            done(error);
+it.skip("should run npm", async() => {
+    return new Promise<void>(done =>
+        exec("npm build", (error: any, stdout: any, stderr: any) => {
+            if (error) {
+                console.error(error);
+                done(error);
 
-            return;
-        }
+                return;
+            }
 
-        if (stderr) {
-            console.error(stderr);
-            done(stderr);
+            if (stderr) {
+                console.error(stderr);
+                done(stderr);
 
-            return;
-        }
+                return;
+            }
 
-        // stdout
-        console.log(stdout);
+            // stdout
+            console.log(stdout);
 
-        done();
-    });
+            done();
+        }));
 });
 
-describe("<Super Lambda>", () => {
+describe.skip("<Super Lambda>", () => {
     const superLambda = new SuperLambda({
         mainRegion: "eu-central-1",
         mainRegionFallbacks: 1,

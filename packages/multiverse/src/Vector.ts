@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 export class Vector {
     constructor(private vector: number[]) {
     }
@@ -15,8 +17,10 @@ export class Vector {
     }
 }
 
-export type NewVector = {
-    vector: Vector;
-    label: string; // unique label
-    metadata: Record<string, string>;
-};
+export const newVectorSchema = z.object({
+    vector: z.instanceof(Vector),
+    label: z.string(),
+    metadata: z.record(z.string()).optional(),
+});
+
+export type NewVector = z.infer<typeof newVectorSchema>;

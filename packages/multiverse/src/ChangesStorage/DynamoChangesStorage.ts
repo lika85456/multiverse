@@ -107,6 +107,7 @@ export class DynamoChangesStorageDeployer {
 export default class DynamoChangesStorage implements ChangesStorage {
 
     private dynamo: DynamoDBDocumentClient;
+    private TTL = 60 * 60 * 24 * 2; // 2 days
 
     constructor(private options: {
         region: string;
@@ -149,8 +150,8 @@ export default class DynamoChangesStorage implements ChangesStorage {
                                 vector: change.vector.vector.toBase64(),
                                 label: change.vector.label,
                                 metadata: change.vector.metadata
-                            } : { label: change.label })
-
+                            } : { label: change.label }),
+                            ttl: Math.floor(Date.now() / 1000) + this.TTL
                         },
                     }
                 }))
@@ -193,5 +194,4 @@ export default class DynamoChangesStorage implements ChangesStorage {
 
         return;
     }
-
 }

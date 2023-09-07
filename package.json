@@ -11,9 +11,6 @@
     "lint": "turbo lint",
     "console": "turbo console",
     "typecheck": "tsc --noEmit",
-    "db:build": "docker build -t multiverse-database .",
-    "db:run": "docker run -p 9000:8080 multiverse-database:latest",
-    "db:deploy": "docker tag multiverse-database:latest 529734186765.dkr.ecr.eu-central-1.amazonaws.com/multiverse && docker push 529734186765.dkr.ecr.eu-central-1.amazonaws.com/multiverse",
     "cdk:deploy": "sst deploy "
   },
   "devDependencies": {

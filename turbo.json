@@ -1,7 +1,9 @@
 {
     "$schema": "https://turbo.build/schema.json",
     "globalEnv": [
-        "NODE_ENV"
+        "NODE_ENV",
+        "CHANGES_TABLE",
+        "SNAPSHOT_BUCKET"
     ],
     "pipeline": {
         "build": {

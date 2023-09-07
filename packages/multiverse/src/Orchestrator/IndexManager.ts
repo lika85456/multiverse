@@ -1,6 +1,6 @@
 import type SuperLambda from "@multiverse/super-lambda/src";
-import type { Query, VectorDatabaseQueryResult } from "../Database/Vector";
 import type { NewVector } from "../Vector";
+import { Query, QueryResult } from "../Database/Query";
 
 export default class IndexManager {
     constructor(private databaseLambda: SuperLambda) {
@@ -10,7 +10,7 @@ export default class IndexManager {
     public async add(vector: NewVector) {
     }
 
-    public async query(query: Query): VectorDatabaseQueryResult {
+    public async query(query: Query): QueryResult {
 
     }
 

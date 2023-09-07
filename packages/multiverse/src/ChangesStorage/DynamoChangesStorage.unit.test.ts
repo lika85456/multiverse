@@ -1,6 +1,7 @@
 import type { StoredVectorChange } from ".";
 import { Vector } from "../Vector";
-import DynamoChangesStorage, { DynamoChangesStorageDeployer } from "./DynamoChangesStorage";
+import { ENV } from "../env";
+import DynamoChangesStorage from "./DynamoChangesStorage";
 import log from "@multiverse/log";
 
 const logger = log.getSubLogger({ name: "DynamoChangesStorage.Test" });
@@ -17,12 +18,7 @@ async function readWholeIterator<T>(iterator: AsyncGenerator<T, void, unknown>):
 
 describe("<DynamoChangesStorage>", () => {
 
-    const tableName = "test-table-" + Date.now();
-
-    const deployer = new DynamoChangesStorageDeployer({
-        region: "eu-central-1",
-        tableName: tableName
-    });
+    const tableName = ENV.CHANGES_TABLE;
 
     const storage = new DynamoChangesStorage({
         indexName: "test-index-" + Date.now(),
@@ -30,14 +26,6 @@ describe("<DynamoChangesStorage>", () => {
         partition: 0,
         region: "eu-central-1",
         tableName: tableName
-    });
-
-    beforeAll(async() => {
-        await deployer.deploy();
-    });
-
-    afterAll(async() => {
-        await deployer.destroy();
     });
 
     it("should add and read changes", async() => {
