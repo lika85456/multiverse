@@ -58,6 +58,12 @@ importers:
         specifier: ^0.34.1
         version: 0.34.1
 
+  apps/calculator:
+    dependencies:
+      '@multiverse/log':
+        specifier: workspace:^
+        version: link:../../packages/log
+
   packages/config/eslint:
     dependencies:
       '@next/eslint-plugin-next':
