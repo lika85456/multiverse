@@ -56,14 +56,45 @@
 
 FROM public.ecr.aws/lambda/nodejs:18
 
+
 RUN yum install -y python3 make gcc-c++ && \
     yum clean all && \
     rm -rf /var/cache/yum
 
-COPY . /var/task/
 
 RUN npm install -g pnpm
-RUN pnpm install --frozen-lockfile
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable
+
+COPY . /var/task/
+
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
+# RUN pnpm install --prod --frozen-lockfile
 RUN pnpm run build:db
 
-CMD [ "packages/multiverse/src/Database/dist/Database.handler" ]
+
+# RUN mkdir /var/task/dist
+# RUN mv /var/task/packages/multiverse/src/Database/dist/Database.js /var/task/dist/Database.js
+# RUN rm -rf /var/task/packages
+# RUN rm -rf /var/task/node_modules
+
+RUN pnpm add hnswlib-node -g
+
+    # NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+    # CHANGES_TABLE: z.string(),
+    # SNAPSHOT_BUCKET: z.string(),
+    # INDEX_CONFIG: z.string().transform<IndexConfiguration>(value => JSON.parse(value)),
+    # PARTITION: z.string().transform<number>(value => parseInt(value)),
+
+# Variables
+ENV NODE_ENV=${NODE_ENV}
+ENV AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+ENV AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+ENV CHANGES_TABLE=${CHANGES_TABLE}
+ENV SNAPSHOT_BUCKET=${SNAPSHOT_BUCKET}
+ENV INDEX_CONFIG=${INDEX_CONFIG}
+ENV PARTITION=${PARTITION}
+
+# CMD [ "dist/Database.handler" ]
+CMD ["packages/multiverse/src/Database/dist/Database.handler"]

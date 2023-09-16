@@ -3,6 +3,7 @@ import { prettifyIssues } from "@multiverse/env";
 import { config } from "dotenv";
 import path from "path";
 import type { IndexConfiguration } from "../IndexConfiguration";
+import log from "@multiverse/log";
 
 config({ path: path.join(__dirname, "..", "..", "..", process.env.NODE_ENV === "test" ? ".env.test" : ".env"), });
 
@@ -26,4 +27,24 @@ export const getEnvIssues = (): z.ZodIssue[] => {
 const issues = getEnvIssues();
 prettifyIssues(issues);
 
-export const DATABASE_ENV = databaseEnvSchema.parse(process.env);
+let env: DatabaseEnvironment;
+if (process.env.NODE_ENV === "development") {
+    log.info("Hard coded development environment loaded.");
+    env = {
+        NODE_ENV: "development",
+        CHANGES_TABLE: "multiverse-changes-dev",
+        SNAPSHOT_BUCKET: "multiverse-snapshots-dev",
+        INDEX_CONFIG: {
+            indexName: "test",
+            owner: "test",
+            region: "eu-central-1",
+            dimensions: 1536,
+            space: "cosine",
+        },
+        PARTITION: 0,
+    };
+} else {
+    env = databaseEnvSchema.parse(process.env);
+}
+
+export const DATABASE_ENV = env;

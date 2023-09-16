@@ -21,6 +21,7 @@ dist
 .turbo
 node_modules
 **/node_modules
+Dockerfile
 
 # *
 # !pnpm-lock.yaml
