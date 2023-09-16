@@ -39,8 +39,8 @@ export default defineWorkspace([
         minThreads: 4,
         maxThreads: 4
       }),
-      hookTimeout: 60000,
-      testTimeout: 60000
+      hookTimeout: 180000,
+      testTimeout: 180000
     }
   },
   {

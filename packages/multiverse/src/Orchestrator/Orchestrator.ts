@@ -1,13 +1,28 @@
-import type SuperLambda from "@multiverse/super-lambda/src";
-import type { IndexConfiguration } from "../IndexConfiguration";
-import type VectorStore from "../VectorStore/VectorStore";
+/**
+ * This is the entry point for Orchestrator lambda.
+ */
 
-export default class Orchestrator {
-    constructor(private options: {
-        database: IndexConfiguration,
-        vectorStore: VectorStore,
-        databaseLambda: SuperLambda
-    }) {
+import log from "@multiverse/log";
+import type {
+    APIGatewayProxyEvent, APIGatewayProxyResult, Context
+} from "aws-lambda";
+import { orchestratorEnvSchema } from "./OrchestratorEnvironment";
 
-    }
+export async function handler(
+    event: APIGatewayProxyEvent,
+    context: Context,
+): Promise<APIGatewayProxyResult> {
+    log.debug("Received event", {
+        event,
+        context,
+        environment: process.env,
+    });
+
+    const _env = orchestratorEnvSchema.parse(process.env);
+
+    return {
+        body: "Hello world!",
+        statusCode: 200,
+    };
+
 }

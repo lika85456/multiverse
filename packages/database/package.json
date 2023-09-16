@@ -3,8 +3,7 @@
   "version": "0.0.1",
   "scripts": {
     "test": "vitest",
-    "typecheck": "tsc -noEmit",
-    "build": "tsup src/index.ts --format cjs --minify --treeshake"
+    "typecheck": "tsc -noEmit"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.119",

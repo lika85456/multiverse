@@ -20,7 +20,7 @@ apps
 dist
 .turbo
 node_modules
-packages/orchestrator
+**/node_modules
 
 # *
 # !pnpm-lock.yaml

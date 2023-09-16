@@ -1,4 +1,6 @@
-import { DynamoDB, } from "@aws-sdk/client-dynamodb";
+import {
+    DynamoDB, waitUntilTableExists, waitUntilTableNotExists,
+} from "@aws-sdk/client-dynamodb";
 import log from "@multiverse/log";
 import type ChangesStorage from ".";
 import {
@@ -24,28 +26,24 @@ export class DynamoChangesStorageDeployer {
 
     public async deploy() {
         await this.createDatabaseTable();
-        await this.waitUntilActive(this.options.tableName);
+        // await this.waitUntilActive(this.options.tableName);
+        await waitUntilTableExists({
+            client: this.dynamo,
+            maxWaitTime: 60
+        }, { TableName: this.options.tableName });
         await this.testTable(this.options.tableName);
+
+        logger.info(`Dynamo ${this.options.tableName} deployed`);
     }
 
     public async destroy() {
         await this.dynamo.deleteTable({ TableName: this.options.tableName });
+        await waitUntilTableNotExists({
+            client: this.dynamo,
+            maxWaitTime: 60
+        }, { TableName: this.options.tableName });
 
-        const start = Date.now();
-
-        // wait until table is deleted
-        while (Date.now() - start < 1000 * 60) {
-            try {
-                await this.dynamo.describeTable({ TableName: this.options.tableName });
-                await new Promise(resolve => setTimeout(resolve, 1000));
-            } catch (e) {
-                logger.info(`Dynamo ${this.options.tableName} destroyed`);
-
-                return;
-            }
-        }
-
-        throw new Error(`Dynamo ${this.options.tableName} destroy timed out`);
+        logger.info(`Dynamo ${this.options.tableName} destroyed`);
     }
 
     private async createDatabaseTable() {
@@ -79,17 +77,6 @@ export class DynamoChangesStorageDeployer {
         });
 
         logger.info(`Dynamo ${this.options.tableName} initialized`);
-    }
-
-    private async waitUntilActive(tableName: string) {
-        let state = (await this.dynamo.describeTable({ TableName: tableName }))?.Table?.TableStatus;
-
-        while (state !== "ACTIVE") {
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            const { Table } = await this.dynamo.describeTable({ TableName: tableName });
-            state = Table?.TableStatus;
-            logger.debug(`${tableName} state: ${state}`);
-        }
     }
 
     private async testTable(tableName: string) {

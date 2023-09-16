@@ -5,6 +5,9 @@
   "scripts": {
     "dev": "sst bind next dev",
     "build": "turbo build",
+    "build:orchestrator": "tsup packages/multiverse/src/Orchestrator/Orchestrator.ts --dts --format cjs --minify --clean --legacy-output --sourcemap --target es2020 --outDir packages/multiverse/src/Orchestrator/dist",
+    "build:db": "tsup packages/multiverse/src/Database/Database.ts --dts --format cjs --minify --clean --sourcemap --target es2020 --outDir packages/multiverse/src/Database/dist",
+    "deploy:db": "aws ecr get-login-password --region eu-central-1 | sudo docker login --username AWS --password-stdin 529734186765.dkr.ecr.eu-central-1.amazonaws.com && sudo docker build -t multiverse . && sudo docker tag multiverse:latest 529734186765.dkr.ecr.eu-central-1.amazonaws.com/multiverse:latest && sudo docker push 529734186765.dkr.ecr.eu-central-1.amazonaws.com/multiverse:latest",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
@@ -35,6 +38,7 @@
   ],
   "dependencies": {
     "@multiverse/multiverse": "workspace:^",
+    "hnswlib-node": "^2.0.0",
     "pnpm": "^8.6.12"
   }
 }
