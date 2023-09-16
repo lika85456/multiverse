@@ -1,9 +1,8 @@
 import { z } from "zod";
-import { Vector } from "../Vector";
 
 // PUBLIC API
 export const querySchema = z.object({
-    vector: z.instanceof(Vector),
+    vector: z.array(z.number()),
     k: z.number(),
     metadataExpression: z.string().optional(),
     // select - to select SearchResultVector fields

@@ -40,7 +40,7 @@ export default class HNSWIndex implements Index {
     public async knn(query: Query): Promise<SearchResultVector[]> {
         log.debug("Querying", { query });
 
-        const result = this.index.searchKnn(query.vector.toArray(), query.k);
+        const result = this.index.searchKnn(query.vector, query.k);
 
         const results: SearchResultVector[] = [];
 

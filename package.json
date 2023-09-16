@@ -38,8 +38,6 @@
     "apps/*"
   ],
   "dependencies": {
-    "@multiverse/multiverse": "workspace:^",
-    "hnswlib-node": "^2.0.0",
-    "pnpm": "^8.6.12"
+    "hnswlib-node": "^2.0.0"
   }
 }

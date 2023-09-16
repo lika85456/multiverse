@@ -8,15 +8,9 @@ importers:
 
   .:
     dependencies:
-      '@multiverse/multiverse':
-        specifier: workspace:^
-        version: link:packages/multiverse
       hnswlib-node:
         specifier: ^2.0.0
         version: 2.0.0
-      pnpm:
-        specifier: ^8.6.12
-        version: 8.6.12
     devDependencies:
       '@types/jest':
         specifier: ^29.5.2
@@ -8926,12 +8920,6 @@ packages:
     engines: {node: '>=8'}
     dependencies:
       find-up: 3.0.0
-
-  /pnpm@8.6.12:
-    resolution: {integrity: sha512-Eza4C5SO/Xl5IYozupbZ5NOA5leBRPYxmXmXfe7G4/4uCkRLhks84rB33aitxNZU/uMrnDGGjwrLktoKvPjqHA==}
-    engines: {node: '>=16.14'}
-    hasBin: true
-    dev: false
 
   /postcss-load-config@4.0.1:
     resolution: {integrity: sha512-vEJIc8RdiBRu3oRAI0ymerOn+7rPuMvRXslTvZUKZonDHFIczxztIyJ1urxM1x9JXEikvpWWTUUqal5j/8QgvA==}
