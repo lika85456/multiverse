@@ -1,15 +1,15 @@
-import type { SearchResultVector } from "../Database/Vector";
+import type { SearchResultVector } from "../Database/Query";
 
 export default function mergeResults(results: SearchResultVector[][]): SearchResultVector[] {
     const merged: SearchResultVector[] = [];
 
-    const ids = new Set<number>();
+    const ids = new Set<string>();
 
     results.forEach(result => {
         result.forEach(item => {
-            if (!ids.has(item.id)) {
+            if (!ids.has(item.label)) {
                 merged.push(item);
-                ids.add(item.id);
+                ids.add(item.label);
             }
         });
     });

@@ -10,7 +10,8 @@ export const orchestratorEnvSchema = z.object({
     NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
     CHANGES_TABLE: z.string(),
     SNAPSHOT_BUCKET: z.string(),
-    INDEX_CONFIG: z.string().transform<IndexConfiguration>(value => JSON.parse(value))
+    INDEX_CONFIG: z.string().transform<IndexConfiguration>(value => JSON.parse(value)),
+    INFRASTRUCTURE_TABLE: z.string(),
 });
 
 export type OrchestratorEnvironment = z.infer<typeof orchestratorEnvSchema>;

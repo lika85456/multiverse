@@ -25,6 +25,16 @@ export class Vector {
 
         return new Vector(vector);
     }
+
+    public static randomArray(size: number): number[] {
+        const vector = [];
+
+        for (let i = 0; i < size; i++) {
+            vector.push(Math.random());
+        }
+
+        return vector;
+    }
 }
 
 export const newVectorSchema = z.object({

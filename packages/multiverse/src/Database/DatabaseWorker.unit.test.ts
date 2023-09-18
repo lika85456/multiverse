@@ -43,7 +43,7 @@ describe("<DatabaseWorker>", () => {
         const result = await databaseWorker.query({
             query: {
                 k: 10,
-                vector: Vector.random(config.dimensions),
+                vector: Vector.randomArray(config.dimensions),
                 metadataExpression: ""
             },
             updates: []
@@ -66,7 +66,7 @@ describe("<DatabaseWorker>", () => {
         const query: DatabaseQuery = {
             query: {
                 k: 10,
-                vector: Vector.random(config.dimensions),
+                vector: Vector.randomArray(config.dimensions),
                 metadataExpression: ""
             },
             updates: [
@@ -107,7 +107,7 @@ describe("<DatabaseWorker>", () => {
         const result = await anotherWorker.query({
             query: {
                 k: 10,
-                vector: Vector.random(config.dimensions),
+                vector: Vector.randomArray(config.dimensions),
                 metadataExpression: ""
             },
             updates: []
@@ -122,7 +122,7 @@ describe("<DatabaseWorker>", () => {
         const result2 = await anotherWorker.query({
             query: {
                 k: 10,
-                vector: Vector.random(config.dimensions),
+                vector: Vector.randomArray(config.dimensions),
                 metadataExpression: ""
             },
             updates: []

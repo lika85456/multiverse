@@ -42,7 +42,7 @@ describe("<HNSWIndex>", () => {
             const query = [3, 3, 3];
             const result = await index.knn({
                 k: 10,
-                vector: new Vector(query)
+                vector: query
             });
 
             expect(result.length).toBe(1);
@@ -73,7 +73,7 @@ describe("<HNSWIndex>", () => {
             const query = [3, 3, 3];
             const result = await index.knn({
                 k: 10,
-                vector: new Vector(query)
+                vector: query
             });
 
             expect(result.length).toBe(10);
@@ -98,12 +98,12 @@ describe("<HNSWIndex>", () => {
             const query = [3, 3, 3, 3];
             await expect(index.knn({
                 k: 10,
-                vector: new Vector(query)
+                vector: query
             })).rejects.toThrow();
 
             await expect(index.knn({
                 k: -1,
-                vector: new Vector([3, 3, 3])
+                vector: [3, 3, 3]
             })).rejects.toThrow();
         });
 
@@ -209,7 +209,7 @@ describe("<HNSWIndex>", () => {
 
             const query = {
                 k: 10,
-                vector: new Vector([3, 3, 3])
+                vector: [3, 3, 3]
             };
 
             const newQueryResult = await newIndex.knn(query);

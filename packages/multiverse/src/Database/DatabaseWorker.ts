@@ -104,4 +104,13 @@ export default class DatabaseWorker implements DatabaseClient {
         log.debug(`Loaded snapshot ${snapshot.filePath}`, { snapshot });
     }
 
+    public async count(): Promise<{
+        vectors: number,
+        vectorDimensions: number
+    }> {
+        return { // TODO: implement properly
+            vectors: await this.options.index.size(),
+            vectorDimensions: await this.options.index.dimensions()
+        };
+    }
 }

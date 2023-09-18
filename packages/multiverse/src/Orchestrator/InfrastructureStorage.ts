@@ -10,12 +10,12 @@ const logger = log.getSubLogger({ name: "DynamoChangesStorageDeployer" });
 
 export type DatabaseInfrastructure = {
     configuration: IndexConfiguration;
-    orchestratorLambdaName: string;
     partitions: {
         lambda: {
             name: string;
             region: string;
             active: boolean;
+            instances: {id: string, lastUpdated: number}[]
         }[]
         partition: number;
     }[];
@@ -56,10 +56,6 @@ const DatabaseInfrastructureEntity = (client: DynamoDBClient, table: string) => 
             },
             required: true
         },
-        orchestratorLambdaName: {
-            type: "string",
-            required: true
-        },
         partitions: {
             type: "list",
             items: {
@@ -80,6 +76,23 @@ const DatabaseInfrastructureEntity = (client: DynamoDBClient, table: string) => 
                                 },
                                 active: {
                                     type: "boolean",
+                                    required: true
+                                },
+                                instances: {
+                                    type: "list",
+                                    items: {
+                                        type: "map",
+                                        properties: {
+                                            id: {
+                                                type: "string",
+                                                required: true
+                                            },
+                                            lastUpdated: {
+                                                type: "number",
+                                                required: true
+                                            }
+                                        }
+                                    },
                                     required: true
                                 }
                             }
@@ -203,7 +216,6 @@ export default class InfrastructureStorage {
     private databaseInfrastructureEntity;
 
     constructor(private options: {
-        stage: string;
         tableName: string;
         region: string
     }) {
@@ -211,13 +223,10 @@ export default class InfrastructureStorage {
         this.databaseInfrastructureEntity = DatabaseInfrastructureEntity(client, options.tableName);
     }
 
-    public async getInfrastructure({ owner, indexName }: {
-        owner: string;
-        indexName: string;
-    }): Promise<DatabaseInfrastructure | undefined> {
+    public async getInfrastructure(indexConfiguration: IndexConfiguration): Promise<DatabaseInfrastructure | undefined> {
         const result = await this.databaseInfrastructureEntity.get({
-            owner,
-            indexName
+            owner: indexConfiguration.owner,
+            indexName: indexConfiguration.indexName
         }).go();
 
         return result.data ?? undefined;
@@ -239,5 +248,9 @@ export default class InfrastructureStorage {
             owner,
             indexName
         }).go();
+    }
+
+    public tableName(): string {
+        return this.options.tableName;
     }
 }

@@ -2,6 +2,8 @@ import { Lambda } from "@aws-sdk/client-lambda";
 import InfrastructureManager from "./InfrastructureManager";
 import InfrastructureStorage, { InfrastructureStorageDeployer } from "./InfrastructureStorage";
 import log from "@multiverse/log";
+import { DynamoChangesStorageDeployer } from "../ChangesStorage/DynamoChangesStorage";
+import { S3SnapshotStorageDeployer } from "../SnapshotStorage/S3SnapshotStorage";
 
 describe("<InfrastructureManager>", () => {
     const manager = new InfrastructureManager({
@@ -12,38 +14,69 @@ describe("<InfrastructureManager>", () => {
             region: "eu-central-1",
             space: "cosine",
         },
-        changesTable: "test",
-        snapshotBucket: "test",
-        orchestratorLambdaName: "test",
+        changesTable: "multiverse-changes-test",
+        snapshotBucket: "multiverse-snapshot-storage-test",
         infrastructureStorage: new InfrastructureStorage({
             region: "eu-central-1",
-            stage: "dev",
             tableName: "infrastructure-storage-test"
         })
     });
 
-    const deployer = new InfrastructureStorageDeployer({
+    const infrastructureDeployer = new InfrastructureStorageDeployer({
         region: "eu-central-1",
         tableName: "infrastructure-storage-test",
     });
 
+    const changesTableDeployer = new DynamoChangesStorageDeployer({
+        region: "eu-central-1",
+        tableName: "multiverse-changes-test",
+    });
+
+    const snapshotStorageDeployer = new S3SnapshotStorageDeployer({
+        bucketName: "multiverse-snapshot-storage-test",
+        region: "eu-central-1"
+    });
+
     beforeAll(async() => {
-        if (!(await deployer.exists())) {
-            await deployer.deploy();
+        if (!(await infrastructureDeployer.exists())) {
+            await infrastructureDeployer.deploy();
+        }
+
+        if (!(await changesTableDeployer.exists())) {
+            await changesTableDeployer.deploy();
+        }
+
+        if (!(await snapshotStorageDeployer.exists())) {
+            await snapshotStorageDeployer.deploy();
         }
     });
 
     afterAll(async() => {
-        // await deployer.destroy();
-        await manager.destroy();
+        // await manager.destroy();
     });
 
-    it("should get infrastructure", async() => {
+    // it("(should )", async() => {
+    //     await manager.destroy();
+    // });
+
+    it("new infrastructure should be empty", async() => {
         const infrastructure = await manager.getInfrastructure();
 
-        expect(infrastructure).toBeDefined();
-        expect(infrastructure.partitions.length).toBe(0);
-        expect(infrastructure.configuration.indexName).toBe("test");
+        expect(infrastructure).toBeUndefined();
+    });
+
+    it("should deploy orchestrator and first partition", async() => {
+        await manager.deploy();
+
+        const infrastructure = await manager.getInfrastructure();
+
+        if (!infrastructure) {
+            throw new Error("Infrastructure not found");
+        }
+
+        expect(infrastructure.partitions.length).toBe(1);
+
+        // TODO: check that the orchestrator can query
     });
 
     it("should add partition", async() => {
@@ -51,7 +84,11 @@ describe("<InfrastructureManager>", () => {
 
         const infrastructure = await manager.getInfrastructure();
 
-        expect(infrastructure.partitions.length).toBe(1);
+        if (!infrastructure) {
+            throw new Error("Infrastructure not found");
+        }
+
+        expect(infrastructure.partitions.length).toBe(2);
 
         // check that the partition can query
         const partition = infrastructure.partitions[0];

@@ -8,6 +8,7 @@ import {
 } from "@aws-sdk/lib-dynamodb";
 import type { StoredVectorChange } from ".";
 import { Vector } from "../Vector";
+import type { IndexConfiguration } from "../IndexConfiguration";
 
 const logger = log.getSubLogger({ name: "DynamoChangesStorageDeployer" });
 
@@ -44,6 +45,19 @@ export class DynamoChangesStorageDeployer {
         }, { TableName: this.options.tableName });
 
         logger.info(`Dynamo ${this.options.tableName} destroyed`);
+    }
+
+    public async exists() {
+        try {
+            await this.dynamo.describeTable({ TableName: this.options.tableName });
+
+            return true;
+        } catch (e: any) {
+            if (e.name === "ResourceNotFoundException") {
+                return false;
+            }
+            throw e;
+        }
     }
 
     private async createDatabaseTable() {
@@ -97,12 +111,10 @@ export default class DynamoChangesStorage implements ChangesStorage {
     private TTL = 60 * 60 * 24 * 2; // 2 days
 
     constructor(private options: {
-        region: string;
         tableName: string;
         partition: number;
-        indexName: string;
-        owner: string;
-    }) {
+
+    } & IndexConfiguration) {
         const db = new DynamoDB({ region: options.region });
         this.dynamo = DynamoDBDocumentClient.from(db);
     }

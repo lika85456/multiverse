@@ -12,10 +12,10 @@ export default class OrchestratorDeployer {
     private lambda: Lambda;
 
     constructor(private options: {
-        stage: string;
         indexConfiguration: IndexConfiguration;
-        changesTable: string,
-        snapshotBucket: string
+        changesTable: string;
+        snapshotBucket: string;
+        infrastructureTable: string;
     }) {
         this.lambda = new Lambda({ region: options.indexConfiguration.region });
     }
@@ -57,8 +57,8 @@ export default class OrchestratorDeployer {
         return buffer;
     }
 
-    private lambdaName() {
-        return `multiverse-orchestrator-${this.options.indexConfiguration.owner}-${this.options.indexConfiguration.indexName}-${this.options.stage}`;
+    public static lambdaName(indexConfiguration: IndexConfiguration) {
+        return `multiverse-orchestrator-${indexConfiguration.owner}-${indexConfiguration.indexName}`;
     }
 
     private async lambdaRoleARN(): Promise<string> {
@@ -85,15 +85,28 @@ export default class OrchestratorDeployer {
                         Effect: "Allow",
                         Principal: { Service: "lambda.amazonaws.com", },
                         Action: "sts:AssumeRole",
-                    },
-                    {
-                        Effect: "Allow",
-                        Principal: { Service: "dynamodb.amazonaws.com", },
-                        Action: "sts:AssumeRole",
                     }
                 ],
             }),
             RoleName: roleName,
+        });
+
+        // add policy AWSLambdaBasicExecutionRole
+        await iam.attachRolePolicy({
+            RoleName: roleName,
+            PolicyArn: "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+        });
+
+        // add dynamodb policy
+        await iam.attachRolePolicy({
+            RoleName: roleName,
+            PolicyArn: "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess",
+        });
+
+        // add lambda:InvokeFunction
+        await iam.attachRolePolicy({
+            RoleName: roleName,
+            PolicyArn: "arn:aws:iam::aws:policy/AWSLambda_FullAccess",
         });
 
         log.debug("Created role", { result, });
@@ -108,9 +121,12 @@ export default class OrchestratorDeployer {
     }
 
     public async deploy(): Promise<string> {
+
+        log.debug("Deploying orchestrator lambda function", { configuration: this.options.indexConfiguration });
+
         const result = await this.lambda.createFunction({
             Code: { ZipFile: await this.build(), },
-            FunctionName: this.lambdaName(),
+            FunctionName: OrchestratorDeployer.lambdaName(this.options.indexConfiguration),
             Role: await this.lambdaRoleARN(),
             Runtime: Runtime.nodejs18x,
             Architectures: [Architecture.arm64],
@@ -122,11 +138,12 @@ export default class OrchestratorDeployer {
                     INDEX_CONFIG: JSON.stringify(this.options.indexConfiguration) as any,
                     SNAPSHOT_BUCKET: this.options.snapshotBucket,
                     NODE_ENV: process.env.NODE_ENV ?? "development",
+                    INFRASTRUCTURE_TABLE: this.options.infrastructureTable
                 } as OrchestratorEnvironment & Environment["Variables"],
             }
         });
 
-        log.debug("Created lambda function", { result, });
+        log.debug("Created lambda function", { result });
 
         if (!result.FunctionArn) throw new Error("Failed to create lambda function");
 
@@ -134,14 +151,16 @@ export default class OrchestratorDeployer {
         await waitUntilPublishedVersionActive({
             client: this.lambda,
             maxWaitTime: 60 * 1000,
-        }, { FunctionName: this.lambdaName(), });
+        }, { FunctionName: OrchestratorDeployer.lambdaName(this.options.indexConfiguration), });
+
+        log.debug("Lambda function is active");
 
         return result.FunctionArn;
     }
 
     public async updateCode() {
         const result = await this.lambda.updateFunctionCode({
-            FunctionName: this.lambdaName(),
+            FunctionName: OrchestratorDeployer.lambdaName(this.options.indexConfiguration),
             ZipFile: await this.build(),
         });
 
@@ -150,7 +169,7 @@ export default class OrchestratorDeployer {
 
     public async updateConfiguration() {
         const result = await this.lambda.updateFunctionConfiguration({
-            FunctionName: this.lambdaName(),
+            FunctionName: OrchestratorDeployer.lambdaName(this.options.indexConfiguration),
             Role: await this.lambdaRoleARN(),
             Runtime: Runtime.nodejs18x,
             Handler: "packages/multiverse/dist/Orchestrator/Orchestrator.handler",
@@ -160,7 +179,8 @@ export default class OrchestratorDeployer {
     }
 
     public async destroy() {
-        const result = await this.lambda.deleteFunction({ FunctionName: this.lambdaName(), });
+        // eslint-disable-next-line max-len
+        const result = await this.lambda.deleteFunction({ FunctionName: OrchestratorDeployer.lambdaName(this.options.indexConfiguration), });
 
         log.debug("Deleted lambda function", { result, });
     }

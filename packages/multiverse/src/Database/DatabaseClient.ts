@@ -29,4 +29,8 @@ export default interface DatabaseClient {
     wake(wait: number): Promise<void>;
     saveSnapshot(): Promise<void>;
     loadLatestSnapshot(): Promise<void>;
+    count(): Promise<{
+        vectors: number,
+        vectorDimensions: number
+    }>;
 }

@@ -8,37 +8,31 @@ import type InfrastructureStorage from "./InfrastructureStorage";
 import type { DatabaseInfrastructure } from "./InfrastructureStorage";
 import log from "@multiverse/log";
 import type { DatabaseEnvironment } from "../Database/DatabaseEnvironment";
+import OrchestratorDeployer from "./OrchestratorDeployer";
 
 export default class InfrastructureManager {
 
-    private infrastructure: Promise<DatabaseInfrastructure>;
     private lambda: Lambda;
+    private orchestratorDeployer: OrchestratorDeployer;
 
     constructor(private options: {
         indexConfiguration: IndexConfiguration;
-        orchestratorLambdaName: string;
         infrastructureStorage: InfrastructureStorage;
         changesTable: string;
         snapshotBucket: string;
 
     }) {
         this.lambda = new Lambda({ region: options.indexConfiguration.region });
-        this.infrastructure = this.getInfrastructure();
+        this.orchestratorDeployer = new OrchestratorDeployer({
+            changesTable: options.changesTable,
+            indexConfiguration: options.indexConfiguration,
+            snapshotBucket: options.snapshotBucket,
+            infrastructureTable: options.infrastructureStorage.tableName()
+        });
     }
 
-    public async getInfrastructure(): Promise<DatabaseInfrastructure> {
-        const result = await this.options.infrastructureStorage.getInfrastructure({
-            indexName: this.options.indexConfiguration.indexName,
-            owner: this.options.indexConfiguration.owner
-        });
-
-        if (!result) {
-            return {
-                configuration: this.options.indexConfiguration,
-                partitions: [],
-                orchestratorLambdaName: this.options.orchestratorLambdaName
-            };
-        }
+    public async getInfrastructure(): Promise<DatabaseInfrastructure | undefined> {
+        const result = await this.options.infrastructureStorage.getInfrastructure(this.options.indexConfiguration);
 
         return result;
     }
@@ -59,7 +53,6 @@ export default class InfrastructureManager {
         }
 
         // TODO!: add *proper* permissions
-
         const result = await iam.createRole({
             AssumeRolePolicyDocument: JSON.stringify({
                 Version: "2012-10-17",
@@ -68,15 +61,28 @@ export default class InfrastructureManager {
                         Effect: "Allow",
                         Principal: { Service: "lambda.amazonaws.com", },
                         Action: "sts:AssumeRole",
-                    },
-                    {
-                        Effect: "Allow",
-                        Principal: { Service: "dynamodb.amazonaws.com", },
-                        Action: "sts:AssumeRole",
                     }
                 ],
             }),
             RoleName: roleName,
+        });
+
+        // add logs policy
+        await iam.attachRolePolicy({
+            PolicyArn: "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+            RoleName: roleName
+        });
+
+        // add dynamodb policy
+        await iam.attachRolePolicy({
+            PolicyArn: "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess",
+            RoleName: roleName
+        });
+
+        // add invoke policy
+        await iam.attachRolePolicy({
+            PolicyArn: "arn:aws:iam::aws:policy/AWSLambdaRole",
+            RoleName: roleName
         });
 
         log.debug("Created role", { result });
@@ -94,8 +100,41 @@ export default class InfrastructureManager {
         return `multiverse-database-${this.options.indexConfiguration.owner}-${this.options.indexConfiguration.indexName}-${partition}`;
     }
 
+    /**
+     * Deploys orchestrator and first partition. Also saves infrastructure to storage.
+     */
+    public async deploy() {
+
+        log.debug("Deploying infrastructure", { indexConfiguration: this.options.indexConfiguration });
+
+        const infrastructure = await this.getInfrastructure();
+
+        if (infrastructure) {
+            throw new Error("Infrastructure already exists");
+        }
+
+        const orchestratorLambdaName = await this.orchestratorDeployer.deploy();
+
+        log.debug("Deployed orchestrator", { orchestratorLambdaName });
+
+        const newInfrastructure: DatabaseInfrastructure = {
+            configuration: this.options.indexConfiguration,
+            partitions: []
+        };
+
+        await this.options.infrastructureStorage.setInfrastructure(newInfrastructure);
+
+        await this.addPartition();
+    }
+
     public async addPartition() {
-        const partitionIndex = (await this.infrastructure).partitions.length;
+        const infrastructure = await this.getInfrastructure();
+
+        if (!infrastructure) {
+            throw new Error("Infrastructure not initialized while adding partition");
+        }
+
+        const partitionIndex = infrastructure.partitions.length;
 
         log.debug("Adding partition", {
             partitionIndex,
@@ -123,23 +162,17 @@ export default class InfrastructureManager {
         });
         log.debug("Created database lambda", { result });
 
-        await waitUntilFunctionActive({
-            client: this.lambda,
-            maxWaitTime: 600
-        }, { FunctionName: result.FunctionName ?? "undefined" });
-
-        log.debug(`Database lambda ${result.FunctionName} is active`);
-
         // 2. add partition to infrastructure
         const newInfrastructure: DatabaseInfrastructure = {
-            ...(await this.infrastructure),
+            ...infrastructure,
             partitions: [
-                ...(await this.infrastructure).partitions,
+                ...infrastructure.partitions,
                 {
                     lambda: [{
                         active: true,
                         name: result.FunctionName ?? "undefined",
-                        region: this.options.indexConfiguration.region
+                        region: this.options.indexConfiguration.region,
+                        instances: []
                     }],
                     partition: partitionIndex
                 }
@@ -147,38 +180,41 @@ export default class InfrastructureManager {
         };
 
         await this.options.infrastructureStorage.setInfrastructure(newInfrastructure);
+
+        await waitUntilFunctionActive({
+            client: this.lambda,
+            maxWaitTime: 600
+        }, { FunctionName: result.FunctionName ?? "undefined" });
+
+        log.debug(`Database lambda ${result.FunctionName} is active`);
     }
 
     public async destroy() {
+
+        log.debug("Destroying infrastructure", { indexConfiguration: this.options.indexConfiguration });
+
         // destroy orchestrator function and all partition lambdas
-        const infrastructure = await this.options.infrastructureStorage.getInfrastructure({
-            owner: this.options.indexConfiguration.owner,
-            indexName: this.options.indexConfiguration.indexName
-        });
+        const infrastructure = await this.options.infrastructureStorage.getInfrastructure(this.options.indexConfiguration);
 
         if (!infrastructure) {
+            log.debug("Infrastructure to destroy does not exist");
+
             return;
         }
 
         const lambda = new Lambda({ region: this.options.indexConfiguration.region });
 
-        // destroy orchestrator
-        // await lambda.deleteFunction({ FunctionName: infrastructure.orchestratorLambdaName });
-
-        // // destroy partitions
-        // for (const partition of infrastructure.partitions) {
-        //     for (const dbLambda of partition.lambda) {
-        //         log.debug("Deleting lambda", { name: dbLambda.name });
-        //         await lambda.deleteFunction({ FunctionName: dbLambda.name }).catch(log.error);
-        //     }
-        // }
-
-        await Promise.all(infrastructure.partitions.map(async(partition) => {
-            for (const dbLambda of partition.lambda) {
-                log.debug("Deleting lambda", { name: dbLambda.name });
-                await lambda.deleteFunction({ FunctionName: dbLambda.name }).catch(log.error);
-            }
-        }));
+        await Promise.all([
+            // destroy database lambdas
+            ...infrastructure.partitions.map(async(partition) => {
+                for (const dbLambda of partition.lambda) {
+                    log.debug("Deleting lambda", { name: dbLambda.name });
+                    await lambda.deleteFunction({ FunctionName: dbLambda.name }).catch(log.error);
+                }
+            }),
+            // destroy orchestrator lambda
+            this.orchestratorDeployer.destroy()
+        ]);
 
         await this.options.infrastructureStorage.removeInfrastructure({
             owner: this.options.indexConfiguration.owner,

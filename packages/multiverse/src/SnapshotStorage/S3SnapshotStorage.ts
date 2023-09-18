@@ -48,6 +48,16 @@ export class S3SnapshotStorageDeployer {
             await this.s3.deleteBucket({ Bucket: this.options.bucketName });
         }
     }
+
+    public async exists() {
+        try {
+            await this.s3.headBucket({ Bucket: this.options.bucketName });
+
+            return true;
+        } catch (e) {
+            return false;
+        }
+    }
 }
 
 export default class S3SnapshotStorage implements SnapshotStorage {
