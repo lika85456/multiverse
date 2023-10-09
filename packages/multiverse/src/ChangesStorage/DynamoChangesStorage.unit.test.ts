@@ -36,7 +36,7 @@ describe("<DynamoChangesStorage>", () => {
                 vector: {
                     label: "test",
                     metadata: {},
-                    vector: new Vector([1, 2, 3])
+                    vector: [1,2,3]
                 }
             },
             {
@@ -45,7 +45,7 @@ describe("<DynamoChangesStorage>", () => {
                 vector: {
                     label: "test",
                     metadata: {},
-                    vector: new Vector([4, 5, 6])
+                    vector: [4,5,6]
                 }
             },
             {

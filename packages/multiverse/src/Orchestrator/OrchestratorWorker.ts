@@ -16,8 +16,8 @@ export default class OrchestratorWorker implements OrchestratorClient {
         return this.options.indexManager.query(query);
     }
 
-    add(vector: NewVector[]): Promise<void> {
-        return this.options.indexManager.add(vector);
+    add(vectors: NewVector[]): Promise<void> {
+        return this.options.indexManager.add(vectors);
     }
 
     remove(label: string[]): Promise<void> {

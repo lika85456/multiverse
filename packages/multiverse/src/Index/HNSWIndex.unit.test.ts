@@ -1,4 +1,3 @@
-import { Vector } from "../Vector";
 import HNSWIndex from "./HNSWIndex";
 import { execSync } from "child_process";
 
@@ -20,11 +19,11 @@ describe("<HNSWIndex>", () => {
             await index.add([
                 {
                     label: "test label 1",
-                    vector: new Vector([1, 2, 3])
+                    vector: [1, 2, 3]
                 },
                 {
                     label: "test label 2",
-                    vector: new Vector([4, 5, 6])
+                    vector: [4, 5, 6]
                 }
             ]);
 
@@ -63,7 +62,7 @@ describe("<HNSWIndex>", () => {
         beforeAll(async() => {
             const vectors = Array.from({ length: 1000 }, (_, i) => ({
                 label: "test label " + i,
-                vector: new Vector([i, i, i])
+                vector: [i, i, i]
             }));
 
             await index.add(vectors);
@@ -112,7 +111,7 @@ describe("<HNSWIndex>", () => {
                 await index.add([
                     {
                         label: "test label " + i,
-                        vector: new Vector([i, i, i])
+                        vector: [i, i, i]
                     }
                 ]);
             }
@@ -148,7 +147,7 @@ describe("<HNSWIndex>", () => {
                     await instance.add([
                         {
                             label: "test label " + i,
-                            vector: new Vector([i, i, i])
+                            vector: [i, i, i]
                         }
                     ]);
                 }
@@ -175,12 +174,12 @@ describe("<HNSWIndex>", () => {
             await index.add([
                 {
                     label: "test label 1",
-                    vector: new Vector([1, 2, 3]),
+                    vector: [1, 2, 3],
                     metadata: { somsing: "smoozie" }
                 },
                 {
                     label: "test label 2",
-                    vector: new Vector([4, 5, 6])
+                    vector: [4, 5, 6]
                 }
             ]);
         });

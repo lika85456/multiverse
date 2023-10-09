@@ -10,9 +10,9 @@ describe("<OrchestratorDeployer>", () => {
             region: "eu-central-1",
             space: "cosine",
         },
-        stage: "dev",
-        changesTable: "test",
-        snapshotBucket: "test"
+        changesTable: "multiverse-changes-test",
+        snapshotBucket: "multiverse-snapshot-storage-test",
+        infrastructureTable: "infrastructure-storage-test"
     });
 
     it("should build code", async() => {
@@ -25,6 +25,10 @@ describe("<OrchestratorDeployer>", () => {
         const arn = await deployer.deploy();
 
         expect(arn).toBeDefined();
+    });
+
+    it("should update lambda", async() => {
+        await deployer.updateCode();
     });
 
     it("should destroy lambda", async() => {

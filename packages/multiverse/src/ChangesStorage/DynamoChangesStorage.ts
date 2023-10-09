@@ -146,9 +146,9 @@ export default class DynamoChangesStorage implements ChangesStorage {
                             // shortened to save space
                             action: change.action[0],
                             ...(change.action === "add" ? {
-                                vector: change.vector.vector.toBase64(),
+                                vector: new Vector(change.vector.vector).toBase64(),
                                 label: change.vector.label,
-                                metadata: change.vector.metadata
+                                ...(change.vector.metadata ? { metadata: change.vector.metadata } : {})
                             } : { label: change.label }),
                             ttl: Math.floor(Date.now() / 1000) + this.TTL
                         },

@@ -22,7 +22,7 @@ export const handler = async(
         action: "add",
         timestamp: Date.now(),
         vector: {
-            vector: new Vector([1, 2, 3]),
+            vector: [1,2,3],
             label: "Maaalabel",
             metadata: { xd: "?" }
         }

@@ -21,7 +21,7 @@ class LambdaDatabaseClient implements DatabaseClient {
 
         const result = await this.lambda.invoke({
             FunctionName: this.lambdaName,
-            Payload: JSON.stringify(payload)
+            Payload: JSON.stringify({ body: JSON.stringify(payload) })
         });
 
         const uintPayload = new Uint8Array(result.Payload as ArrayBuffer);
@@ -36,7 +36,7 @@ class LambdaDatabaseClient implements DatabaseClient {
             result: JSON.parse(Buffer.from(uintPayload).toString("utf-8"))
         });
 
-        return JSON.parse(Buffer.from(uintPayload).toString("utf-8"));
+        return JSON.parse(JSON.parse(Buffer.from(uintPayload).toString("utf-8")).body);
     }
 
     public async query(query: DatabaseQuery): Promise<DatabaseQueryResult> {

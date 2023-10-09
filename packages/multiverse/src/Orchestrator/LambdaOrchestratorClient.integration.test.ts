@@ -20,9 +20,20 @@ describe("<LambdaOrchestratorClient>", () => {
     it("should query", async() => {
         const result = await client.query({
             k: 10,
-            vector: Vector.randomArray(1536),
+            vector: Vector.random(1536),
         });
 
         log.debug("Query result", { result });
+    });
+
+    it("should add vectors", async() => {
+        const result = await client.add([
+            {
+                label: "test",
+                vector: Vector.random(1536)
+            }
+        ]);
+
+        log.debug("Add result", { result });
     });
 });

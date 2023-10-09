@@ -52,6 +52,11 @@ describe("<InfrastructureManager>", () => {
     });
 
     afterAll(async() => {
+        // await Promise.all([
+        //     infrastructureDeployer.destroy(),
+        //     changesTableDeployer.destroy(),
+        //     snapshotStorageDeployer.destroy()
+        // ]);
         // await manager.destroy();
     });
 

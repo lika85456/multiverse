@@ -25,12 +25,11 @@ export default class LambdaOrchestratorClient implements OrchestratorClient {
         const uintPayload = new Uint8Array(result.Payload as ArrayBuffer);
 
         if (result.FunctionError) {
-
             log.error({ result: JSON.parse(Buffer.from(uintPayload).toString("utf-8")) });
             throw new Error(result.FunctionError);
         }
 
-        return JSON.parse(Buffer.from(uintPayload).toString("utf-8"));
+        return JSON.parse(JSON.parse(Buffer.from(uintPayload).toString("utf-8")).body);
     }
 
     public async query(query: Query): Promise<QueryResult> {

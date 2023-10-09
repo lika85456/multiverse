@@ -19,7 +19,9 @@ const changesStorage = new DynamoChangesStorage({
     owner: env.INDEX_CONFIG.owner,
     partition: env.PARTITION,
     tableName: env.CHANGES_TABLE,
-    region: env.INDEX_CONFIG.region
+    region: env.INDEX_CONFIG.region,
+    dimensions: env.INDEX_CONFIG.dimensions,
+    space: env.INDEX_CONFIG.space
 });
 
 const index = new HNSWIndex({

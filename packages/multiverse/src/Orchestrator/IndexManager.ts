@@ -27,7 +27,13 @@ export default class IndexManager {
 
     public async add(vectors: NewVector[]) {
 
-        log.debug("Adding vectors", { vectors });
+        log.debug("Adding vectors", {
+            vectors: vectors.map(vector => ({
+                action: "add",
+                timestamp: Date.now(),
+                vector
+            }))
+        });
 
         // TODO: validate vectors
         await this.options.changesStorage.add(vectors.map(vector => ({
@@ -83,6 +89,7 @@ export default class IndexManager {
         }));
 
         // TODO store states
+        log.debug("Merging results", { partitionResults });
 
         return { result: mergeResults(partitionResults.map(r => r.result.result)) };
     }

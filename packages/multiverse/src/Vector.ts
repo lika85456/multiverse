@@ -16,17 +16,7 @@ export class Vector {
         return new Vector(Array.from(Buffer.from(base64, "base64")));
     }
 
-    public static random(size: number): Vector {
-        const vector = [];
-
-        for (let i = 0; i < size; i++) {
-            vector.push(Math.random());
-        }
-
-        return new Vector(vector);
-    }
-
-    public static randomArray(size: number): number[] {
+    public static random(size: number): number[] {
         const vector = [];
 
         for (let i = 0; i < size; i++) {
@@ -38,7 +28,7 @@ export class Vector {
 }
 
 export const newVectorSchema = z.object({
-    vector: z.instanceof(Vector),
+    vector: z.array(z.number()),
     label: z.string(),
     metadata: z.record(z.string()).optional(),
 });

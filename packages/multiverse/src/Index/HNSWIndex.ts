@@ -74,7 +74,7 @@ export default class HNSWIndex implements Index {
             if (vector.metadata)
                 this.metadata[id] = vector.metadata;
 
-            index.addPoint(vector.vector.toArray(), id, true);
+            index.addPoint(vector.vector, id, true);
 
             log.debug("Added vector", {
                 vector,
