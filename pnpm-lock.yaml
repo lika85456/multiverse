@@ -229,7 +229,7 @@ importers:
         specifier: ^1.4.1
         version: 1.4.1
       '@multiverse/env':
-        specifier: workspace:^
+        specifier: workspace:*
         version: link:../env
       '@multiverse/log':
         specifier: workspace:^

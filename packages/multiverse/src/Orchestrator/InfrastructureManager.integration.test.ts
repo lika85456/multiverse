@@ -6,6 +6,11 @@ import { DynamoChangesStorageDeployer } from "../ChangesStorage/DynamoChangesSto
 import { S3SnapshotStorageDeployer } from "../SnapshotStorage/S3SnapshotStorage";
 
 describe("<InfrastructureManager>", () => {
+
+    const changesTableName = "multiverse-changes-test-" + Math.random().toString(36).substring(7);
+    const snapshotBucketName = "multiverse-snapshot-storage-test-" + Math.random().toString(36).substring(7);
+    const infrastructureTableName = "infrastructure-storage-test-" + Math.random().toString(36).substring(7);
+
     const manager = new InfrastructureManager({
         indexConfiguration: {
             dimensions: 1536,
@@ -14,55 +19,49 @@ describe("<InfrastructureManager>", () => {
             region: "eu-central-1",
             space: "cosine",
         },
-        changesTable: "multiverse-changes-test",
-        snapshotBucket: "multiverse-snapshot-storage-test",
+        changesTable: changesTableName,
+        snapshotBucket: snapshotBucketName,
         infrastructureStorage: new InfrastructureStorage({
             region: "eu-central-1",
-            tableName: "infrastructure-storage-test"
+            tableName: infrastructureTableName,
         })
     });
 
     const infrastructureDeployer = new InfrastructureStorageDeployer({
         region: "eu-central-1",
-        tableName: "infrastructure-storage-test",
+        tableName: infrastructureTableName,
     });
 
     const changesTableDeployer = new DynamoChangesStorageDeployer({
         region: "eu-central-1",
-        tableName: "multiverse-changes-test",
+        tableName: changesTableName,
     });
 
     const snapshotStorageDeployer = new S3SnapshotStorageDeployer({
-        bucketName: "multiverse-snapshot-storage-test",
-        region: "eu-central-1"
+        region: "eu-central-1",
+        bucketName: snapshotBucketName,
     });
 
     beforeAll(async() => {
-        if (!(await infrastructureDeployer.exists())) {
-            await infrastructureDeployer.deploy();
+        if (await infrastructureDeployer.exists() || await changesTableDeployer.exists() || await snapshotStorageDeployer.exists()) {
+            throw new Error("One of the resources already exists");
         }
 
-        if (!(await changesTableDeployer.exists())) {
-            await changesTableDeployer.deploy();
-        }
-
-        if (!(await snapshotStorageDeployer.exists())) {
-            await snapshotStorageDeployer.deploy();
-        }
+        await Promise.all([
+            infrastructureDeployer.deploy(),
+            changesTableDeployer.deploy(),
+            snapshotStorageDeployer.deploy()
+        ]);
     });
 
     afterAll(async() => {
-        // await Promise.all([
-        //     infrastructureDeployer.destroy(),
-        //     changesTableDeployer.destroy(),
-        //     snapshotStorageDeployer.destroy()
-        // ]);
-        // await manager.destroy();
+        await manager.destroy().catch(log.error);
+        await Promise.all([
+            infrastructureDeployer.destroy().catch(log.error),
+            changesTableDeployer.destroy().catch(log.error),
+            snapshotStorageDeployer.destroy().catch(log.error)
+        ]);
     });
-
-    // it("(should )", async() => {
-    //     await manager.destroy();
-    // });
 
     it("new infrastructure should be empty", async() => {
         const infrastructure = await manager.getInfrastructure();
@@ -119,6 +118,5 @@ describe("<InfrastructureManager>", () => {
         const uintPayload = new Uint8Array(result.Payload as ArrayBuffer);
 
         log.debug("result", { result: JSON.parse(Buffer.from(uintPayload).toString("utf-8")) });
-
     });
 });

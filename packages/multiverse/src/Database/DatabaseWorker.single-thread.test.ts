@@ -14,7 +14,7 @@ describe("<DatabaseWorker>", () => {
         owner: "test",
         region: "eu-central-1",
         space: "ip" as const
-    } satisfies IndexConfiguration;
+    } as IndexConfiguration;
 
     const changesStorage = new MemoryChangesStorage();
 

@@ -24,7 +24,7 @@
     "@aws-sdk/lib-storage": "^3.370.0",
     "@aws-sdk/s3-request-presigner": "^3.370.0",
     "@isaacs/ttlcache": "^1.4.1",
-    "@multiverse/env": "workspace:^",
+    "@multiverse/env": "workspace:*",
     "@multiverse/log": "workspace:^",
     "@multiverse/super-lambda": "workspace:^",
     "@trpc/client": "^10.37.1",
