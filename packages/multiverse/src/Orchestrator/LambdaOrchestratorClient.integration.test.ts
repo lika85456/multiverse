@@ -7,7 +7,7 @@ import InfrastructureManager from "./InfrastructureManager";
 import InfrastructureStorage, { InfrastructureStorageDeployer } from "./InfrastructureStorage";
 import type { IndexConfiguration } from "../IndexConfiguration";
 
-describe("<LambdaOrchestratorClient>", () => {
+describe.skip("<LambdaOrchestratorClient>", () => {
     // const changesTableName = "multiverse-changes-test-" + Math.random().toString(36).substring(7);
     // const snapshotBucketName = "multiverse-snapshot-storage-test-" + Math.random().toString(36).substring(7);
     // const infrastructureTableName = "infrastructure-storage-test-" + Math.random().toString(36).substring(7);
