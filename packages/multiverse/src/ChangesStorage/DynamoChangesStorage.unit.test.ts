@@ -1,5 +1,4 @@
 import type { StoredVectorChange } from ".";
-import { Vector } from "../Vector";
 import { ENV } from "../env";
 import DynamoChangesStorage from "./DynamoChangesStorage";
 import log from "@multiverse/log";
@@ -25,7 +24,9 @@ describe("<DynamoChangesStorage>", () => {
         owner: "test-owner",
         partition: 0,
         region: "eu-central-1",
-        tableName: tableName
+        tableName: tableName,
+        dimensions: 3,
+        space: "cosine",
     });
 
     it("should add and read changes", async() => {
@@ -36,7 +37,7 @@ describe("<DynamoChangesStorage>", () => {
                 vector: {
                     label: "test",
                     metadata: {},
-                    vector: [1,2,3]
+                    vector: [1, 2, 3]
                 }
             },
             {
@@ -45,7 +46,7 @@ describe("<DynamoChangesStorage>", () => {
                 vector: {
                     label: "test",
                     metadata: {},
-                    vector: [4,5,6]
+                    vector: [4, 5, 6]
                 }
             },
             {

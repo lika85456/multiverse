@@ -2,6 +2,7 @@ type FunctionArguments<Fn> = Fn extends (...args: infer A) => any ? A : never;
 type ReturnType<Fn> = Fn extends (...args: any[]) => infer R ? R : never;
 
 /**
+ * TODO!: Change name to ComputeLambda!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!§
  * Database lambda should:
  * 1. wake up all the necessary instances
  * 2. invoke the action on an instance that is ready
