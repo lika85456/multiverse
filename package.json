@@ -9,6 +9,7 @@
     "build:db": "tsup packages/multiverse/src/Database/Database.ts --dts --format cjs --minify --clean --sourcemap --target es2020 --outDir packages/multiverse/src/Database/dist",
     "deploy:db": "aws ecr get-login-password --region eu-central-1 | docker login --username AWS --password-stdin 529734186765.dkr.ecr.eu-central-1.amazonaws.com && DOCKER_BUILDKIT=1 docker build -t multiverse . && docker tag multiverse:latest 529734186765.dkr.ecr.eu-central-1.amazonaws.com/multiverse:latest && docker push 529734186765.dkr.ecr.eu-central-1.amazonaws.com/multiverse:latest",
     "run:db": "DOCKER_BUILDKIT=1 docker build -t multiverse . && docker run -p 9000:8080 multiverse",
+    "start:docs": "cd apps/docs && pnpm start",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
