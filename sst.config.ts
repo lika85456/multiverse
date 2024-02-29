@@ -1,37 +1,47 @@
-import { Bucket, Function } from "sst/constructs";
-import { DynamoChangesStorageStack } from "./packages/multiverse/src/ChangesStorage/DynamoChangesStorageStack";
+import { StaticSite } from "sst/constructs";
 import type { StackContext } from "sst/constructs";
-import { RemovalPolicy } from "aws-cdk-lib/core";
 import type { SSTConfig } from "sst";
 
 function MultiverseStack({ stack }: StackContext) {
-    const changesTable = DynamoChangesStorageStack(stack);
+    // const changesTable = DynamoChangesStorageStack(stack);
 
-    const snapshotStorage = new Bucket(stack, "snapshots", { cdk: { bucket: { removalPolicy: RemovalPolicy.DESTROY } } });
+    // const snapshotStorage = new Bucket(stack, "snapshots", { cdk: { bucket: { removalPolicy: RemovalPolicy.DESTROY } } });
 
-    // orchestrator function
-    const orchestratorLambda = new Function(stack, "orchestrator", {
-        handler: "packages/orchestrator/src/index.handler",
-        runtime: "nodejs18.x",
-        memorySize: 256,
-        timeout: 10,
-        environment: {
-            CHANGES_TABLE: changesTable.tableName,
-            SNAPSHOT_BUCKET: snapshotStorage.bucketName
-        }
+    // // build orchestrator using "pnpm build:orchestrator" command
+    // execSync("pnpm build:orchestrator", { stdio: "inherit" });
+
+    // // orchestrator function
+    // const orchestratorLambda = new Function(stack, "orchestrator", {
+    //     handler: "packages/orchestrator/src/index.handler",
+    //     runtime: "nodejs18.x",
+    //     memorySize: 256,
+    //     timeout: 10,
+    //     environment: {
+    //         CHANGES_TABLE: changesTable.tableName,
+    //         SNAPSHOT_BUCKET: snapshotStorage.bucketName
+    //     }
+    // });
+
+    // // add access to the table and bucket
+    // orchestratorLambda.attachPermissions([
+    //     changesTable,
+    //     snapshotStorage
+    // ]);
+
+    // docs static site
+    const web = new StaticSite(stack, "docs", {
+        path: "./apps/docs",
+        buildOutput: "build",
+        buildCommand: "pnpm run build",
     });
 
-    // add access to the table and bucket
-    orchestratorLambda.attachPermissions([
-        changesTable,
-        snapshotStorage
-    ]);
+    // stack.addOutputs({
+    //     orchestratorLambdaArn: orchestratorLambda.functionArn,
+    //     changesTable: changesTable.tableName,
+    //     snapshotStorage: snapshotStorage.bucketName
+    // });
 
-    stack.addOutputs({
-        orchestratorLambdaArn: orchestratorLambda.functionArn,
-        changesTable: changesTable.tableName,
-        snapshotStorage: snapshotStorage.bucketName
-    });
+    return web;
 }
 
 // https://docs.sst.dev/configuring-sst
@@ -46,5 +56,6 @@ export default {
     },
     stacks(app) {
         app.stack(MultiverseStack);
+
     },
 } as SSTConfig;

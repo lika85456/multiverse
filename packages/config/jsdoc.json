@@ -1,0 +1,8 @@
+{
+    "recurseDepth": 10,
+    "source": {
+        "includePattern": ".+\\.ts(doc|x)?$",
+       "excludePattern": "(^|\\/|\\\\)(_|node_modules)"
+    },
+    "plugins": ["plugins/markdown"]
+}
