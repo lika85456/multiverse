@@ -3,45 +3,14 @@ import type { StackContext } from "sst/constructs";
 import type { SSTConfig } from "sst";
 
 function MultiverseStack({ stack }: StackContext) {
-    // const changesTable = DynamoChangesStorageStack(stack);
 
-    // const snapshotStorage = new Bucket(stack, "snapshots", { cdk: { bucket: { removalPolicy: RemovalPolicy.DESTROY } } });
-
-    // // build orchestrator using "pnpm build:orchestrator" command
-    // execSync("pnpm build:orchestrator", { stdio: "inherit" });
-
-    // // orchestrator function
-    // const orchestratorLambda = new Function(stack, "orchestrator", {
-    //     handler: "packages/orchestrator/src/index.handler",
-    //     runtime: "nodejs18.x",
-    //     memorySize: 256,
-    //     timeout: 10,
-    //     environment: {
-    //         CHANGES_TABLE: changesTable.tableName,
-    //         SNAPSHOT_BUCKET: snapshotStorage.bucketName
-    //     }
-    // });
-
-    // // add access to the table and bucket
-    // orchestratorLambda.attachPermissions([
-    //     changesTable,
-    //     snapshotStorage
-    // ]);
-
-    // docs static site
-    const web = new StaticSite(stack, "docs", {
+    const docsWeb = new StaticSite(stack, "docs", {
         path: "./apps/docs",
         buildOutput: "build",
         buildCommand: "pnpm run build",
     });
 
-    // stack.addOutputs({
-    //     orchestratorLambdaArn: orchestratorLambda.functionArn,
-    //     changesTable: changesTable.tableName,
-    //     snapshotStorage: snapshotStorage.bucketName
-    // });
-
-    return web;
+    stack.addOutputs({ docsUrl: docsWeb.cdk?.distribution.distributionDomainName });
 }
 
 // https://docs.sst.dev/configuring-sst
