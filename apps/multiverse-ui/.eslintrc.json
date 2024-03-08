@@ -1,9 +1,11 @@
 {
-  "extends": "next/core-web-vitals",
-  "rules": {
-    "indent": [
-      "error",
-      2
-    ]
+  "root": true,
+  "extends": [
+    "custom/base"
+  ],
+  "parserOptions": {
+    "ecmaVersion": "latest",
+    "project": true,
+    "tsconfigRootDir": "__dirname"
   }
 }
