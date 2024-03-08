@@ -2,7 +2,7 @@ import z from "zod";
 import { prettifyIssues } from "@multiverse/env";
 import { config } from "dotenv";
 import path from "path";
-import type { IndexConfiguration } from "../IndexConfiguration";
+import type { DatabaseConfiguration } from "../DatabaseConfiguration";
 import log from "@multiverse/log";
 
 config({ path: path.join(__dirname, "..", "..", "..", process.env.NODE_ENV === "test" ? ".env.test" : ".env"), });

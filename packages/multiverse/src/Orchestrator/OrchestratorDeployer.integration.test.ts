@@ -3,7 +3,7 @@ import OrchestratorDeployer from "./OrchestratorDeployer";
 describe("<OrchestratorDeployer>", () => {
 
     const deployer = new OrchestratorDeployer({
-        indexConfiguration: {
+        databaseConfiguration: {
             dimensions: 1536,
             indexName: "test",
             owner: "test",

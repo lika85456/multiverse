@@ -1,6 +1,6 @@
 import type ChangesStorage from "../ChangesStorage";
 import type Index from "../Index";
-import type { IndexConfiguration } from "../IndexConfiguration";
+import type { DatabaseConfiguration } from "../DatabaseConfiguration";
 import type SnapshotStorage from "../SnapshotStorage";
 import type {
     DatabaseClientState, DatabaseQuery, DatabaseQueryResult

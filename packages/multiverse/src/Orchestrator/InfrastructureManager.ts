@@ -3,9 +3,9 @@ import type { Environment } from "@aws-sdk/client-lambda";
 import {
     Lambda, PackageType, waitUntilFunctionActive
 } from "@aws-sdk/client-lambda";
-import type { IndexConfiguration } from "../IndexConfiguration";
-import type InfrastructureStorage from "./InfrastructureStorage";
-import type { DatabaseInfrastructure } from "./InfrastructureStorage";
+import type { DatabaseConfiguration } from "../DatabaseConfiguration";
+import type InfrastructureStorage from "../InfrastructureStorage/InfrastructureStorage";
+import type { DatabaseInfrastructure } from "../InfrastructureStorage/InfrastructureStorage";
 import log from "@multiverse/log";
 import type { DatabaseEnvironment } from "../Database/DatabaseEnvironment";
 import OrchestratorDeployer from "./OrchestratorDeployer";
@@ -25,7 +25,7 @@ export default class InfrastructureManager {
         this.lambda = new Lambda({ region: options.indexConfiguration.region });
         this.orchestratorDeployer = new OrchestratorDeployer({
             changesTable: options.changesTable,
-            indexConfiguration: options.indexConfiguration,
+            databaseConfiguration: options.indexConfiguration,
             snapshotBucket: options.snapshotBucket,
             infrastructureTable: options.infrastructureStorage.tableName()
         });

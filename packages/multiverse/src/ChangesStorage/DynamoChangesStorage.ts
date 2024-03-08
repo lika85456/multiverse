@@ -8,11 +8,24 @@ import {
 } from "@aws-sdk/lib-dynamodb";
 import type { StoredVectorChange } from ".";
 import { Vector } from "../Vector";
-import type { IndexConfiguration } from "../IndexConfiguration";
+import type { DatabaseConfiguration } from "../DatabaseConfiguration";
 
 const logger = log.getSubLogger({ name: "DynamoChangesStorageDeployer" });
 
 // TODO: optimize lazy loading?
+
+// export const storedVectorChangeSchema = z.union([
+//     z.object({
+//         action: z.literal("add"),
+//         timestamp: z.number(),
+//         vector: newVectorSchema,
+//     }),
+//     z.object({
+//         action: z.literal("remove"),
+//         timestamp: z.number(),
+//         label: z.string(),
+//     }),
+// ]);
 
 export class DynamoChangesStorageDeployer {
 
@@ -114,7 +127,7 @@ export default class DynamoChangesStorage implements ChangesStorage {
         tableName: string;
         partition: number;
 
-    } & IndexConfiguration) {
+    } & DatabaseConfiguration) {
         const db = new DynamoDB({ region: options.region });
         this.dynamo = DynamoDBDocumentClient.from(db);
     }
@@ -141,7 +154,7 @@ export default class DynamoChangesStorage implements ChangesStorage {
                 [this.options.tableName]: changes.map(change => ({
                     PutRequest: {
                         Item: {
-                            PK: `${this.options.owner}-${this.options.indexName}#${this.options.partition}`,
+                            PK: `${this.options.name}#${this.options.partition}`,
                             SK: change.timestamp,
                             // shortened to save space
                             action: change.action[0],
@@ -167,7 +180,7 @@ export default class DynamoChangesStorage implements ChangesStorage {
                 TableName: this.options.tableName,
                 KeyConditionExpression: "PK = :pk AND SK >= :sk",
                 ExpressionAttributeValues: {
-                    ":pk": `${this.options.owner}-${this.options.indexName}#${this.options.partition}`,
+                    ":pk": `${this.options.name}#${this.options.partition}`,
                     ":sk": timestamp
                 },
                 ExclusiveStartKey: lastEvaluatedKey
@@ -192,5 +205,23 @@ export default class DynamoChangesStorage implements ChangesStorage {
         } while (lastEvaluatedKey);
 
         return;
+    }
+
+    public async deploy() {
+        const deployer = new DynamoChangesStorageDeployer({
+            region: this.options.region,
+            tableName: this.options.tableName
+        });
+
+        await deployer.deploy();
+    }
+
+    public async destroy() {
+        const deployer = new DynamoChangesStorageDeployer({
+            region: this.options.region,
+            tableName: this.options.tableName
+        });
+
+        await deployer.destroy();
     }
 }

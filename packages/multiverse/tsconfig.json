@@ -13,7 +13,7 @@
       "allowJs": true,
     },
     "include": [
-      "src/**/*", "src/IndexConfiguration.ts",
+      "src/**/*", "src/DatabaseConfiguration.ts",
     ],
     "exclude": ["dist", "build", "node_modules"],
   }

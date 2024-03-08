@@ -2,22 +2,22 @@ import type { Environment } from "@aws-sdk/client-lambda";
 import {
     Architecture, Lambda, Runtime, waitUntilPublishedVersionActive
 } from "@aws-sdk/client-lambda";
-import type { IndexConfiguration } from "../IndexConfiguration";
 import log from "@multiverse/log";
 import { IAM } from "@aws-sdk/client-iam";
 import type { OrchestratorEnvironment } from "./OrchestratorEnvironment";
+import type { DatabaseConfiguration } from "../DatabaseConfiguration";
 
 export default class OrchestratorDeployer {
 
     private lambda: Lambda;
 
     constructor(private options: {
-        indexConfiguration: IndexConfiguration;
+        databaseConfiguration: DatabaseConfiguration;
         changesTable: string;
         snapshotBucket: string;
         infrastructureTable: string;
     }) {
-        this.lambda = new Lambda({ region: options.indexConfiguration.region });
+        this.lambda = new Lambda({ region: options.databaseConfiguration.region });
     }
 
     /**
@@ -57,13 +57,13 @@ export default class OrchestratorDeployer {
         return buffer;
     }
 
-    public static lambdaName(indexConfiguration: IndexConfiguration) {
+    public static lambdaName(databaseConfiguration: DatabaseConfiguration) {
         return `multiverse-orchestrator-${indexConfiguration.owner}-${indexConfiguration.indexName}`;
     }
 
     private async lambdaRoleARN(): Promise<string> {
         // if doesn't exist, create
-        const iam = new IAM({ region: this.options.indexConfiguration.region });
+        const iam = new IAM({ region: this.options.databaseConfiguration.region });
 
         const roleName = "multiverse-orchestrator-role";
 
@@ -122,11 +122,11 @@ export default class OrchestratorDeployer {
 
     public async deploy(): Promise<string> {
 
-        log.debug("Deploying orchestrator lambda function", { configuration: this.options.indexConfiguration });
+        log.debug("Deploying orchestrator lambda function", { configuration: this.options.databaseConfiguration });
 
         const result = await this.lambda.createFunction({
             Code: { ZipFile: await this.build(), },
-            FunctionName: OrchestratorDeployer.lambdaName(this.options.indexConfiguration),
+            FunctionName: OrchestratorDeployer.lambdaName(this.options.databaseConfiguration),
             Role: await this.lambdaRoleARN(),
             Runtime: Runtime.nodejs18x,
             Architectures: [Architecture.arm64],
@@ -135,7 +135,7 @@ export default class OrchestratorDeployer {
             Environment: {
                 Variables: {
                     CHANGES_TABLE: this.options.changesTable,
-                    INDEX_CONFIG: JSON.stringify(this.options.indexConfiguration) as any,
+                    INDEX_CONFIG: JSON.stringify(this.options.databaseConfiguration) as any,
                     SNAPSHOT_BUCKET: this.options.snapshotBucket,
                     NODE_ENV: process.env.NODE_ENV ?? "development",
                     INFRASTRUCTURE_TABLE: this.options.infrastructureTable
@@ -150,8 +150,8 @@ export default class OrchestratorDeployer {
         // wait for lambda to be created
         await waitUntilPublishedVersionActive({
             client: this.lambda,
-            maxWaitTime: 60 * 1000,
-        }, { FunctionName: OrchestratorDeployer.lambdaName(this.options.indexConfiguration), });
+            maxWaitTime: 120 * 1000,
+        }, { FunctionName: OrchestratorDeployer.lambdaName(this.options.databaseConfiguration), });
 
         log.debug("Lambda function is active");
 
@@ -160,7 +160,7 @@ export default class OrchestratorDeployer {
 
     public async updateCode() {
         const result = await this.lambda.updateFunctionCode({
-            FunctionName: OrchestratorDeployer.lambdaName(this.options.indexConfiguration),
+            FunctionName: OrchestratorDeployer.lambdaName(this.options.databaseConfiguration),
             ZipFile: await this.build(),
         });
 
@@ -169,7 +169,7 @@ export default class OrchestratorDeployer {
 
     public async updateConfiguration() {
         const result = await this.lambda.updateFunctionConfiguration({
-            FunctionName: OrchestratorDeployer.lambdaName(this.options.indexConfiguration),
+            FunctionName: OrchestratorDeployer.lambdaName(this.options.databaseConfiguration),
             Role: await this.lambdaRoleARN(),
             Runtime: Runtime.nodejs18x,
             Handler: "packages/multiverse/dist/Orchestrator/Orchestrator.handler",
@@ -180,7 +180,7 @@ export default class OrchestratorDeployer {
 
     public async destroy() {
         // eslint-disable-next-line max-len
-        const result = await this.lambda.deleteFunction({ FunctionName: OrchestratorDeployer.lambdaName(this.options.indexConfiguration), });
+        const result = await this.lambda.deleteFunction({ FunctionName: OrchestratorDeployer.lambdaName(this.options.databaseConfiguration), });
 
         log.debug("Deleted lambda function", { result, });
     }

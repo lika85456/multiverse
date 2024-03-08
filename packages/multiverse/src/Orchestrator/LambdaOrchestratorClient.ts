@@ -1,6 +1,6 @@
 import { Lambda } from "@aws-sdk/client-lambda";
 import type { Query, QueryResult } from "../Database/Query";
-import type { IndexConfiguration } from "../IndexConfiguration";
+import type { DatabaseConfiguration } from "../DatabaseConfiguration";
 import type { NewVector } from "../Vector";
 import type OrchestratorClient from "./OrchestratorClient";
 import OrchestratorDeployer from "./OrchestratorDeployer";

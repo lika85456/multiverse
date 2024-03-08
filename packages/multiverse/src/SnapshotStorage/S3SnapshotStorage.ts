@@ -87,7 +87,7 @@ export default class S3SnapshotStorage implements SnapshotStorage {
         return {
             filePath,
             timestamp: now,
-            indexName: this.options.indexName
+            databaseName: this.options.indexName
         };
     }
 
@@ -115,7 +115,7 @@ export default class S3SnapshotStorage implements SnapshotStorage {
             snapshots.push({
                 filePath,
                 timestamp: +timestamp,
-                indexName: this.options.indexName
+                databaseName: this.options.indexName
             });
         }
 
@@ -147,7 +147,7 @@ export default class S3SnapshotStorage implements SnapshotStorage {
         return {
             filePath: `${this.options.downloadPath}/${latest.filePath}`,
             timestamp: latest.timestamp,
-            indexName: this.options.indexName
+            databaseName: this.options.indexName
         };
     }
 

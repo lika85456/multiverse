@@ -8,7 +8,7 @@ import {
 } from "fs/promises";
 import adm from "adm-zip";
 import logger from "@multiverse/log";
-import type { IndexConfiguration } from "../IndexConfiguration";
+import type { DatabaseConfiguration } from "../DatabaseConfiguration";
 
 const log = logger.getSubLogger({ name: "HNSWIndex" });
 
