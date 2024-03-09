@@ -17,15 +17,19 @@ export default function RootLayout({ children, }: Readonly<{
     return (
         <html lang="en" suppressHydrationWarning>
             <body className={inter.className}>
-                <ThemeProvider
-                    attribute="class"
-                    defaultTheme="system"
-                    enableSystem
-                    disableTransitionOnChange
-                >
-                    <MainNav />
-                    {children}
-                </ThemeProvider>
+                <div className="flex flex-col min-h-screen w-screen justify-start">
+                    <ThemeProvider
+                        attribute="class"
+                        defaultTheme="system"
+                        enableSystem
+                        disableTransitionOnChange
+                    >
+                        <MainNav />
+                        <div className="flex flex-col flex-1 justify-start items-center">
+                            {children}
+                        </div>
+                    </ThemeProvider>
+                </div>
             </body>
         </html>
     );

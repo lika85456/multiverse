@@ -25,6 +25,9 @@
         --accent: 210 40% 96.1%;
         --accent-foreground: 222.2 47.4% 11.2%;
 
+        --accent-light: 263 100% 71%;
+        --accent-light-foreground: 0 0% 100%;
+
         --destructive: 0 84.2% 60.2%;
         --destructive-foreground: 210 40% 98%;
 
@@ -49,7 +52,7 @@
         --primary-foreground: 0 0% 100%;
 
         --secondary: 0 0% 20%;
-        --secondary-foreground: 0 0% 70%;
+        --secondary-foreground: 0 0% 90%;
 
         --muted: 217.2 32.6% 17.5%;
         --muted-foreground: 215 20.2% 65.1%;
@@ -57,8 +60,8 @@
         --accent: 263 100% 52%;
         --accent-foreground: 0 0% 100%;
 
-        --accent_light: 263 100% 71%;
-        --accent_light-foreground: 0 0% 100%;
+        --accent-light: 263 100% 71%;
+        --accent-light-foreground: 0 0% 100%;
 
         --destructive: 7 71% 58%;
         --destructive-foreground: 0 0% 100%;
@@ -91,8 +94,8 @@
         --accent: 263 100% 52%;
         --accent-foreground: 0 0% 100%;
 
-        --accent_light: 263 100% 71%;
-        --accent_light-foreground: 0 0% 100%;
+        --accent-light: 263 100% 71%;
+        --accent-light-foreground: 0 0% 100%;
 
         --destructive: 7 71% 58%;
         --destructive-foreground: 0 0% 100%;

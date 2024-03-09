@@ -24,7 +24,7 @@ const NavigationOptions: FC<NavigationOptionsProps> = ({ pages }) => {
             <NavigationMenuItem key={item.path}>
                 <Link href={item.path} legacyBehavior passHref>
                     <NavigationMenuLink
-                        className={`px-4  uppercase font-thin hover:underline hover:underline-offset-4 ${
+                        className={`px-4 uppercase font-thin hover:underline hover:underline-offset-4 ${
                             item.path === pathName
                                 ? "underline underline-offset-4 text-primary-foreground"
                                 : "text-secondary-foreground"

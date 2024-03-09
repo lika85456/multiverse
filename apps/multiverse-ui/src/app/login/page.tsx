@@ -1,3 +1,5 @@
+import LoginOptions from "@/features/login/LoginOptions";
+
 export default function LoginPage() {
-    return <div>Login</div>;
+    return <LoginOptions />;
 }
