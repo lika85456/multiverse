@@ -8,13 +8,13 @@ export default function EmailInput() {
             <Input
                 type="email"
                 placeholder="email@example.com"
-                className="rounded-r-none border-gray-500 border-r-0"
+                className="rounded-r-none border-r-0"
             />
             <Button
                 type="submit"
                 className="rounded-l-none bg-accent text-primary hover:bg-accent_light"
             >
-                <IoArrowForward className="w-6 h-6 text-foreground" />
+                <IoArrowForward className="w-6 h-6 text-accent-foreground" />
             </Button>
         </div>
     );
