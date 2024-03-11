@@ -1,0 +1,11 @@
+{
+  "root": true,
+  "extends": [
+    "custom/base"
+  ],
+  "parserOptions": {
+    "ecmaVersion": "latest",
+    "project": true,
+    "tsconfigRootDir": "__dirname"
+  }
+}
