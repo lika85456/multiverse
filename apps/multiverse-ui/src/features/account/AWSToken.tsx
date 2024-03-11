@@ -1,6 +1,6 @@
 "use client";
 
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { FaRegTrashAlt } from "react-icons/fa";
 import {
@@ -27,9 +27,9 @@ export default function AWSToken() {
     const providedToken = (
         <div className={"flex flex-col w-full space-y-4"}>
             <h3 className={"text-tertiary-foreground"}>Public Key</h3>
-            <Input title={"public"} type="text" placeholder="public key" />
+            <Textarea title={"public"} placeholder="public key" />
             <h3 className={"text-tertiary-foreground"}>Private Key</h3>
-            <Input title={"private"} type="text" placeholder="private key" />
+            <Textarea title={"private"} placeholder="private key" />
             <AlertDialog>
                 <AlertDialogTrigger asChild className={"flex w-fit self-end"}>
                     <Button
@@ -99,9 +99,9 @@ export default function AWSToken() {
     const tokenInput = (
         <div className={"flex flex-col w-full space-y-4"}>
             <h3 className={"text-tertiary-foreground"}>Public Key</h3>
-            <Input title={"public"} type="text" placeholder="public key" />
+            <Textarea title={"public"} placeholder="public key" />
             <h3 className={"text-tertiary-foreground"}>Private Key</h3>
-            <Input title={"private"} type="text" placeholder="private key" />
+            <Textarea title={"private"} placeholder="private key" />
             <div className={"flex flex-row justify-end space-x-4"}>
                 <Button
                     variant={"outline"}

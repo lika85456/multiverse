@@ -17,18 +17,12 @@ import { LogOut } from "lucide-react";
 import { FiUser } from "react-icons/fi";
 
 export default function AccountIcon() {
-    const params = usePathname();
-    const isHighlighted = params === "/account";
+    const currentPath = usePathname();
 
     const userName = "Michal Kornúc";
     const userInitial = userName.length > 0 ? userName.at(0)?.toUpperCase() : "U";
-
     const userImage =
     "https://e7.pngegg.com/pngimages/178/595/png-clipart-user-profile-computer-icons-login-user-avatars-monochromes-black.png";
-
-    const optionsHandler = () => {
-        console.log("Options");
-    };
 
     return (
         <>
@@ -36,9 +30,10 @@ export default function AccountIcon() {
                 <DropdownMenuTrigger>
                     <Avatar
                         className={`mx-1.5 ${
-                            isHighlighted ? "border-2 border-foreground" : ""
+                            currentPath.includes("/account")
+                                ? "border-2 border-foreground"
+                                : ""
                         }`}
-                        onClick={() => optionsHandler()}
                     >
                         <AvatarImage src={userImage} alt="@shadcn" />
                         <AvatarFallback
@@ -52,7 +47,7 @@ export default function AccountIcon() {
                     <DropdownMenuLabel>{userName}</DropdownMenuLabel>
                     <DropdownMenuSeparator className={"bg-border"} />
                     <Link href={"/account"}>
-                        <DropdownMenuItem className={"font-bold"}>
+                        <DropdownMenuItem className={"font-bold focus:bg-primary"}>
                             <FiUser className={"mr-2 h-4 w-4"} />
               Account
                         </DropdownMenuItem>
@@ -64,7 +59,7 @@ export default function AccountIcon() {
                             console.log("Logging out");
                         }}
                     >
-                        <DropdownMenuItem>
+                        <DropdownMenuItem className={"focus:bg-primary"}>
                             <LogOut className="mr-2 h-4 w-4" />
                             <span>Log out</span>
                         </DropdownMenuItem>

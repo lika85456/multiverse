@@ -7,7 +7,6 @@ import {
     NavigationMenuList,
 } from "@/components/ui/navigation-menu";
 import Link from "next/link";
-import type { FC } from "react";
 import { usePathname } from "next/navigation";
 
 export interface NavigationOptionsProps {
@@ -18,7 +17,7 @@ export interface NavigationOptionsProps {
   }[];
 }
 
-const NavigationOptions: FC<NavigationOptionsProps> = ({ pages }) => {
+export default function NavigationOptions({ pages }: NavigationOptionsProps) {
     const pathName = usePathname();
 
     const authenticated = true;
@@ -33,7 +32,7 @@ const NavigationOptions: FC<NavigationOptionsProps> = ({ pages }) => {
                 <Link href={page.path} legacyBehavior passHref>
                     <NavigationMenuLink
                         className={`px-4 uppercase font-thin hover:underline hover:underline-offset-4 ${
-                            page.path === pathName
+                            pathName.includes(page.path)
                                 ? "underline underline-offset-4 text-primary-foreground"
                                 : "text-secondary-foreground"
                         }`}
@@ -50,6 +49,4 @@ const NavigationOptions: FC<NavigationOptionsProps> = ({ pages }) => {
             <NavigationMenuList>{pagesItems}</NavigationMenuList>
         </NavigationMenu>
     );
-};
-
-export default NavigationOptions;
+}
