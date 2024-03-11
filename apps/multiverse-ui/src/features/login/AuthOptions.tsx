@@ -1,7 +1,7 @@
 import EmailInput from "@/features/login/EmailInput";
 import OAuthOptions from "@/features/login/OAuthOptions";
 
-export default function LoginOptions() {
+export default function AuthOptions() {
     return (
         <div className="flex flex-col w-96">
             <h1 className="flex justify-center text-foreground text-2xl font-bold py-4">

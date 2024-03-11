@@ -25,9 +25,7 @@ export default function RootLayout({ children, }: Readonly<{
                         disableTransitionOnChange
                     >
                         <MainNav />
-                        <div className="flex flex-col flex-1 justify-start items-center">
-                            {children}
-                        </div>
+                        {children}
                     </ThemeProvider>
                 </div>
             </body>

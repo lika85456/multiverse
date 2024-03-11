@@ -21,7 +21,7 @@ export default function MainNav() {
     ];
 
     return (
-        <nav className="flex flex-row justify-between h-fit p-4 sticky top-0 z-50">
+        <nav className="flex flex-row justify-between h-fit p-4 sticky top-0 z-50 backdrop-blur-sm">
             <Link href={"/"} className="flex items-center w-fit">
                 <MultiverseLogo />
             </Link>

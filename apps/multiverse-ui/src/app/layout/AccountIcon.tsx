@@ -24,7 +24,9 @@ export default function AccountIcon() {
             onClick={() => optionsHandler()}
         >
             <AvatarImage src={userImage} alt="@shadcn" />
-            <AvatarFallback className={"text-accent-foreground bg-accent_light"}>
+            <AvatarFallback
+                className={"text-contrast_primary-foreground bg-contrast_primary"}
+            >
                 {userInitial}
             </AvatarFallback>
         </Avatar>
