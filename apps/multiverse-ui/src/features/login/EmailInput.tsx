@@ -8,6 +8,10 @@ import { useRouter } from "next/navigation";
 export default function EmailInput() {
     const router = useRouter();
 
+    const handleLogin = () => {
+        router.push("/");
+    };
+
     return (
         <div className="flex w-full max-w-sm items-center ">
             <Input
@@ -18,7 +22,7 @@ export default function EmailInput() {
             <Button
                 type="submit"
                 className="rounded-l-none bg-accent text-primary hover:bg-accent_light"
-                onClick={() => router.push("/")}
+                onClick={handleLogin}
             >
                 <IoArrowForward className="w-6 h-6 text-accent-foreground" />
             </Button>

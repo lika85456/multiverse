@@ -9,7 +9,7 @@ export default function Account() {
     return (
         <div
             className={
-                "flex flex-1 flex-col w-full h-full px-64 justify-start items-center"
+                "flex flex-1 flex-col w-full h-full px-72 justify-start items-center"
             }
         >
             <PageTitle title={`${userName} - account`} />
