@@ -14,23 +14,31 @@ export interface NavigationOptionsProps {
   pages: {
     path: string;
     title: string;
+    requiredAuth: boolean;
   }[];
 }
 
 const NavigationOptions: FC<NavigationOptionsProps> = ({ pages }) => {
     const pathName = usePathname();
-    const pagesItems = pages.map((item) => {
+
+    const authenticated = true;
+
+    const filteredPages = pages.filter((item) => {
+        return item.requiredAuth || authenticated;
+    });
+
+    const pagesItems = filteredPages.map((page) => {
         return (
-            <NavigationMenuItem key={item.path}>
-                <Link href={item.path} legacyBehavior passHref>
+            <NavigationMenuItem key={page.path}>
+                <Link href={page.path} legacyBehavior passHref>
                     <NavigationMenuLink
                         className={`px-4 uppercase font-thin hover:underline hover:underline-offset-4 ${
-                            item.path === pathName
+                            page.path === pathName
                                 ? "underline underline-offset-4 text-primary-foreground"
                                 : "text-secondary-foreground"
                         }`}
                     >
-                        {item.title}
+                        {page.title}
                     </NavigationMenuLink>
                 </Link>
             </NavigationMenuItem>

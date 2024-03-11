@@ -3,10 +3,10 @@ import type { FC } from "react";
 import logo from "/public/multiverse-logo.svg";
 
 interface MultiverseLogoProps {
-  logoOnly: boolean;
+  logoOnly?: boolean;
 }
 
-const MultiverseLogo: FC<MultiverseLogoProps> = ({ logoOnly }): JSX.Element => {
+const MultiverseLogo: FC<MultiverseLogoProps> = ({ logoOnly = false, }): JSX.Element => {
     return (
         <div className="flex items-center">
             <Image
@@ -15,7 +15,7 @@ const MultiverseLogo: FC<MultiverseLogoProps> = ({ logoOnly }): JSX.Element => {
                 className="w-11 h-11 text-foreground dark:invert"
             />
             <div className="flex items-center text-foreground">
-                {logoOnly && <h1 className="font-mono lowercase mx-4">multiverse</h1>}
+                {!logoOnly && <h1 className="font-mono lowercase mx-4">multiverse</h1>}
             </div>
         </div>
     );

@@ -11,17 +11,19 @@ export default function MainNav() {
         {
             path: "/databases",
             title: "Databases",
+            requiredAuth: true,
         },
         {
             path: "/pricing",
             title: "Pricing",
+            requiredAuth: false,
         },
     ];
 
     return (
         <nav className="flex flex-row justify-between h-fit p-4 sticky top-0 z-50">
             <Link href={"/"} className="flex items-center w-fit">
-                <MultiverseLogo logoOnly={true} />
+                <MultiverseLogo />
             </Link>
             <div className="flex flex-1 flex-row mx-4">
                 <NavigationOptions pages={pages} />
