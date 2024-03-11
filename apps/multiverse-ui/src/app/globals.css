@@ -19,6 +19,9 @@
         --secondary: 210 40% 96.1%;
         --secondary-foreground: 222.2 47.4% 11.2%;
 
+        --tertiary: 0 0% 40%;
+        --tertiary-foreground: 0 0% 90%;
+
         --muted: 210 40% 96.1%;
         --muted-foreground: 215.4 16.3% 46.9%;
 
@@ -36,6 +39,9 @@
 
         --destructive: 0 84.2% 60.2%;
         --destructive-foreground: 210 40% 98%;
+
+        --destructive-light: 7 93% 74%;;
+        --destructive-light-foreground: 0 0% 100%;
 
         --border: 214.3 31.8% 91.4%;
         --input: 214.3 31.8% 91.4%;
@@ -60,8 +66,8 @@
         --secondary: 0 0% 20%;
         --secondary-foreground: 0 0% 90%;
 
-        --tetriary: 0 0% 40%;
-        --tetriary-foreground: 0 0% 100%;
+        --tertiary: 0 0% 60%;
+        --tertiary-foreground: 0 0% 90%;
 
         --muted: 217.2 32.6% 17.5%;
         --muted-foreground: 215 20.2% 65.1%;
@@ -78,9 +84,12 @@
         --destructive: 7 71% 58%;
         --destructive-foreground: 0 0% 100%;
 
+        --destructive-light: 7 93% 74%;;
+        --destructive-light-foreground: 0 0% 100%;
+
         --border: 0 0% 50%;
         --input: 0 0% 50%;
-        --ring: 212.7 26.8% 83.9%;
+        --ring: 0 0% 50%;
 
     }
 
@@ -100,6 +109,9 @@
         --secondary: 0 0% 80%;
         --secondary-foreground: 0 0% 20%;
 
+        --tertiary: 0 0% 40%;
+        --tertiary-foreground: 0 0% 80%;
+
         --muted: 217.2 32.6% 17.5%;
         --muted-foreground: 215 20.2% 65.1%;
 
@@ -117,6 +129,9 @@
 
         --destructive: 7 71% 58%;
         --destructive-foreground: 0 0% 100%;
+
+        --destructive-light: 7 93% 74%;;
+        --destructive-light-foreground: 0 0% 100%;
 
         --border: 0 0% 50%;
         --input: 0 0% 60%;
