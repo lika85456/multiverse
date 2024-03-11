@@ -50,7 +50,7 @@ export default function AWSToken() {
                                     "border-0 bg-inherit hover:bg-inherit w-8 h-8 p-0 m-0"
                                 }
                             >
-                                <IoClose className={"w-8 h-8"} />
+                                <IoClose className={"w-4 h-4"} />
                             </AlertDialogCancel>
                         </div>
                         <AlertDialogDescription>
