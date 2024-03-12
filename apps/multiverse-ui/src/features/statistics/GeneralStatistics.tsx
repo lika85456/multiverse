@@ -1,10 +1,6 @@
 export interface GeneralStatisticsItemProps {
   label: string;
   value: string;
-  unit: {
-    sign: string;
-    prepend: boolean;
-  };
 }
 
 export interface GeneralStatisticsProps {
@@ -21,9 +17,7 @@ export function GeneralStatisticsItem(item: GeneralStatisticsItemProps) {
                 {item.label}
             </span>
             <span className="text-contrast_primary text-xl font-bold">
-                {item.unit.prepend
-                    ? `${item.unit.sign} ${item.value}`
-                    : `${item.value} ${item.unit.sign}`}
+                {item.value}
             </span>
         </li>
     );
