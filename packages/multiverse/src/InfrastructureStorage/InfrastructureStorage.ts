@@ -3,13 +3,14 @@ import { Entity } from "electrodb";
 import {
     DynamoDB, DynamoDBClient, waitUntilTableExists, waitUntilTableNotExists
 } from "@aws-sdk/client-dynamodb";
-import type { IndexConfiguration } from "../IndexConfiguration";
+import type { DatabaseConfiguration, Token } from "../DatabaseConfiguration";
 import log from "@multiverse/log";
 
 const logger = log.getSubLogger({ name: "DynamoChangesStorageDeployer" });
 
 export type DatabaseInfrastructure = {
-    configuration: IndexConfiguration;
+    configuration: DatabaseConfiguration;
+    secretTokens: Token[];
     partitions: {
         lambda: {
             name: string;
@@ -28,31 +29,40 @@ const DatabaseInfrastructureEntity = (client: DynamoDBClient, table: string) => 
         version: "1"
     },
     attributes: {
-        owner: { type: "string" },
-        indexName: { type: "string" },
-        configuration: {
-            type: "map",
-            properties: {
-                indexName: {
-                    type: "string",
-                    required: true
-                },
-                owner: {
-                    type: "string",
-                    required: true
-                },
-                region: {
-                    type: "string",
-                    required: true
-                },
-                dimensions: {
-                    type: "number",
-                    required: true
-                },
-                space: {
-                    type: ["ip", "cosine", "l2"] as const,
-                    required: true
-                },
+        name: {
+            type: "string",
+            required: true
+        },
+        region: {
+            type: "string",
+            required: true
+        },
+        dimensions: {
+            type: "number",
+            required: true
+        },
+        space: {
+            type: ["ip", "cosine", "l2"] as const,
+            required: true
+        },
+        secretTokens: {
+            type: "list",
+            items: {
+                type: "map",
+                properties: {
+                    name: {
+                        type: "string",
+                        required: true
+                    },
+                    secret: {
+                        type: "string",
+                        required: true
+                    },
+                    validUntil: {
+                        type: "number",
+                        required: true
+                    }
+                }
             },
             required: true
         },
@@ -211,6 +221,9 @@ export class InfrastructureStorageDeployer {
     }
 }
 
+/**
+ * Each database has its own row in the table.
+ */
 export default class InfrastructureStorage {
 
     private databaseInfrastructureEntity;

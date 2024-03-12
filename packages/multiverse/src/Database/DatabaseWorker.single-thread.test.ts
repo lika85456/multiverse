@@ -2,7 +2,7 @@ import MemoryChangesStorage from "../ChangesStorage/MemoryChangesStorage";
 import HNSWIndex from "../Index/HNSWIndex";
 import LocalSnapshotStorage from "../SnapshotStorage/LocalSnapshotStorage";
 import DatabaseWorker from "./DatabaseWorker";
-import type { IndexConfiguration } from "../IndexConfiguration";
+import type { DatabaseConfiguration } from "../DatabaseConfiguration";
 import { Vector } from "../Vector";
 import type { DatabaseQuery } from "./DatabaseClient";
 

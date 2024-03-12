@@ -1,42 +1,25 @@
 import GeneralStatistics from "@/features/statistics/GeneralStatistics";
-import { Button } from "@/components/ui/button";
-import { IoAdd } from "react-icons/io5";
 import { Separator } from "@/components/ui/separator";
 import type { DatabaseListProps } from "@/app/databases/components/DatabaseList";
 import DatabaseList from "@/app/databases/components/DatabaseList";
+import { format } from "@/features/statistics/format";
 
 const items = [
     {
         label: "Total Cost",
-        value: "12.47",
-        unit: {
-            sign: "$",
-            prepend: true,
-        },
+        value: `$ ${format(12.47)}`,
     },
     {
         label: "Data Size",
-        value: "2.3",
-        unit: {
-            sign: "GB",
-            prepend: false,
-        },
+        value: `${format(2300000000, "bytes")}`,
     },
     {
         label: "Total Records",
-        value: "2 537 291",
-        unit: {
-            sign: "",
-            prepend: false,
-        },
+        value: `${format(2537291)}`,
     },
     {
         label: "Queries",
-        value: "627",
-        unit: {
-            sign: "K",
-            prepend: false,
-        },
+        value: `${format(627000, "compact")}`,
     },
 ];
 

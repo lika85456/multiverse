@@ -36,7 +36,7 @@ describe("<S3SnapshotStorage>", () => {
         expect(snapshot).toBeDefined();
         expect(snapshot.filePath).toBe("/tmp/snapshots/testfile");
         expect(snapshot.timestamp).toBeGreaterThan(0);
-        expect(snapshot.indexName).toBe("test");
+        expect(snapshot.databaseName).toBe("test");
         expect(readFile(snapshot.filePath, "utf-8")).resolves.toBe("test");
     });
 
@@ -50,7 +50,7 @@ describe("<S3SnapshotStorage>", () => {
         expect(snapshot).toBeDefined();
         expect(snapshot.filePath.startsWith("/tmp/s3-snapshots/")).toBe(true);
         expect(snapshot.timestamp).toBeGreaterThan(1);
-        expect(snapshot.indexName).toBe("test");
+        expect(snapshot.databaseName).toBe("test");
         expect(readFile(snapshot.filePath, "utf-8")).resolves.toBe("test");
     });
 });

@@ -19,7 +19,7 @@ describe("LocalSnapshotStorage", () => {
         expect(snapshot).toBeDefined();
         expect(snapshot.filePath.startsWith("/tmp/snapshots/test/")).toBe(true);
         expect(snapshot.timestamp).toBeGreaterThan(0);
-        expect(snapshot.indexName).toBe("test");
+        expect(snapshot.databaseName).toBe("test");
     });
 
     it("should load latest", async() => {
@@ -32,7 +32,7 @@ describe("LocalSnapshotStorage", () => {
         expect(snapshot).toBeDefined();
         expect(snapshot.filePath.startsWith("/tmp/snapshots/test/")).toBe(true);
         expect(snapshot.timestamp).toBeGreaterThan(1);
-        expect(snapshot.indexName).toBe("test");
+        expect(snapshot.databaseName).toBe("test");
         expect(readFile(snapshot.filePath, "utf-8")).resolves.toBe("test");
     });
 });

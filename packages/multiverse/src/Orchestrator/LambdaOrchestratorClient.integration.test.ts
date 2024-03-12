@@ -4,8 +4,8 @@ import LambdaOrchestratorClient from "./LambdaOrchestratorClient";
 import { DynamoChangesStorageDeployer } from "../ChangesStorage/DynamoChangesStorage";
 import { S3SnapshotStorageDeployer } from "../SnapshotStorage/S3SnapshotStorage";
 import InfrastructureManager from "./InfrastructureManager";
-import InfrastructureStorage, { InfrastructureStorageDeployer } from "./InfrastructureStorage";
-import type { IndexConfiguration } from "../IndexConfiguration";
+import InfrastructureStorage, { InfrastructureStorageDeployer } from "../InfrastructureStorage/InfrastructureStorage";
+import type { DatabaseConfiguration } from "../DatabaseConfiguration";
 
 describe.skip("<LambdaOrchestratorClient>", () => {
     // const changesTableName = "multiverse-changes-test-" + Math.random().toString(36).substring(7);

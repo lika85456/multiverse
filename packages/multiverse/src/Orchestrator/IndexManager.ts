@@ -1,13 +1,13 @@
 import type { NewVector } from "../Vector";
 import type { Query, QueryResult } from "../Database/Query";
-import type { IndexConfiguration } from "../IndexConfiguration";
+import type { DatabaseConfiguration } from "../DatabaseConfiguration";
 import type DatabaseClient from "../Database/DatabaseClient";
 import type ChangesStorage from "../ChangesStorage";
-import type InfrastructureStorage from "./InfrastructureStorage";
+import type InfrastructureStorage from "../InfrastructureStorage/InfrastructureStorage";
 import log from "@multiverse/log";
 import type { StoredVectorChange } from "../ChangesStorage";
 import mergeResults from "../Index/mergeResults";
-import type { DatabaseInfrastructure } from "./InfrastructureStorage";
+import type { DatabaseInfrastructure } from "../InfrastructureStorage/InfrastructureStorage";
 
 export default class IndexManager {
 

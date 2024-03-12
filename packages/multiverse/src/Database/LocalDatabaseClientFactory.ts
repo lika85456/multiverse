@@ -1,7 +1,7 @@
 import type ChangesStorage from "../ChangesStorage";
 import type Index from "../Index";
-import type { IndexConfiguration } from "../IndexConfiguration";
-import type { DatabaseInfrastructure } from "../Orchestrator/InfrastructureStorage";
+import type { DatabaseConfiguration } from "../DatabaseConfiguration";
+import type { DatabaseInfrastructure } from "../InfrastructureStorage/InfrastructureStorage";
 import type SnapshotStorage from "../SnapshotStorage";
 import type DatabaseClient from "./DatabaseClient";
 import DatabaseWorker from "./DatabaseWorker";

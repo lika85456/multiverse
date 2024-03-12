@@ -11,7 +11,7 @@ import IndexManager from "./IndexManager";
 import InfrastructureManager from "./InfrastructureManager";
 import { ORCHESTRATOR_ENV } from "./OrchestratorEnvironment";
 import DynamoChangesStorage from "../ChangesStorage/DynamoChangesStorage";
-import InfrastructureStorage from "./InfrastructureStorage";
+import InfrastructureStorage from "../InfrastructureStorage/InfrastructureStorage";
 import lambdaDatabaseClientFactory from "../Database/LambdaDatabaseClientFactory";
 
 type OrchestratorEvent = {

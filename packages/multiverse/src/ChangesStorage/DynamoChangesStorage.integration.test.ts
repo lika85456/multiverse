@@ -17,14 +17,11 @@ async function readWholeIterator<T>(iterator: AsyncGenerator<T, void, unknown>):
 
 describe("<DynamoChangesStorage>", () => {
 
-    const tableName = ENV.CHANGES_TABLE;
-
     const storage = new DynamoChangesStorage({
-        indexName: "test-index-" + Date.now(),
-        owner: "test-owner",
+        name: "test-index-" + Date.now(),
         partition: 0,
         region: "eu-central-1",
-        tableName: tableName,
+        tableName: //,
         dimensions: 3,
         space: "cosine",
     });
