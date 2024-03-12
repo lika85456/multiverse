@@ -2,7 +2,7 @@ import GeneralStatistics from "@/features/statistics/GeneralStatistics";
 import { Separator } from "@/components/ui/separator";
 import type { DatabaseListProps } from "@/app/databases/components/DatabaseList";
 import DatabaseList from "@/app/databases/components/DatabaseList";
-import { format } from "@/features/statistics/format";
+import format from "@/features/statistics/format";
 
 const items = [
     {

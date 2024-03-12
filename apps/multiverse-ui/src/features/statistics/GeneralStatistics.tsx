@@ -11,7 +11,7 @@ export function GeneralStatisticsItem(item: GeneralStatisticsItemProps) {
     return (
         <li
             key={item.label}
-            className="flex w-full flex-col items-start bg-secondary justify-between p-4 rounded-xl space-y-4 hover:bg-middle transition-all"
+            className="flex w-full flex-col items-start bg-card justify-between p-4 rounded-xl space-y-4 hover:bg-middle transition-all"
         >
             <span className="text-contrast_secondary text-sm uppercase font-thin tracking-[0.3rem]">
                 {item.label}

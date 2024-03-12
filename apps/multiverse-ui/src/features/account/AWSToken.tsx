@@ -41,7 +41,7 @@ export default function AWSToken() {
             Remove token
                     </Button>
                 </AlertDialogTrigger>
-                <AlertDialogContent className={"bg-secondary border-0"}>
+                <AlertDialogContent className={"bg-card border-0"}>
                     <AlertDialogHeader>
                         <div className={"flex flex-row justify-between"}>
                             <AlertDialogTitle>Delete AWS token</AlertDialogTitle>
@@ -53,14 +53,14 @@ export default function AWSToken() {
                                 <IoClose className={"w-4 h-4"} />
                             </AlertDialogCancel>
                         </div>
-                        <AlertDialogDescription>
+                        <AlertDialogDescription className={"text-secondary-foreground"}>
               Do you really wish to delete this AWS Token? This action cannot be
               undone and Multiverse loses access to related AWS Account and
               databases.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel className={"hover:bg-secondary"}>
+                        <AlertDialogCancel className={"bg-inherit hover:bg-secondary"}>
                             <IoClose className={"w-6 h-6 mr-2"} />
               Cancel
                         </AlertDialogCancel>

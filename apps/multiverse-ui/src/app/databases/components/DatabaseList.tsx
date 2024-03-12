@@ -50,7 +50,7 @@ export default function DatabaseList({ items }: DatabaseListProps) {
             Create database
                     </Button>
                 </DialogTrigger>
-                <DialogContent className={"border-0 bg-secondary"}>
+                <DialogContent className={"border-0 bg-card"}>
                     <DialogHeader>
                         <DialogTitle>Create Database</DialogTitle>
                     </DialogHeader>
@@ -66,33 +66,67 @@ export default function DatabaseList({ items }: DatabaseListProps) {
                         />
                     </div>
                     <div className="flex flex-col w-full items-start gap-4">
-                        <Label htmlFor="metrics" className="text-right">
+                        <Label htmlFor="locality" className="text-right">
               Locality
                         </Label>
                         <Select>
-                            <SelectTrigger className="w-full bg-secondary">
+                            <SelectTrigger className="w-full bg-inherit">
                                 <SelectValue placeholder="Select a locality" />
                             </SelectTrigger>
-                            <SelectContent className={"bg-primary border-0"}>
-                                <SelectItem value="central_europe">Central Europe</SelectItem>
-                                <SelectItem value="northern_europe">Northern Europe</SelectItem>
-                                <SelectItem value="eastern_europe">Eastern Europe</SelectItem>
+                            <SelectContent
+                                className={"bg-card text-secondary-foreground border"}
+                            >
+                                <SelectItem
+                                    className={"focus:bg-accent_light"}
+                                    value="central_europe"
+                                >
+                  Central Europe
+                                </SelectItem>
+                                <SelectItem
+                                    className={"focus:bg-accent_light"}
+                                    value="northern_europe"
+                                >
+                  Northern Europe
+                                </SelectItem>
+                                <SelectItem
+                                    className={"focus:bg-accent_light"}
+                                    value="eastern_europe"
+                                >
+                  Eastern Europe
+                                </SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
                     <div className={"flex flex-row w-full space-x-4"}>
                         <div className="flex flex-col w-full items-start gap-4">
-                            <Label htmlFor="metrics" className="text-right">
-                Locality
+                            <Label htmlFor="locality" className="text-right">
+                Metrics
                             </Label>
                             <Select>
-                                <SelectTrigger className="w-[280px] bg-secondary">
-                                    <SelectValue placeholder="Select a metrics" />
+                                <SelectTrigger className="w-[280px] bg-inherit">
+                                    <SelectValue placeholder="Select used metrics" />
                                 </SelectTrigger>
-                                <SelectContent className={"bg-primary border-0"}>
-                                    <SelectItem value="dot_product">Dot Product</SelectItem>
-                                    <SelectItem value="euclidean">Euclidean Distance</SelectItem>
-                                    <SelectItem value="cosine">Cosine Similarity</SelectItem>
+                                <SelectContent
+                                    className={"bg-card text-secondary-foreground border"}
+                                >
+                                    <SelectItem
+                                        className={"focus:bg-accent_light"}
+                                        value="dot_product"
+                                    >
+                    Dot Product
+                                    </SelectItem>
+                                    <SelectItem
+                                        className={"focus:bg-accent_light"}
+                                        value="euclidean"
+                                    >
+                    Euclidean Distance
+                                    </SelectItem>
+                                    <SelectItem
+                                        className={"focus:bg-accent_light"}
+                                        value="cosine"
+                                    >
+                    Cosine Similarity
+                                    </SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>

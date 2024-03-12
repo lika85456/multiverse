@@ -1,6 +1,6 @@
 import prettyBytes from "pretty-bytes";
 
-export function format(
+export default function format(
     value: number,
     options: "delim" | "compact" | "bytes" = "delim",
     style = "en-US",

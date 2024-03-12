@@ -19,7 +19,7 @@ export default function DatabaseItem({ databaseItem }: DatabaseItemProps) {
         <Link
             href={`/databases/${databaseItem.databaseId}`}
             className={
-                "flex flex-row w-full p-4 border outline-border rounded-2xl items-center"
+                "flex flex-row w-full p-4 border outline-border rounded-2xl items-center hover:bg-secondary transition-all"
             }
         >
             <div className={"flex w-11/12 m-0 p-0"}>
@@ -51,13 +51,9 @@ export default function DatabaseItem({ databaseItem }: DatabaseItemProps) {
                     {databaseItem.databaseType}
                 </p>
             </div>
-            <Button
-                className={
-                    "flex w-1/12 bg-inherit text-primary-foreground hover:text-middle "
-                }
-            >
-                <RiDatabase2Line className={"w-10 h-10"} />
-            </Button>
+            <div className={"flex w-1/12 justify-center"}>
+                <RiDatabase2Line className={"flex w-10 h-10 text-primary-foreground"} />
+            </div>
         </Link>
     );
 }
