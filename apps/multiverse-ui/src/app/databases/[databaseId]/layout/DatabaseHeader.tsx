@@ -12,7 +12,6 @@ import Link from "next/link";
 
 export default function DatabaseHeader() {
     const params = useParams();
-    const pathName = usePathname();
     const databaseId = params.databaseId as string;
     const database = getDatabaseById(databaseId);
 
@@ -34,6 +33,7 @@ export default function DatabaseHeader() {
             />
             <DatabaseSectionNavigation />
             <Separator className={"mb-4"} />
+            {/*<GeneralStatistics items={} />*/}
         </div>
     );
 }
