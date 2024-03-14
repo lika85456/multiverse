@@ -2,44 +2,14 @@
 
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { FaRegTrashAlt } from "react-icons/fa";
 import {
     IoAdd, IoClose, IoCheckmark
 } from "react-icons/io5";
 import { useState } from "react";
-
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { TrashIcon } from "lucide-react";
+import { DeleteAWSTokenModal } from "@/features/account/DeleteAWSTokenModal";
 
 export default function AWSToken() {
     const [state, setState] = useState(0);
-    const [_modalOpen, setModalOpen] = useState(false);
-
-    const onConfirmDelete = (event: any) => {
-        event.stopPropagation();
-        if (false) {
-            setState(1);
-            handleCloseModal();
-        }
-    };
-
-    const handleOpenModal = () => {
-        setModalOpen(true);
-    };
-
-    const handleCloseModal = () => {
-        setModalOpen(false);
-    };
 
     const providedToken = (
         <div className={"flex flex-col w-full space-y-4"}>
@@ -47,58 +17,7 @@ export default function AWSToken() {
             <Textarea title={"public"} placeholder="public key" />
             <h3 className={"text-tertiary-foreground"}>Private Key</h3>
             <Textarea title={"private"} placeholder="private key" />
-            <AlertDialog>
-                <AlertDialogTrigger
-                    asChild
-                    className={"flex w-fit self-end"}
-                    onClick={handleOpenModal}
-                >
-                    <Button
-                        className={
-                            " bg-destructive text-destructive-foreground hover:bg-destructive_light"
-                        }
-                    >
-                        <FaRegTrashAlt className={"w-6 h-6 mr-2 "} />
-            Remove token
-                    </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent className={"bg-card border-0"}>
-                    <AlertDialogHeader>
-                        <div className={"flex flex-row justify-between"}>
-                            <AlertDialogTitle>Delete AWS token</AlertDialogTitle>
-                            <AlertDialogCancel
-                                className={
-                                    "border-0 bg-inherit hover:bg-inherit w-8 h-8 p-0 m-0"
-                                }
-                            >
-                                <IoClose className={"w-4 h-4"} />
-                            </AlertDialogCancel>
-                        </div>
-                        <AlertDialogDescription className={"text-secondary-foreground"}>
-              Do you really wish to delete this AWS Token? This action cannot be
-              undone and Multiverse loses access to related AWS Account and
-              databases.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel
-                            className={"flex w-full bg-inherit hover:bg-primary"}
-                        >
-                            <IoClose className={"w-6 h-6 mr-2"} />
-              Cancel
-                        </AlertDialogCancel>
-                        <AlertDialogAction
-                            className={
-                                "flex w-full text-destructive-foreground bg-destructive hover:bg-destructive_light"
-                            }
-                            onClick={onConfirmDelete}
-                        >
-                            <TrashIcon className={"w-6 h-6 mr-2"} />
-              Delete
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+            <DeleteAWSTokenModal setState={setState} />
         </div>
     );
 

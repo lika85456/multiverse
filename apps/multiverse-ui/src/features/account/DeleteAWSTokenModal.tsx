@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -11,16 +12,21 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { TrashIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { FaRegTrashAlt } from "react-icons/fa";
 import { IoClose } from "react-icons/io5";
-import { useEffect, useState } from "react";
+import { TrashIcon } from "lucide-react";
 
-export default function DeleteTokenModal() {
+export function DeleteAWSTokenModal({ setState, }: {
+  setState: (state: number) => void;
+}) {
     const [modalOpen, setModalOpen] = useState(false);
 
-    const handleDeleteToken = () => {
-        console.log("Deleting token");
-        handleCloseModal();
+    const onConfirmDelete = () => {
+        if (true) {
+            setState(1);
+            handleCloseModal();
+        }
     };
 
     const handleOpenModal = () => {
@@ -44,43 +50,50 @@ export default function DeleteTokenModal() {
 
     return (
         <AlertDialog open={modalOpen}>
-            <AlertDialogTrigger asChild onClick={handleOpenModal}>
-                <TrashIcon className={"w-6 h-6 mx-4 cursor-pointer"} />
+            <AlertDialogTrigger
+                asChild
+                className={"flex w-fit self-end"}
+                onClick={handleOpenModal}
+            >
+                <Button
+                    className={
+                        " bg-destructive text-destructive-foreground hover:bg-destructive_light"
+                    }
+                >
+                    <FaRegTrashAlt className={"w-6 h-6 mr-2 "} />
+          Remove token
+                </Button>
             </AlertDialogTrigger>
             <AlertDialogContent className={"bg-card border-0"}>
                 <AlertDialogHeader>
                     <div className={"flex flex-row justify-between"}>
-                        <AlertDialogTitle>Delete Token</AlertDialogTitle>
+                        <AlertDialogTitle>Delete AWS token</AlertDialogTitle>
                         <AlertDialogCancel
                             className={"border-0 bg-inherit hover:bg-inherit w-8 h-8 p-0 m-0"}
-                            onClick={handleCloseModal}
                         >
                             <IoClose className={"w-4 h-4"} />
                         </AlertDialogCancel>
                     </div>
                     <AlertDialogDescription className={"text-secondary-foreground"}>
-            Do you really wish to delete this token? This action cannot be
-            undone and all users using this token will lose access.
+            Do you really wish to delete this AWS Token? This action cannot be
+            undone and Multiverse loses access to related AWS Account and
+            databases.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
-
                 <AlertDialogFooter>
                     <AlertDialogCancel
-                        onClick={handleCloseModal}
-                        className={
-                            "flex flex-row w-full justify-center bg-inherit hover:bg-primary "
-                        }
+                        className={"flex w-full bg-inherit hover:bg-primary"}
                     >
-                        <IoClose className={"w-6 h-6"} />
+                        <IoClose className={"w-6 h-6 mr-2"} />
             Cancel
                     </AlertDialogCancel>
                     <AlertDialogAction
-                        onClick={handleDeleteToken}
                         className={
-                            "flex flex-row w-full justify-center bg-destructive text-destructive-foreground hover:bg-destructive_light"
+                            "flex w-full text-destructive-foreground bg-destructive hover:bg-destructive_light"
                         }
+                        onClick={onConfirmDelete}
                     >
-                        <TrashIcon className={"w-6 h-6 mx-2"} />
+                        <TrashIcon className={"w-6 h-6 mr-2"} />
             Delete
                     </AlertDialogAction>
                 </AlertDialogFooter>

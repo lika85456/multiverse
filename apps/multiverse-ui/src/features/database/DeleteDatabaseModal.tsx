@@ -2,10 +2,9 @@
 
 import {
     AlertDialog,
-    AlertDialogCancel,
     AlertDialogContent,
     AlertDialogDescription,
-    // AlertDialogFooter,
+    AlertDialogFooter,
     AlertDialogHeader,
     AlertDialogTitle,
     AlertDialogTrigger,
@@ -13,49 +12,50 @@ import {
 import { TrashIcon } from "lucide-react";
 import { IoClose } from "react-icons/io5";
 import { Button } from "@/components/ui/button";
-// import { z } from "zod";
-// import { Form, useForm } from "react-hook-form";
-// import { zodResolver } from "@hookform/resolvers/zod";
-// import {
-//     FormControl,
-//     FormField,
-//     FormItem,
-//     FormMessage,
-// } from "@/components/ui/form";
-// import { Input } from "@/components/ui/input";
-
-const dbName = "Database Chatbot 1";
+import { useEffect, useState } from "react";
+import { Input } from "@/components/ui/input";
+import { useRouter } from "next/navigation";
 
 export default function DeleteDatabaseModal() {
-    // const formSchema = z.object({
-    //     databaseName: z
-    //         .string()
-    //         .min(dbName.length, { message: "Length does not equal" })
-    //         .refine(
-    //             (value) => {
-    //                 return dbName === value;
-    //             },
-    //             { message: "Database name does not match" },
-    //         ),
-    // });
-    //
-    // const form = useForm<z.infer<typeof formSchema>>({
-    //     defaultValues: { databaseName: "" },
-    //
-    //     resolver: zodResolver(formSchema),
-    // });
-    //
-    // const onSubmit = (values: z.infer<typeof formSchema>) => {
-    //     console.log(values);
-    // };
+    const router = useRouter();
+    const [modalOpen, setModalOpen] = useState(false);
+
+    const dbName = "Database Chatbot 1";
+    const [typedDatabaseName, setTypedDatabaseName] = useState("");
+
+    const handleDeleteDatabase = () => {
+        console.log("Deleting database");
+        handleCloseModal();
+        router.push("/databases");
+    };
+
+    const handleOpenModal = () => {
+        setModalOpen(true);
+    };
+
+    const handleCloseModal = () => {
+        setModalOpen(false);
+    };
+
+    useEffect(() => {
+        const handleEscape = (event: KeyboardEvent) => {
+            if (event.key === "Escape") {
+                handleCloseModal();
+            }
+        };
+        window.addEventListener("keydown", handleEscape);
+
+        return () => window.removeEventListener("keydown", handleEscape);
+    }, []);
 
     return (
-        <AlertDialog>
+        <AlertDialog open={modalOpen}>
             <AlertDialogTrigger asChild>
                 <Button
                     className={
                         "flex w-fit self-end text-destructive-foreground bg-destructive hover:bg-destructive_light"
                     }
+                    onClick={handleOpenModal}
                 >
                     <TrashIcon className={"w-6 h-6 mr-2"} />
           Delete database
@@ -65,38 +65,42 @@ export default function DeleteDatabaseModal() {
                 <AlertDialogHeader>
                     <div className={"flex flex-row justify-between"}>
                         <AlertDialogTitle>Delete Database</AlertDialogTitle>
-                        <AlertDialogCancel
-                            className={"border-0 bg-inherit hover:bg-inherit w-8 h-8 p-0 m-0"}
+                        <div
+                            className={
+                                "border-0 text-primary-foreground hover:text-secondary-foreground w-8 h-8 p-0 m-0 cursor-pointer transition-all"
+                            }
+                            onClick={handleCloseModal}
                         >
-                            <IoClose className={"w-4 h-4"} />
-                        </AlertDialogCancel>
+                            <IoClose className={"w-8 h-8"} />
+                        </div>
                     </div>
                     <AlertDialogDescription className={"text-secondary-foreground"}>
             Do you really wish to delete this database? This action cannot be
             undone. To delete this database, type “{dbName}”
                     </AlertDialogDescription>
                 </AlertDialogHeader>
-
-                {/*  <Form {...form}>*/}
-                {/*      <form onSubmit={form.handleSubmit(onSubmit)}>*/}
-                {/*          <FormField*/}
-                {/*              control={form.control}*/}
-                {/*              name="databaseName"*/}
-                {/*              render={({ field }) => (*/}
-                {/*                  <FormItem>*/}
-                {/*                      <FormControl>*/}
-                {/*                          <Input placeholder="shadcn" {...field} />*/}
-                {/*                      </FormControl>*/}
-                {/*                      <FormMessage />*/}
-                {/*                  </FormItem>*/}
-                {/*              )}*/}
-                {/*          />*/}
-
-                {/*          <AlertDialogFooter>*/}
-                {/*f<Button type="submit">Delete</Button>*/}
-                {/*          </AlertDialogFooter>*/}
-                {/*      </form>*/}
-                {/*  </Form>*/}
+                <Input
+                    id={"typedDatabaseName"}
+                    placeholder={"Database name"}
+                    onChange={(e) => setTypedDatabaseName(e.target.value)}
+                    className={`bg-inherit ${
+                        typedDatabaseName !== dbName
+                            ? "border-destructive text-destructive"
+                            : "text-primary-foreground"
+                    }`}
+                />
+                <AlertDialogFooter>
+                    <Button
+                        disabled={typedDatabaseName !== dbName}
+                        className={
+                            "bg-destructive text-destructive-foreground hover:bg-destructive_light disabled:cursor-not-allowed"
+                        }
+                        onClick={handleDeleteDatabase}
+                    >
+                        <TrashIcon className={"w-6 h-6 mr-2"} />
+            Delete database
+                    </Button>
+                </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
     );
