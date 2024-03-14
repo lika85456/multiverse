@@ -23,6 +23,23 @@ import { TrashIcon } from "lucide-react";
 
 export default function AWSToken() {
     const [state, setState] = useState(0);
+    const [_modalOpen, setModalOpen] = useState(false);
+
+    const onConfirmDelete = (event: any) => {
+        event.stopPropagation();
+        if (false) {
+            setState(1);
+            handleCloseModal();
+        }
+    };
+
+    const handleOpenModal = () => {
+        setModalOpen(true);
+    };
+
+    const handleCloseModal = () => {
+        setModalOpen(false);
+    };
 
     const providedToken = (
         <div className={"flex flex-col w-full space-y-4"}>
@@ -31,7 +48,11 @@ export default function AWSToken() {
             <h3 className={"text-tertiary-foreground"}>Private Key</h3>
             <Textarea title={"private"} placeholder="private key" />
             <AlertDialog>
-                <AlertDialogTrigger asChild className={"flex w-fit self-end"}>
+                <AlertDialogTrigger
+                    asChild
+                    className={"flex w-fit self-end"}
+                    onClick={handleOpenModal}
+                >
                     <Button
                         className={
                             " bg-destructive text-destructive-foreground hover:bg-destructive_light"
@@ -70,7 +91,7 @@ export default function AWSToken() {
                             className={
                                 "flex w-full text-destructive-foreground bg-destructive hover:bg-destructive_light"
                             }
-                            onClick={() => setState(1)}
+                            onClick={onConfirmDelete}
                         >
                             <TrashIcon className={"w-6 h-6 mr-2"} />
               Delete
