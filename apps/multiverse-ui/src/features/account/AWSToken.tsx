@@ -60,13 +60,15 @@ export default function AWSToken() {
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel className={"bg-inherit hover:bg-secondary"}>
+                        <AlertDialogCancel
+                            className={"flex w-full bg-inherit hover:bg-primary"}
+                        >
                             <IoClose className={"w-6 h-6 mr-2"} />
               Cancel
                         </AlertDialogCancel>
                         <AlertDialogAction
                             className={
-                                "text-destructive-foreground bg-destructive hover:bg-destructive_light"
+                                "flex w-full text-destructive-foreground bg-destructive hover:bg-destructive_light"
                             }
                             onClick={() => setState(1)}
                         >

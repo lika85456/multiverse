@@ -1,16 +1,5 @@
 "use client";
 
-import {
-    NavigationMenu,
-    NavigationMenuContent,
-    NavigationMenuIndicator,
-    NavigationMenuItem,
-    NavigationMenuLink,
-    NavigationMenuList,
-    NavigationMenuTrigger,
-    navigationMenuTriggerStyle,
-    NavigationMenuViewport,
-} from "@/components/ui/navigation-menu";
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
 import { getDatabaseById } from "@/features/database/dummy-databases";

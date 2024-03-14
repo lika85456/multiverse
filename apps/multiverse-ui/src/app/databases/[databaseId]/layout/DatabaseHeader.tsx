@@ -1,7 +1,7 @@
 "use client";
 
 import PageTitle from "@/app/layout/components/PageTitle";
-import { useParams, usePathname } from "next/navigation";
+import { useParams } from "next/navigation";
 import Page404 from "@/app/not-found";
 import { Separator } from "@/components/ui/separator";
 import { getDatabaseById } from "@/features/database/dummy-databases";

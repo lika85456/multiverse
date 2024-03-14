@@ -1,4 +1,3 @@
-import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
 import { RiDatabase2Line } from "react-icons/ri";

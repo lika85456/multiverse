@@ -1,10 +1,7 @@
-import DatabaseHeader from "@/app/databases/[databaseId]/layout/DatabaseHeader";
-import SectionTitle from "@/app/layout/components/SectionTitle";
 import GeneralDatabaseStatistics from "@/features/database/GeneralDatabaseStatistics";
 import { Separator } from "@/components/ui/separator";
 import ConnectionTokensList from "@/features/database/ConnectionTokensList";
-import { Button } from "@/components/ui/button";
-import { TrashIcon } from "lucide-react";
+import DeleteDatabaseModal from "@/features/database/DeleteDatabaseModal";
 
 export default function DatabaseGeneral() {
     return (
@@ -13,14 +10,7 @@ export default function DatabaseGeneral() {
             <Separator className={"my-4"} />
             <ConnectionTokensList />
             <Separator className={"my-4"} />
-            <Button
-                className={
-                    "flex w-fit self-end text-destructive-foreground bg-destructive hover:bg-destructive_light"
-                }
-            >
-                <TrashIcon className={"w-6 h-6 mr-2"} />
-        Delete database
-            </Button>
+            <DeleteDatabaseModal />
         </div>
     );
 }
