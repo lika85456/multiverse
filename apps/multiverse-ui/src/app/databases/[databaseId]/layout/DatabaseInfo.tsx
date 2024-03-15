@@ -32,7 +32,7 @@ export default function DatabaseInfo({
         >
             <li
                 className={
-                    "flex w-fit bg-secondary px-2 py-1 rounded-xl cursor-pointer"
+                    "flex w-fit bg-card px-2 py-1 rounded-xl cursor-pointer hover:bg-middle transition-all"
                 }
                 onClick={handleCopyData.bind(null, codename.toLowerCase())}
             >
@@ -40,7 +40,7 @@ export default function DatabaseInfo({
             </li>
             <li
                 className={
-                    "flex w-fit bg-secondary px-2 py-1 rounded-xl cursor-pointer"
+                    "flex w-fit bg-card px-2 py-1 rounded-xl cursor-pointer hover:bg-middle transition-all"
                 }
                 onClick={handleCopyData.bind(null, locality.toLowerCase())}
             >
@@ -48,7 +48,7 @@ export default function DatabaseInfo({
             </li>
             <li
                 className={
-                    "flex w-fit bg-secondary px-2 py-1 rounded-xl cursor-pointer"
+                    "flex w-fit bg-card px-2 py-1 rounded-xl cursor-pointer hover:bg-middle transition-all"
                 }
                 onClick={handleCopyData.bind(null, `${dimensions} dimensions`)}
             >
@@ -57,7 +57,7 @@ export default function DatabaseInfo({
             </li>
             <li
                 className={
-                    "flex w-fit bg-secondary px-2 py-1 rounded-xl cursor-pointer"
+                    "flex w-fit bg-card px-2 py-1 rounded-xl cursor-pointer hover:bg-middle transition-all"
                 }
                 onClick={handleCopyData.bind(null, metrics.toLowerCase())}
             >

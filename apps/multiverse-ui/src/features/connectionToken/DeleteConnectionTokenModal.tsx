@@ -15,7 +15,7 @@ import { TrashIcon } from "lucide-react";
 import { IoClose } from "react-icons/io5";
 import { useEffect, useState } from "react";
 
-export default function DeleteTokenModal() {
+export default function DeleteConnectionTokenModal() {
     const [modalOpen, setModalOpen] = useState(false);
 
     const handleDeleteToken = () => {
@@ -55,7 +55,7 @@ export default function DeleteTokenModal() {
                             className={"border-0 bg-inherit hover:bg-inherit w-8 h-8 p-0 m-0"}
                             onClick={handleCloseModal}
                         >
-                            <IoClose className={"w-4 h-4"} />
+                            <IoClose className={"w-8 h-8"} />
                         </AlertDialogCancel>
                     </div>
                     <AlertDialogDescription className={"text-secondary-foreground"}>

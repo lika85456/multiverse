@@ -1,6 +1,6 @@
-import GeneralDatabaseStatistics from "@/features/database/GeneralDatabaseStatistics";
+import GeneralDatabaseStatistics from "@/features/statistics/GeneralDatabaseStatistics";
 import { Separator } from "@/components/ui/separator";
-import ConnectionTokensList from "@/features/database/ConnectionTokensList";
+import ConnectionTokensList from "@/features/connectionToken/ConnectionTokensList";
 import DeleteDatabaseModal from "@/features/database/DeleteDatabaseModal";
 
 export default function DatabaseGeneral() {

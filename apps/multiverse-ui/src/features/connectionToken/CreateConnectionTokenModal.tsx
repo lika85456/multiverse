@@ -74,7 +74,7 @@ export default function CreateConnectionTokenModal() {
             <AlertDialogTrigger asChild onClick={handleOpenModal}>
                 <Button
                     className={
-                        "flex w-fit self-end text-accent_light-foreground bg-accent hover:bg-accent_light"
+                        "flex w-fit self-end text-accent-foreground bg-accent hover:bg-accent_light"
                     }
                 >
                     <IoAdd className={"w-6 h-6 mr-2"} /> Create token
@@ -107,7 +107,7 @@ export default function CreateConnectionTokenModal() {
                         <Button
                             variant={"outline"}
                             className={cn(
-                                "w-full justify-start text-left font-normal bg-inherit hover:bg-primary focus:bg-primary",
+                                "w-full justify-start text-left font-normal bg-inherit hover:bg-primary hover:text-primary-foreground focus:bg-primary",
                                 !date && "text-muted-foreground",
                                 date &&
                   date < new Date() &&
@@ -118,7 +118,7 @@ export default function CreateConnectionTokenModal() {
                             {date ? format(date, "PPP") : <span>Pick a date</span>}
                         </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0 border-0">
+                    <PopoverContent className="bg-primary w-auto p-0 border-0">
                         <Calendar
                             mode="single"
                             selected={date}
@@ -131,7 +131,7 @@ export default function CreateConnectionTokenModal() {
                     <Button
                         disabled={disabledSubmit}
                         onClick={onConfirmCreate}
-                        className={"bg-accent hover:bg-accent_light"}
+                        className={"bg-accent hover:bg-accent_light text-accent-foreground"}
                     >
                         <IoAdd className={"w-6 h-6 mr-2"} />
             Create

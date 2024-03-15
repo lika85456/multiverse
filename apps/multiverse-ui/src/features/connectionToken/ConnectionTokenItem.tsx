@@ -6,7 +6,7 @@ import { IoEyeOutline } from "react-icons/io5";
 import { IoEyeOffOutline } from "react-icons/io5";
 import { CopyIcon, TrashIcon } from "lucide-react";
 import { toast } from "sonner";
-import DeleteTokenModal from "@/features/database/DeleteTokenModal";
+import DeleteConnectionTokenModal from "@/features/connectionToken/DeleteConnectionTokenModal";
 
 export interface ConnectionTokenItemProps {
   token: {
@@ -36,7 +36,7 @@ export default function ConnectionTokenItem({ token, }: ConnectionTokenItemProps
     return (
         <div
             className={
-                "flex flex-row h-10 rounded-xl border border-border items-center"
+                "flex flex-row h-10 rouanded-xl border-b boarder-border items-center hover:bg-secondary transition-all"
             }
         >
             <div className={"flex w-full justify-between items-center mx-4"}>
@@ -79,7 +79,7 @@ export default function ConnectionTokenItem({ token, }: ConnectionTokenItemProps
                 </div>
             </div>
             <div className={"flex w-1/5 justify-end items-center"}>
-                <DeleteTokenModal />
+                <DeleteConnectionTokenModal />
             </div>
         </div>
     );

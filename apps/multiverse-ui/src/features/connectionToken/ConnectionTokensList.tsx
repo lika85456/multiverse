@@ -1,6 +1,6 @@
 import SectionTitle from "@/app/layout/components/SectionTitle";
-import ConnectionTokenItem from "@/features/database/ConnectionTokenItem";
-import CreateConnectionTokenModal from "@/features/database/CreateConnectionTokenModal";
+import ConnectionTokenItem from "@/features/connectionToken/ConnectionTokenItem";
+import CreateConnectionTokenModal from "@/features/connectionToken/CreateConnectionTokenModal";
 
 const tokens = [
     {

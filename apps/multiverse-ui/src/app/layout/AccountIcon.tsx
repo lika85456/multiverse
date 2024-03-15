@@ -58,7 +58,6 @@ export default function AccountIcon() {
               Account
                         </DropdownMenuItem>
                     </Link>
-                    {/*<DropdownMenuSeparator className={"bg-border"} />*/}
                     <Link
                         href={"/login"}
                         onClick={() => {
