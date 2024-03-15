@@ -21,7 +21,6 @@ export default function DatabaseSectionNavigation() {
     } else if (pathName === `/databases/${databaseId}/browser`) {
         currentSection = "browser";
     }
-    console.log(currentSection);
 
     return (
         <ul className={"flex w-full h-11 justify-center items-center space-x-16"}>

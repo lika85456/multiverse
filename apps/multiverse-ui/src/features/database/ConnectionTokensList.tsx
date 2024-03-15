@@ -1,7 +1,6 @@
 import SectionTitle from "@/app/layout/components/SectionTitle";
-import { Button } from "@/components/ui/button";
-import { IoAdd } from "react-icons/io5";
 import ConnectionTokenItem from "@/features/database/ConnectionTokenItem";
+import CreateConnectionTokenModal from "@/features/database/CreateConnectionTokenModal";
 
 const tokens = [
     {
@@ -16,24 +15,6 @@ const tokens = [
         tokenData: "725e6ca495fd5957",
         validity: Date.now(),
     },
-    // {
-    //     tokenId: "3",
-    //     name: "Token 2",
-    //     tokenData: "725e6ca495fd5957",
-    //     validity: Date.now(),
-    // },
-    // {
-    //     tokenId: "4",
-    //     name: "Token 2",
-    //     tokenData: "725e6ca495fd5957",
-    //     validity: Date.now(),
-    // },
-    // {
-    //     tokenId: "5",
-    //     name: "Token 2",
-    //     tokenData: "725e6ca495fd5957",
-    //     validity: Date.now(),
-    // },
 ];
 
 export default function ConnectionTokensList() {
@@ -49,13 +30,7 @@ export default function ConnectionTokensList() {
                     );
                 })}
             </ul>
-            <Button
-                className={
-                    "flex w-fit self-end text-accent_light-foreground bg-accent hover:bg-accent_light"
-                }
-            >
-                <IoAdd className={"w-6 h-6 mr-2"} /> Create token
-            </Button>
+            <CreateConnectionTokenModal />
         </>
     );
 }

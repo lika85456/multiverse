@@ -37,7 +37,7 @@ export default function CreateDatabaseModal() {
         navigator.clipboard
             .writeText(`${"Create database text"}`)
             .then(() => {
-                toast("Data had been copied into your clipboard.");
+                toast("Data have been copied into your clipboard.");
             })
             .catch(() => {
                 console.log("Data could not be copied.");

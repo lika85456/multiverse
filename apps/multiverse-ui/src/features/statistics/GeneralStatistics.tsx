@@ -16,7 +16,7 @@ export function GeneralStatisticsItem(item: GeneralStatisticsItemProps) {
         navigator.clipboard
             .writeText(`${item.label}: ${item.value}`)
             .then(() => {
-                toast("Data had been copied into your clipboard.");
+                toast("Data have been copied into your clipboard.");
             })
             .catch(() => {
                 console.log("Data could not be copied.");
