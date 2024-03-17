@@ -43,6 +43,13 @@
         --destructive-light: 7 93% 74%;;
         --destructive-light-foreground: 0 0% 100%;
 
+
+        --grey30: 0 0% 30%;
+        --grey30-foreground: 0 0% 70%;
+
+        --grey40: 0 0% 40%;
+        --grey40-foreground: 0 0% 60%;
+
         --border: 214.3 31.8% 91.4%;
         --input: 214.3 31.8% 91.4%;
         --ring: 222.2 84% 4.9%;
@@ -86,6 +93,12 @@
 
         --destructive-light: 7 93% 74%;;
         --destructive-light-foreground: 0 0% 100%;
+
+        --grey30: 0 0% 30%;
+        --grey30-foreground: 0 0% 70%;
+
+        --grey40: 0 0% 40%;
+        --grey40-foreground: 0 0% 60%;
 
         --border: 0 0% 50%;
         --input: 0 0% 50%;
@@ -132,6 +145,12 @@
 
         --destructive-light: 7 93% 74%;;
         --destructive-light-foreground: 0 0% 100%;
+
+        --grey30: 0 0% 70%;
+        --grey30-foreground: 0 0% 30%;
+
+        --grey40: 0 0% 60%;
+        --grey40-foreground: 0 0% 40%;
 
         --border: 0 0% 50%;
         --input: 0 0% 60%;

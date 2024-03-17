@@ -54,6 +54,14 @@ const config = {
                     DEFAULT: "hsl(var(--middle))",
                     foreground: "hsl(var(--middle-foreground))",
                 },
+                grey30: {
+                    DEFAULT: "hsl(var(--grey30))",
+                    foreground: "hsl(var(--grey30-foreground))",
+                },
+                grey40: {
+                    DEFAULT: "hsl(var(--grey40))",
+                    foreground: "hsl(var(--grey40-foreground))",
+                },
                 accent: {
                     DEFAULT: "hsl(var(--accent))",
                     foreground: "hsl(var(--accent-foreground))",

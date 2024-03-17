@@ -18,7 +18,7 @@ export default function RootLayout({ children, }: Readonly<{
     return (
         <html lang="en" suppressHydrationWarning>
             <body className={inter.className}>
-                <div className="flex flex-col min-h-screen w-screen justify-start">
+                <div className="flex flex-col min-h-screen w-screeen justify-start">
                     <ThemeProvider
                         attribute="class"
                         defaultTheme="system"
