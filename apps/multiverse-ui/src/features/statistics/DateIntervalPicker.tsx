@@ -1,7 +1,7 @@
-"use client";
-
 import * as React from "react";
-import { addDays, format } from "date-fns";
+import {
+    addDays, addYears, addMonths, format
+} from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
 import type { DateRange } from "react-day-picker";
 
@@ -13,26 +13,36 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover";
+import { useEffect } from "react";
 
-type PredefinedOptions =
-  | "today"
-  | "last-week"
-  | "last-month"
-  | "last-year"
-  | "custom";
+enum PredefinedOptions {
+  TODAY = "today",
+  LAST_WEEK = "last-week",
+  LAST_MONTH = "last-month",
+  LAST_YEAR = "last-year",
+  CUSTOM = "custom",
+}
 
-export function DateIntervalPicker({ className, }: React.HTMLAttributes<HTMLDivElement>) {
+type DateIntervalPickerProps = {
+  getDate: () => DateRange | undefined;
+  setDate: React.Dispatch<React.SetStateAction<DateRange | undefined>>;
+  className?: React.HTMLAttributes<HTMLDivElement>;
+};
+
+export function DateIntervalPicker({
+    getDate,
+    setDate,
+    className,
+}: DateIntervalPickerProps) {
     const [modalOpen, setModalOpen] = React.useState(false);
-    const [date, setDate] = React.useState<DateRange | undefined>({
-        from: addDays(new Date(), -7),
-        to: new Date(),
-    });
 
-    const [chosenOption, setChosenOption] =
-    React.useState<PredefinedOptions>("custom");
+    const [prevPredefinedChoice, setPrevPredefinedChoice] =
+    React.useState<PredefinedOptions>(PredefinedOptions.CUSTOM);
+    const [newPredefinedChoice, setNewPredefinedChoice] =
+    React.useState<PredefinedOptions>(prevPredefinedChoice);
     const [newDate, setNewDate] = React.useState<DateRange | undefined>({
-        from: date?.from,
-        to: date?.to,
+        from: getDate()?.from,
+        to: getDate()?.to,
     });
 
     const handleOpenModal = () => {
@@ -40,44 +50,58 @@ export function DateIntervalPicker({ className, }: React.HTMLAttributes<HTMLDivE
     };
 
     const handleCloseModal = () => {
+        setNewDate(getDate());
+        setNewPredefinedChoice(prevPredefinedChoice);
         setModalOpen(false);
     };
 
     const handleSubmitInterval = () => {
         setDate(newDate);
-        handleCloseModal();
+        setPrevPredefinedChoice(newPredefinedChoice);
+        setModalOpen(false);
     };
 
-    const handlePredefinedOption = (option: PredefinedOptions) => {
+    useEffect(() => {
+        const handleEscape = (event: KeyboardEvent) => {
+            if (event.key === "Escape") {
+                handleCloseModal();
+            }
+        };
+        window.addEventListener("keydown", handleEscape);
+
+        return () => window.removeEventListener("keydown", handleEscape);
+    }, []);
+
+    const handlePredefinedOptionChoice = (option: PredefinedOptions) => {
         switch (option) {
-        case "today":
+        case PredefinedOptions.TODAY:
             setNewDate({
                 from: new Date(),
                 to: new Date(),
             });
             break;
-        case "last-week":
+        case PredefinedOptions.LAST_WEEK:
             setNewDate({
                 from: addDays(new Date(), -7),
                 to: new Date(),
             });
             break;
-        case "last-month":
+        case PredefinedOptions.LAST_MONTH:
             setNewDate({
-                from: addDays(new Date(), -30),
+                from: addMonths(new Date(), -1),
                 to: new Date(),
             });
             break;
-        case "last-year":
+        case PredefinedOptions.LAST_YEAR:
             setNewDate({
-                from: addDays(new Date(), -365),
+                from: addYears(new Date(), -1),
                 to: new Date(),
             });
             break;
-        case "custom":
+        case PredefinedOptions.CUSTOM:
             break;
         }
-        setChosenOption(option);
+        setNewPredefinedChoice(option);
     };
 
     return (
@@ -115,41 +139,56 @@ export function DateIntervalPicker({ className, }: React.HTMLAttributes<HTMLDivE
                 >
                     <ul className={"bg-grey30 p-2 rounded-l-xl"}>
                         <li
-                            onClick={handlePredefinedOption.bind(null, "today")}
+                            onClick={handlePredefinedOptionChoice.bind(
+                                null,
+                                PredefinedOptions.TODAY,
+                            )}
                             className={`rounded ${
-                                chosenOption === "today" ? "bg-card" : "bg-inherit"
+                                newPredefinedChoice === "today" ? "bg-card" : "bg-inherit"
                             }`}
                         >
               Today
                         </li>
                         <li
-                            onClick={handlePredefinedOption.bind(null, "last-week")}
+                            onClick={handlePredefinedOptionChoice.bind(
+                                null,
+                                PredefinedOptions.LAST_WEEK,
+                            )}
                             className={`rounded ${
-                                chosenOption === "last-week" ? "bg-card" : "bg-inherit"
+                                newPredefinedChoice === "last-week" ? "bg-card" : "bg-inherit"
                             }`}
                         >
               Last Week
                         </li>
                         <li
-                            onClick={handlePredefinedOption.bind(null, "last-month")}
+                            onClick={handlePredefinedOptionChoice.bind(
+                                null,
+                                PredefinedOptions.LAST_MONTH,
+                            )}
                             className={`rounded ${
-                                chosenOption === "last-month" ? "bg-card" : "bg-inherit"
+                                newPredefinedChoice === "last-month" ? "bg-card" : "bg-inherit"
                             }`}
                         >
               Last Month
                         </li>
                         <li
-                            onClick={handlePredefinedOption.bind(null, "last-year")}
+                            onClick={handlePredefinedOptionChoice.bind(
+                                null,
+                                PredefinedOptions.LAST_YEAR,
+                            )}
                             className={`rounded ${
-                                chosenOption === "last-year" ? "bg-card" : "bg-inherit"
+                                newPredefinedChoice === "last-year" ? "bg-card" : "bg-inherit"
                             }`}
                         >
               Last Year
                         </li>
                         <li
-                            onClick={handlePredefinedOption.bind(null, "custom")}
+                            onClick={handlePredefinedOptionChoice.bind(
+                                null,
+                                PredefinedOptions.CUSTOM,
+                            )}
                             className={`rounded ${
-                                chosenOption === "custom" ? "bg-card" : "bg-inherit"
+                                newPredefinedChoice === "custom" ? "bg-card" : "bg-inherit"
                             }`}
                         >
               Custom
@@ -159,16 +198,19 @@ export function DateIntervalPicker({ className, }: React.HTMLAttributes<HTMLDivE
                         <Calendar
                             initialFocus
                             mode="range"
-                            defaultMonth={date?.from}
+                            defaultMonth={getDate()?.from}
                             selected={newDate}
                             onSelect={(e) => {
-                                handlePredefinedOption("custom");
+                                handlePredefinedOptionChoice(PredefinedOptions.CUSTOM);
                                 setNewDate(e);
                             }}
                             numberOfMonths={2}
                             className={"bg-primary rounded-xl"}
                         />
-                        <Button onClick={handleSubmitInterval}>Confirm</Button>
+                        <div>
+                            <Button onClick={handleCloseModal}>Cancel</Button>
+                            <Button onClick={handleSubmitInterval}>Confirm</Button>
+                        </div>
                     </div>
                 </PopoverContent>
             </Popover>
