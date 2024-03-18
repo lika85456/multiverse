@@ -37,7 +37,7 @@ export class MultiverseDatabase {
     }
 }
 
-export default class Multliverse {
+export default class Multiverse {
 
     // don't forget to add the region to the options
 
@@ -78,4 +78,6 @@ export default class Multliverse {
     public async listDatabases(): Promise<MultiverseDatabase[]> {
 
     }
+
+    // !maybe add "deployInfrastructure, destroyInfrastructure" ?
 }
