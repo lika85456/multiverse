@@ -62,6 +62,11 @@ export class S3SnapshotStorageDeployer {
 
 export default class S3SnapshotStorage implements SnapshotStorage {
 
+    private deployer = new S3SnapshotStorageDeployer({
+        bucketName: this.options.bucketName,
+        region: this.options.region
+    });
+
     private s3: S3;
 
     constructor(private options: {
@@ -153,5 +158,13 @@ export default class S3SnapshotStorage implements SnapshotStorage {
 
     public async directoryPath(): Promise<string> {
         return `${this.options.downloadPath}/${this.options.indexName}`;
+    }
+
+    public async deploy(): Promise<void> {
+        await this.deployer.deploy();
+    }
+
+    public async destroy(): Promise<void> {
+        await this.deployer.destroy();
     }
 }
