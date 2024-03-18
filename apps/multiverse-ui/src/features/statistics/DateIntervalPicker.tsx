@@ -14,19 +14,20 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover";
 import { useEffect } from "react";
+import { IoCheckmark, IoClose } from "react-icons/io5";
 
 enum PredefinedOptions {
-  TODAY = "today",
-  LAST_WEEK = "last-week",
-  LAST_MONTH = "last-month",
-  LAST_YEAR = "last-year",
-  CUSTOM = "custom",
+  TODAY = "Today",
+  LAST_WEEK = "Last Week",
+  LAST_MONTH = "Last Month",
+  LAST_YEAR = "Last Year",
+  CUSTOM = "Custom",
 }
 
 type DateIntervalPickerProps = {
   getDate: () => DateRange | undefined;
   setDate: React.Dispatch<React.SetStateAction<DateRange | undefined>>;
-  className?: React.HTMLAttributes<HTMLDivElement>;
+  className?: string;
 };
 
 export function DateIntervalPicker({
@@ -135,66 +136,30 @@ export function DateIntervalPicker({
                 </PopoverTrigger>
                 <PopoverContent
                     className="flex flex-row border-0 w-auto p-0 bg-card rounded-xl"
-                    align="start"
+                    align="end"
                 >
-                    <ul className={"bg-grey30 p-2 rounded-l-xl"}>
-                        <li
-                            onClick={handlePredefinedOptionChoice.bind(
-                                null,
-                                PredefinedOptions.TODAY,
-                            )}
-                            className={`rounded ${
-                                newPredefinedChoice === "today" ? "bg-card" : "bg-inherit"
-                            }`}
-                        >
-              Today
-                        </li>
-                        <li
-                            onClick={handlePredefinedOptionChoice.bind(
-                                null,
-                                PredefinedOptions.LAST_WEEK,
-                            )}
-                            className={`rounded ${
-                                newPredefinedChoice === "last-week" ? "bg-card" : "bg-inherit"
-                            }`}
-                        >
-              Last Week
-                        </li>
-                        <li
-                            onClick={handlePredefinedOptionChoice.bind(
-                                null,
-                                PredefinedOptions.LAST_MONTH,
-                            )}
-                            className={`rounded ${
-                                newPredefinedChoice === "last-month" ? "bg-card" : "bg-inherit"
-                            }`}
-                        >
-              Last Month
-                        </li>
-                        <li
-                            onClick={handlePredefinedOptionChoice.bind(
-                                null,
-                                PredefinedOptions.LAST_YEAR,
-                            )}
-                            className={`rounded ${
-                                newPredefinedChoice === "last-year" ? "bg-card" : "bg-inherit"
-                            }`}
-                        >
-              Last Year
-                        </li>
-                        <li
-                            onClick={handlePredefinedOptionChoice.bind(
-                                null,
-                                PredefinedOptions.CUSTOM,
-                            )}
-                            className={`rounded ${
-                                newPredefinedChoice === "custom" ? "bg-card" : "bg-inherit"
-                            }`}
-                        >
-              Custom
-                        </li>
+                    <ul className={"w-40 bg-grey30 p-2 rounded-l-xl space-y-2"}>
+                        {[
+                            PredefinedOptions.TODAY,
+                            PredefinedOptions.LAST_WEEK,
+                            PredefinedOptions.LAST_MONTH,
+                            PredefinedOptions.LAST_YEAR,
+                            PredefinedOptions.CUSTOM,
+                        ].map((option) => {
+                            return (
+                                <li
+                                    key={option}
+                                    onClick={handlePredefinedOptionChoice.bind(null, option)}
+                                    className={`rounded-xl p-2 hover:bg-primary transition-all select-none cursor-pointer ${
+                                        newPredefinedChoice === option ? "bg-card" : "bg-inherit"
+                                    }`}
+                                >
+                                    {option}
+                                </li>
+                            );
+                        })}
                     </ul>
-                    <div className={"p-4"}>
+                    <div className={"p-4 space-y-4"}>
                         <Calendar
                             initialFocus
                             mode="range"
@@ -207,9 +172,25 @@ export function DateIntervalPicker({
                             numberOfMonths={2}
                             className={"bg-primary rounded-xl"}
                         />
-                        <div>
-                            <Button onClick={handleCloseModal}>Cancel</Button>
-                            <Button onClick={handleSubmitInterval}>Confirm</Button>
+                        <div className={"flex flex-row justify-end space-x-4"}>
+                            <Button
+                                onClick={handleCloseModal}
+                                className={
+                                    "bg-inherit text-primary-foreground border border-border"
+                                }
+                            >
+                                <IoClose className={"w-6 h-6 mr-2"} />
+                Cancel
+                            </Button>
+                            <Button
+                                onClick={handleSubmitInterval}
+                                className={
+                                    "bg-accent text-accent-foreground hover:bg-accent_light"
+                                }
+                            >
+                                <IoCheckmark className={"w-6 h-6 mr-2"} />
+                Confirm
+                            </Button>
                         </div>
                     </div>
                 </PopoverContent>

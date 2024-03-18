@@ -12,8 +12,12 @@ export default function DatabaseStatistics() {
     });
 
     return (
-        <div>
-            <DateIntervalPicker getDate={() => date} setDate={setDate} />
+        <div className={"flex flex-col"}>
+            <DateIntervalPicker
+                className={"self-end"}
+                getDate={() => date}
+                setDate={setDate}
+            />
         </div>
     );
 }
