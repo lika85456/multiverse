@@ -1,5 +1,5 @@
 import { Lambda } from "@aws-sdk/client-lambda";
-import type { DatabaseInfrastructure } from "../InfrastructureStorage/InfrastructureStorage";
+import type { DatabaseInfrastructure } from "../InfrastructureStorage/DynamoInfrastructureStorage";
 import type { DatabaseQuery, DatabaseQueryResult } from "./DatabaseClient";
 import type DatabaseClient from "./DatabaseClient";
 import log from "@multiverse/log";

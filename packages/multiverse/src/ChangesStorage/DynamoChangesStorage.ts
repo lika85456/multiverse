@@ -130,6 +130,10 @@ export default class DynamoChangesStorage implements ChangesStorage {
     } & DatabaseConfiguration) {
         const db = new DynamoDB({ region: options.region });
         this.dynamo = DynamoDBDocumentClient.from(db);
+        this.deployer = new DynamoChangesStorageDeployer({
+            region: this.options.region,
+            tableName: this.options.tableName
+        });
     }
 
     public async add(changes: StoredVectorChange[]): Promise<void> {

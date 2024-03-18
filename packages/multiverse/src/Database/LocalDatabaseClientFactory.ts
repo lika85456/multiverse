@@ -1,7 +1,7 @@
 import type ChangesStorage from "../ChangesStorage";
 import type Index from "../Index";
 import type { DatabaseConfiguration } from "../DatabaseConfiguration";
-import type { DatabaseInfrastructure } from "../InfrastructureStorage/InfrastructureStorage";
+import type { DatabaseInfrastructure } from "../InfrastructureStorage/DynamoInfrastructureStorage";
 import type SnapshotStorage from "../SnapshotStorage";
 import type DatabaseClient from "./DatabaseClient";
 import DatabaseWorker from "./DatabaseWorker";

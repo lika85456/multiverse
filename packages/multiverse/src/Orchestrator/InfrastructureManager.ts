@@ -4,8 +4,8 @@ import {
     Lambda, PackageType, waitUntilFunctionActive
 } from "@aws-sdk/client-lambda";
 import type { DatabaseConfiguration } from "../DatabaseConfiguration";
-import type InfrastructureStorage from "../InfrastructureStorage/InfrastructureStorage";
-import type { DatabaseInfrastructure } from "../InfrastructureStorage/InfrastructureStorage";
+import type InfrastructureStorage from "../InfrastructureStorage/DynamoInfrastructureStorage";
+import type { DatabaseInfrastructure } from "../InfrastructureStorage/DynamoInfrastructureStorage";
 import log from "@multiverse/log";
 import type { DatabaseEnvironment } from "../Database/DatabaseEnvironment";
 import OrchestratorDeployer from "./OrchestratorDeployer";

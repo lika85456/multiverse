@@ -4,7 +4,7 @@ import LambdaOrchestratorClient from "./LambdaOrchestratorClient";
 import { DynamoChangesStorageDeployer } from "../ChangesStorage/DynamoChangesStorage";
 import { S3SnapshotStorageDeployer } from "../SnapshotStorage/S3SnapshotStorage";
 import InfrastructureManager from "./InfrastructureManager";
-import InfrastructureStorage, { InfrastructureStorageDeployer } from "../InfrastructureStorage/InfrastructureStorage";
+import InfrastructureStorage, { InfrastructureStorageDeployer } from "../InfrastructureStorage/DynamoInfrastructureStorage";
 import type { DatabaseConfiguration } from "../DatabaseConfiguration";
 
 describe.skip("<LambdaOrchestratorClient>", () => {
