@@ -10,4 +10,5 @@ export default interface SnapshotStorage {
     directoryPath(): Promise<string>;
 
     deploy(): Promise<void>;
+    destroy(): Promise<void>;
 }
