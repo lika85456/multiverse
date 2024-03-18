@@ -12,6 +12,7 @@ import {
     XAxis,
     YAxis,
 } from "recharts";
+import { useTheme } from "next-themes";
 
 interface StatisticsGraphProps {
   title: string;
@@ -42,6 +43,7 @@ const CustomTooltip = ({
 };
 
 export default function StatisticsGraph({ title, data }: StatisticsGraphProps) {
+    const { theme } = useTheme();
     const handleCopy = async() => {
         navigator.clipboard
             .writeText(`${title}: ${JSON.stringify({
@@ -88,14 +90,14 @@ export default function StatisticsGraph({ title, data }: StatisticsGraphProps) {
                 >
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey={"timeString"} />
-                    <YAxis dataKey={"value"} />
+                    <YAxis />
                     <Tooltip content={<CustomTooltip />} />
                     <Legend />
                     <Line
                         type="monotone"
                         dataKey={"Data"}
                         name={`${title}${data.unit ? ` (${data.unit})` : ""}`}
-                        stroke="#FFEBC5"
+                        stroke={theme === "dark" ? "#FFEBC5" : "#C3A15E"}
                     />
                 </LineChart>
             </ResponsiveContainer>
