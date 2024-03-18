@@ -127,10 +127,7 @@ export class DynamoChangesStorageDeployer {
 
 export default class DynamoChangesStorage implements ChangesStorage {
 
-    private deployer = new DynamoChangesStorageDeployer({
-        region: this.options.region,
-        tableName: this.options.tableName
-    });
+    private deployer: DynamoChangesStorageDeployer;
 
     private dynamo: DynamoDBDocumentClient;
     private TTL = 60 * 60 * 24 * 2; // 2 days
@@ -140,6 +137,10 @@ export default class DynamoChangesStorage implements ChangesStorage {
     }) {
         const db = new DynamoDB({ region: options.region });
         this.dynamo = DynamoDBDocumentClient.from(db);
+        this.deployer = new DynamoChangesStorageDeployer({
+            region: this.options.region,
+            tableName: this.options.tableName
+        });
     }
 
     public async add(changes: StoredVectorChange[], batchIndexOffset = 0): Promise<void> {
