@@ -24,6 +24,23 @@ interface StatisticsGraphProps {
   };
 }
 
+const CustomTooltip = ({
+    active, payload, label
+}: any) => {
+    if (active && payload && payload.length) {
+        return (
+            <div
+                className={"bg-card border border-border bg-opacity-100 p-2 rounded-md"}
+            >
+                <p className={"text-white text-xs"}>{`Date: ${label}`}</p>
+                <p className={"text-white text-xs"}>{`Value: ${payload[0].value}`}</p>
+            </div>
+        );
+    }
+
+    return null;
+};
+
 export default function StatisticsGraph({ title, data }: StatisticsGraphProps) {
     const handleCopy = async() => {
         navigator.clipboard
@@ -72,7 +89,7 @@ export default function StatisticsGraph({ title, data }: StatisticsGraphProps) {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey={"timeString"} />
                     <YAxis dataKey={"value"} />
-                    <Tooltip />
+                    <Tooltip content={<CustomTooltip />} />
                     <Legend />
                     <Line
                         type="monotone"
