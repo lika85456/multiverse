@@ -10,29 +10,63 @@ import UpsertVectorModal from "@/features/browser/UpsertVectorModal";
 import { Button } from "@/components/ui/button";
 import { CopyIcon } from "lucide-react";
 
-const result = {
-    id: "1",
-    label: "red tractorasdasdasdasdasdasdasd",
-    value: [
-        0.1, 0.2, 0.312, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 0.2, 0.3, 0.312, 0.4, 0.5,
-        0.6, 0.7, 0.8, 0.9, 1,
-    ],
-    metrics: 48.371,
-};
+const dummyResults = [
+    {
+        id: "1",
+        label: "red tractor",
+        value: [
+            0.1, 0.2, 0.312, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 0.2, 0.3, 0.312, 0.4,
+            0.5, 0.6, 0.7, 0.8, 0.9, 1,
+        ],
+        metrics: 48.371,
+    },
+    {
+        id: "2",
+        label: "blue tractor",
+        value: [
+            0.1, 0.2, 0.312, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 0.2, 0.3, 0.312, 0.4,
+            0.5, 0.6, 0.7, 0.8, 0.9, 1,
+        ],
+        metrics: 52.371,
+    },
+    {
+        id: "3",
+        label: "green tractor",
+        value: [
+            0.1, 0.2, 0.312, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 0.2, 0.3, 0.312, 0.4,
+            0.5, 0.6, 0.7, 0.8, 0.9, 1,
+        ],
+        metrics: 58.371,
+    },
+    {
+        id: "4",
+        label: "yellow tractor",
+        value: [
+            0.1, 0.2, 0.312, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 0.2, 0.3, 0.312, 0.4,
+            0.5, 0.6, 0.7, 0.8, 0.9, 1,
+        ],
+        metrics: 68.371,
+    },
+    {
+        id: "5",
+        label: "purple tractor",
+        value: [
+            0.1, 0.2, 0.312, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 0.2, 0.3, 0.312, 0.4,
+            0.5, 0.6, 0.7, 0.8, 0.9, 1,
+        ],
+        metrics: 78.371,
+    },
+];
 
 export default function VectorQuery() {
     const [queryRan, setQueryRan] = useState<boolean>(false);
-    const [results, setResults] = useState<QueryResultProps[]>([
-        result,
-        result,
-        result,
-        result,
-        result,
-    ]);
+    const [results, setResults] = useState<QueryResultProps[]>([]);
+    const dimensions = 10;
 
     const handleRunQuery = (vector: VectorValues, k: number) => {
         console.log(`running query ${vector} with k=${k}`);
         setQueryRan(true);
+        setResults(dummyResults);
     };
 
     const handleCopyRequest = async(vector: VectorValues, k: number) => {
@@ -81,7 +115,7 @@ export default function VectorQuery() {
                     }
                 >
                     <div>Query result is empty</div>
-                    <UpsertVectorModal />
+                    <UpsertVectorModal dimensions={dimensions} />
                 </div>
             )}
             {queryRan && results.length > 0 && (

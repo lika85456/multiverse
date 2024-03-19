@@ -1,9 +1,9 @@
-import { TrashIcon } from "lucide-react";
 import DeleteVectorModal from "@/features/browser/DeleteVectorModal";
 
 export interface QueryResultProps {
   id: string;
   label: string;
+  metadata?: string;
   value: number[];
   metrics: number;
 }
