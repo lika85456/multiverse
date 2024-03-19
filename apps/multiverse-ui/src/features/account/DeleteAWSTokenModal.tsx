@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -16,11 +15,14 @@ import { Button } from "@/components/ui/button";
 import { FaRegTrashAlt } from "react-icons/fa";
 import { IoClose } from "react-icons/io5";
 import { TrashIcon } from "lucide-react";
+import useModal from "@/features/modals/use-modal";
 
 export function DeleteAWSTokenModal({ setState, }: {
   setState: (state: number) => void;
 }) {
-    const [modalOpen, setModalOpen] = useState(false);
+    const {
+        modalOpen, handleOpenModal, handleCloseModal
+    } = useModal();
 
     const onConfirmDelete = () => {
         if (true) {
@@ -28,25 +30,6 @@ export function DeleteAWSTokenModal({ setState, }: {
             handleCloseModal();
         }
     };
-
-    const handleOpenModal = () => {
-        setModalOpen(true);
-    };
-
-    const handleCloseModal = () => {
-        setModalOpen(false);
-    };
-
-    useEffect(() => {
-        const handleEscape = (event: KeyboardEvent) => {
-            if (event.key === "Escape") {
-                handleCloseModal();
-            }
-        };
-        window.addEventListener("keydown", handleEscape);
-
-        return () => window.removeEventListener("keydown", handleEscape);
-    }, []);
 
     return (
         <AlertDialog open={modalOpen}>

@@ -23,9 +23,12 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import useModal from "@/features/modals/use-modal";
 
 export default function CreateDatabaseModal() {
-    const [modalOpen, setModalOpen] = useState(false);
+    const {
+        modalOpen, handleOpenModal, handleCloseModal
+    } = useModal();
 
     const handleCreateDatabase = () => {
         console.log("Creating database");
@@ -43,25 +46,6 @@ export default function CreateDatabaseModal() {
                 console.log("Data could not be copied.");
             });
     };
-
-    const handleOpenModal = () => {
-        setModalOpen(true);
-    };
-
-    const handleCloseModal = () => {
-        setModalOpen(false);
-    };
-
-    useEffect(() => {
-        const handleEscape = (event: KeyboardEvent) => {
-            if (event.key === "Escape") {
-                handleCloseModal();
-            }
-        };
-        window.addEventListener("keydown", handleEscape);
-
-        return () => window.removeEventListener("keydown", handleEscape);
-    }, []);
 
     return (
         <AlertDialog open={modalOpen}>

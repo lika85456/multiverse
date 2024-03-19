@@ -13,34 +13,17 @@ import {
 } from "@/components/ui/alert-dialog";
 import { TrashIcon } from "lucide-react";
 import { IoClose } from "react-icons/io5";
-import { useEffect, useState } from "react";
+import useModal from "@/features/modals/use-modal";
 
 export default function DeleteConnectionTokenModal() {
-    const [modalOpen, setModalOpen] = useState(false);
+    const {
+        modalOpen, handleOpenModal, handleCloseModal
+    } = useModal();
 
     const handleDeleteToken = () => {
         console.log("Deleting token");
         handleCloseModal();
     };
-
-    const handleOpenModal = () => {
-        setModalOpen(true);
-    };
-
-    const handleCloseModal = () => {
-        setModalOpen(false);
-    };
-
-    useEffect(() => {
-        const handleEscape = (event: KeyboardEvent) => {
-            if (event.key === "Escape") {
-                handleCloseModal();
-            }
-        };
-        window.addEventListener("keydown", handleEscape);
-
-        return () => window.removeEventListener("keydown", handleEscape);
-    }, []);
 
     return (
         <AlertDialog open={modalOpen}>

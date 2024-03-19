@@ -15,11 +15,13 @@ import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { useRouter } from "next/navigation";
+import useModal from "@/features/modals/use-modal";
 
 export default function DeleteDatabaseModal() {
+    const {
+        modalOpen, handleOpenModal, handleCloseModal
+    } = useModal();
     const router = useRouter();
-    const [modalOpen, setModalOpen] = useState(false);
-
     const dbName = "Database Chatbot 1";
     const [typedDatabaseName, setTypedDatabaseName] = useState("");
 
@@ -28,25 +30,6 @@ export default function DeleteDatabaseModal() {
         handleCloseModal();
         router.push("/databases");
     };
-
-    const handleOpenModal = () => {
-        setModalOpen(true);
-    };
-
-    const handleCloseModal = () => {
-        setModalOpen(false);
-    };
-
-    useEffect(() => {
-        const handleEscape = (event: KeyboardEvent) => {
-            if (event.key === "Escape") {
-                handleCloseModal();
-            }
-        };
-        window.addEventListener("keydown", handleEscape);
-
-        return () => window.removeEventListener("keydown", handleEscape);
-    }, []);
 
     return (
         <AlertDialog open={modalOpen}>
@@ -76,7 +59,10 @@ export default function DeleteDatabaseModal() {
                     </div>
                     <AlertDialogDescription className={"text-secondary-foreground"}>
             Do you really wish to delete this database? This action cannot be
-            undone. To delete this database, type “{dbName}”
+            undone. To delete this database, type{" "}
+                        <span className={"text-destructive font-bold tracking-wide"}>
+              “{dbName}”
+                        </span>
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <Input

@@ -27,9 +27,12 @@ import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import useModal from "@/features/modals/use-modal";
 
 export default function CreateConnectionTokenModal() {
-    const [modalOpen, setModalOpen] = useState(false);
+    const {
+        modalOpen, handleOpenModal, handleCloseModal
+    } = useModal();
     const [date, setDate] = React.useState<Date>();
     const [tokenName, setTokenName] = useState("");
     const [disabledSubmit, setDisabledSubmit] = useState(true);
@@ -43,25 +46,6 @@ export default function CreateConnectionTokenModal() {
             toast("Token could not be created.");
         }
     };
-
-    const handleOpenModal = () => {
-        setModalOpen(true);
-    };
-
-    const handleCloseModal = () => {
-        setModalOpen(false);
-    };
-
-    useEffect(() => {
-        const handleEscape = (event: KeyboardEvent) => {
-            if (event.key === "Escape") {
-                handleCloseModal();
-            }
-        };
-        window.addEventListener("keydown", handleEscape);
-
-        return () => window.removeEventListener("keydown", handleEscape);
-    }, []);
 
     useEffect(() => {
         date && date > new Date() && tokenName.length > 0
