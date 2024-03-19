@@ -20,7 +20,7 @@ import Editor from "@monaco-editor/react";
 export interface Vector {
   id?: string;
   label: string;
-  metadata?: string;
+  metadata?: any;
   values: VectorValues;
 }
 
@@ -95,7 +95,9 @@ export default function UpsertVectorModal({
 
             const excessKey = findExcessJsonKeys(json);
             if (excessKey.length > 0) {
-                foundErrors.push(`Excess keys found: ${excessKey.join(", ")} `);
+                foundErrors.push(`Excess key${
+                    excessKey.length === 1 ? "" : "s"
+                } found: ${excessKey.join(", ")} `,);
             }
 
             if (foundErrors.length > 0) {
