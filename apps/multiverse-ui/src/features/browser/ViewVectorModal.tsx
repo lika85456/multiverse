@@ -31,12 +31,12 @@ export default function ViewVectorModal({ vector }: { vector: Vector }) {
 
     const handleCopyData = () => {
         navigator.clipboard
-            .writeText(`${JSON.stringify(vector)}`)
+            .writeText(`${JSON.stringify(vectorData)}`)
             .then(() => {
                 toast("Vector has been copied into your clipboard.");
             })
             .catch(() => {
-                console.log("Request could not be copied.");
+                console.log("Vector could not be copied.");
             });
     };
 
