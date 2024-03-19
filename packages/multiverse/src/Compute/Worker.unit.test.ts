@@ -1,20 +1,19 @@
 import MemoryChangesStorage from "../ChangesStorage/MemoryChangesStorage";
 import HNSWIndex from "../Index/HNSWIndex";
 import LocalSnapshotStorage from "../SnapshotStorage/LocalSnapshotStorage";
-import DatabaseWorker from "./DatabaseWorker";
+import type { WorkerQuery } from "./Worker";
+import Worker from "./Worker";
+import { Vector } from "../core/Vector";
 import type { DatabaseConfiguration } from "../DatabaseConfiguration";
-import { Vector } from "../Vector";
-import type { DatabaseQuery } from "./DatabaseClient";
 
-describe("<DatabaseWorker>", () => {
+describe("<Worker>", () => {
 
     const config = {
         dimensions: 1536,
-        indexName: "test",
-        owner: "test",
+        name: "test",
         region: "eu-central-1",
-        space: "ip" as const
-    } as IndexConfiguration;
+        space: "cosine"
+    } as DatabaseConfiguration;
 
     const changesStorage = new MemoryChangesStorage();
 
@@ -22,7 +21,7 @@ describe("<DatabaseWorker>", () => {
 
     const index = new HNSWIndex(config);
 
-    const databaseWorker: DatabaseWorker = new DatabaseWorker({
+    const worker: Worker = new Worker({
         config,
         changesStorage,
         snapshotStorage,
@@ -32,7 +31,7 @@ describe("<DatabaseWorker>", () => {
     });
 
     it("should have instanceId and report state", async() => {
-        const state = await databaseWorker.state();
+        const state = await worker.state();
 
         expect(state.instanceId).toBeDefined();
         expect(state.lastUpdate).toBe(0);
@@ -40,11 +39,12 @@ describe("<DatabaseWorker>", () => {
     });
 
     it("query should be empty for empty worker", async() => {
-        const result = await databaseWorker.query({
+        const result = await worker.query({
             query: {
                 k: 10,
                 vector: Vector.random(config.dimensions),
-                metadataExpression: ""
+                metadataExpression: "",
+                sendVector: true
             },
             updates: []
         });
@@ -55,7 +55,7 @@ describe("<DatabaseWorker>", () => {
     it("should wait on wake", async() => {
         const start = Date.now();
 
-        await databaseWorker.wake(500);
+        await worker.wake(500);
 
         const end = Date.now();
 
@@ -63,11 +63,12 @@ describe("<DatabaseWorker>", () => {
     });
 
     it("should process updates", async() => {
-        const query: DatabaseQuery = {
+        const query: WorkerQuery = {
             query: {
                 k: 10,
                 vector: Vector.random(config.dimensions),
-                metadataExpression: ""
+                metadataExpression: "",
+                sendVector: true
             },
             updates: [
                 {
@@ -82,7 +83,7 @@ describe("<DatabaseWorker>", () => {
             ]
         };
 
-        const result = await databaseWorker.query(query);
+        const result = await worker.query(query);
 
         expect(result.result.result.length).toBe(1);
         expect(result.result.result[0].label).toBe("test");
@@ -90,11 +91,11 @@ describe("<DatabaseWorker>", () => {
     });
 
     it("should save snapshot", async() => {
-        await databaseWorker.saveSnapshot();
+        await worker.saveSnapshot();
     });
 
     it("should load snapshot", async() => {
-        const anotherWorker: DatabaseWorker = new DatabaseWorker({
+        const anotherWorker: Worker = new Worker({
             config,
             changesStorage,
             snapshotStorage,
@@ -108,7 +109,8 @@ describe("<DatabaseWorker>", () => {
             query: {
                 k: 10,
                 vector: Vector.random(config.dimensions),
-                metadataExpression: ""
+                metadataExpression: "",
+                sendVector: true
             },
             updates: []
         });
@@ -123,7 +125,8 @@ describe("<DatabaseWorker>", () => {
             query: {
                 k: 10,
                 vector: Vector.random(config.dimensions),
-                metadataExpression: ""
+                metadataExpression: "",
+                sendVector: true
             },
             updates: []
         });

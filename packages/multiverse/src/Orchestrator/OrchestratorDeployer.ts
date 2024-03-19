@@ -135,7 +135,7 @@ export default class OrchestratorDeployer {
             Environment: {
                 Variables: {
                     CHANGES_TABLE: this.options.changesTable,
-                    INDEX_CONFIG: JSON.stringify(this.options.databaseConfiguration) as any,
+                    DATABASE_CONFIG: JSON.stringify(this.options.databaseConfiguration) as any,
                     SNAPSHOT_BUCKET: this.options.snapshotBucket,
                     NODE_ENV: process.env.NODE_ENV ?? "development",
                     INFRASTRUCTURE_TABLE: this.options.infrastructureTable

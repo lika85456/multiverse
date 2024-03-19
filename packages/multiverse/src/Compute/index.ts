@@ -1,47 +1,44 @@
 /**
- * This is the entry point for Database lambda.
+ * This is the entry point for Compute lambda.
  */
 
 import log from "@multiverse/log";
 import type {
     APIGatewayProxyEvent, APIGatewayProxyResult, Context
 } from "aws-lambda";
-import DatabaseWorker from "./DatabaseWorker";
+import Worker from "./Worker";
 import DynamoChangesStorage from "../ChangesStorage/DynamoChangesStorage";
-import { databaseEnvSchema } from "./DatabaseEnvironment";
+import { databaseEnvSchema } from "./env";
 import HNSWIndex from "../Index/HNSWIndex";
 import S3SnapshotStorage from "../SnapshotStorage/S3SnapshotStorage";
 
 const env = databaseEnvSchema.parse(process.env);
 
 const changesStorage = new DynamoChangesStorage({
-    indexName: env.INDEX_CONFIG.indexName,
-    owner: env.INDEX_CONFIG.owner,
-    partition: env.PARTITION,
     tableName: env.CHANGES_TABLE,
-    region: env.INDEX_CONFIG.region,
-    dimensions: env.INDEX_CONFIG.dimensions,
-    space: env.INDEX_CONFIG.space
+    region: env.DATABASE_CONFIG.region,
+    dimensions: env.DATABASE_CONFIG.dimensions,
+    space: env.DATABASE_CONFIG.space,
+    name: env.DATABASE_CONFIG.name,
 });
 
 const index = new HNSWIndex({
-    dimensions: env.INDEX_CONFIG.dimensions,
-    indexName: env.INDEX_CONFIG.indexName,
-    owner: env.INDEX_CONFIG.owner,
-    region: env.INDEX_CONFIG.region,
-    space: env.INDEX_CONFIG.space,
+    dimensions: env.DATABASE_CONFIG.dimensions,
+    region: env.DATABASE_CONFIG.region,
+    space: env.DATABASE_CONFIG.space,
+    name: env.DATABASE_CONFIG.name,
 });
 
 const snapshotStorage = new S3SnapshotStorage({
     bucketName: env.SNAPSHOT_BUCKET,
-    indexName: env.INDEX_CONFIG.indexName,
-    region: env.INDEX_CONFIG.region,
+    name: env.DATABASE_CONFIG.name,
+    region: env.DATABASE_CONFIG.region,
     downloadPath: "/tmp"
 });
 
-const databaseWorker = new DatabaseWorker({
+const databaseWorker = new Worker({
     changesStorage,
-    config: env.INDEX_CONFIG,
+    config: env.DATABASE_CONFIG,
     ephemeralLimit: 1024,
     index,
     memoryLimit: 512,
@@ -49,8 +46,8 @@ const databaseWorker = new DatabaseWorker({
 });
 
 export type DatabaseEvent = {
-    event: keyof DatabaseWorker,
-    payload: Parameters<DatabaseWorker[keyof DatabaseWorker]>
+    event: keyof Worker,
+    payload: Parameters<Worker[keyof Worker]>
 };
 
 export async function handler(

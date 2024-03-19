@@ -1,5 +1,5 @@
-import type { Query, QueryResult } from "../Database/Query";
-import type { NewVector } from "../Vector";
+import type { Query, QueryResult } from "../core/Query";
+import type { NewVector } from "../core/Vector";
 
 export default interface OrchestratorClient {
     query(query: Query): Promise<QueryResult>;

@@ -35,7 +35,7 @@ RUN yum install -y python3 make gcc-c++ && \
 
 # Copy the package.json and Database.js from the build stage
 COPY --from=build /var/task/package.json .
-COPY --from=build /var/task/packages/multiverse/src/Database/dist/Database.js ./packages/multiverse/src/Database/dist/Database.js
+COPY --from=build /var/task/packages/multiverse/src/Compute/dist/index.js ./packages/multiverse/src/Compute/dist/index.js
 COPY --from=build /var/task/pnpm-workspace.yaml .
 COPY --from=build /var/task/pnpm-lock.yaml .
 
@@ -53,7 +53,7 @@ ENV AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
 ENV AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
 ENV CHANGES_TABLE=${CHANGES_TABLE}
 ENV SNAPSHOT_BUCKET=${SNAPSHOT_BUCKET}
-ENV INDEX_CONFIG=${INDEX_CONFIG}
+ENV DATABASE_CONFIG=${DATABASE_CONFIG}
 ENV PARTITION=${PARTITION}
 
 # Define the command to run your Lambda function

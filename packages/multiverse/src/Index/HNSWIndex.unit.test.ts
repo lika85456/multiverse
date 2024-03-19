@@ -5,9 +5,8 @@ describe("<HNSWIndex>", () => {
     describe("Basic functions", () => {
         const index = new HNSWIndex({
             dimensions: 3,
-            indexName: "test",
             space: "l2",
-            owner: "test",
+            name: "test",
             region: "eu-central-1",
         });
 
@@ -53,9 +52,8 @@ describe("<HNSWIndex>", () => {
     describe("Query with thousand vectors", () => {
         const index = new HNSWIndex({
             dimensions: 3,
-            indexName: "test",
             space: "l2",
-            owner: "test",
+            name: "test",
             region: "eu-central-1",
         });
 
@@ -86,9 +84,8 @@ describe("<HNSWIndex>", () => {
 
         const index = new HNSWIndex({
             dimensions: 3,
-            indexName: "test",
             space: "l2",
-            owner: "test",
+            name: "test",
             region: "eu-central-1",
         });
 
@@ -121,23 +118,20 @@ describe("<HNSWIndex>", () => {
             const instances = [
                 new HNSWIndex({
                     dimensions: 3,
-                    indexName: "test",
                     space: "l2",
-                    owner: "test",
+                    name: "test",
                     region: "eu-central-1",
                 }),
                 new HNSWIndex({
                     dimensions: 3,
-                    indexName: "test",
                     space: "l2",
-                    owner: "test",
+                    name: "test",
                     region: "eu-central-1",
                 }),
                 new HNSWIndex({
                     dimensions: 3,
-                    indexName: "test",
                     space: "l2",
-                    owner: "test",
+                    name: "test",
                     region: "eu-central-1",
                 })
             ];
@@ -162,9 +156,8 @@ describe("<HNSWIndex>", () => {
     describe("Saving & Loading", () => {
         const index = new HNSWIndex({
             dimensions: 3,
-            indexName: "test",
             space: "l2",
-            owner: "test",
+            name: "test",
             region: "eu-central-1",
         });
 
@@ -195,9 +188,8 @@ describe("<HNSWIndex>", () => {
         it("should load", async() => {
             const newIndex = new HNSWIndex({
                 dimensions: 3,
-                indexName: "test",
                 space: "l2",
-                owner: "test",
+                name: "test",
                 region: "eu-central-1",
             });
 

@@ -1,8 +1,8 @@
 import { HierarchicalNSW, } from "hnswlib-node";
 import type Index from ".";
-import type { Query, SearchResultVector } from "../Database/Query";
+import type { Query, SearchResultVector } from "../core/Query";
 import crypto from "crypto";
-import type { NewVector } from "../Vector";
+import type { NewVector } from "../core/Vector";
 import {
     mkdir, readFile, writeFile
 } from "fs/promises";
@@ -18,7 +18,7 @@ export default class HNSWIndex implements Index {
     private idMap: {[id: number]: string} = {};
     private metadata: {[id: number]: Record<string, string>} = {};
 
-    constructor(private config: IndexConfiguration) {
+    constructor(private config: DatabaseConfiguration) {
         this.index = this.initializeIndex();
     }
 
@@ -37,7 +37,7 @@ export default class HNSWIndex implements Index {
         return id;
     }
 
-    public async knn(query: Query): Promise<SearchResultVector[]> {
+    public async knn(query: Omit<Query, "sendVector">): Promise<SearchResultVector[]> {
         log.debug("Querying", { query });
 
         const result = this.index.searchKnn(query.vector, query.k);

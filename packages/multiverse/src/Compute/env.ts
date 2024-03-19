@@ -2,8 +2,8 @@ import z from "zod";
 import { prettifyIssues } from "@multiverse/env";
 import { config } from "dotenv";
 import path from "path";
-import type { DatabaseConfiguration } from "../DatabaseConfiguration";
 import log from "@multiverse/log";
+import type { DatabaseConfiguration } from "../DatabaseConfiguration";
 
 config({ path: path.join(__dirname, "..", "..", "..", process.env.NODE_ENV === "test" ? ".env.test" : ".env"), });
 
@@ -11,7 +11,7 @@ export const databaseEnvSchema = z.object({
     NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
     CHANGES_TABLE: z.string(),
     SNAPSHOT_BUCKET: z.string(),
-    INDEX_CONFIG: z.string().transform<IndexConfiguration>(value => JSON.parse(value)),
+    DATABASE_CONFIG: z.string().transform<DatabaseConfiguration>(value => JSON.parse(value)),
     PARTITION: z.string().transform<number>(value => parseInt(value)),
 });
 
@@ -34,12 +34,11 @@ if (process.env.NODE_ENV === "development") {
         NODE_ENV: "development",
         CHANGES_TABLE: "multiverse-changes-dev",
         SNAPSHOT_BUCKET: "multiverse-snapshots-dev",
-        INDEX_CONFIG: {
-            indexName: "test",
-            owner: "test",
+        DATABASE_CONFIG: {
             region: "eu-central-1",
             dimensions: 1536,
             space: "cosine",
+            name: "multiverse-index-dev",
         },
         PARTITION: 0,
     };
