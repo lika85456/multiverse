@@ -31,7 +31,7 @@ export default function NavigationOptions({ pages }: NavigationOptionsProps) {
             <NavigationMenuItem key={page.path}>
                 <Link href={page.path} legacyBehavior passHref>
                     <NavigationMenuLink
-                        className={`px-4 uppercase font-thin hover:underline hover:underline-offset-4 ${
+                        className={`text-sm tracking-[0.2rem] px-4 uppercase font-thin hover:underline hover:underline-offset-4 ${
                             pathName.includes(page.path)
                                 ? "underline underline-offset-4 text-primary-foreground"
                                 : "text-secondary-foreground"

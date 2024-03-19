@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import MainNav from "@/app/layout/MainNav";
 import { ThemeProvider } from "@/components/theme-provider";
+import { Toaster } from "@/components/ui/sonner";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -17,7 +18,7 @@ export default function RootLayout({ children, }: Readonly<{
     return (
         <html lang="en" suppressHydrationWarning>
             <body className={inter.className}>
-                <div className="flex flex-col min-h-screen w-screen justify-start">
+                <div className="flex flex-col min-h-screen w-screeen justify-start">
                     <ThemeProvider
                         attribute="class"
                         defaultTheme="system"
@@ -34,6 +35,7 @@ export default function RootLayout({ children, }: Readonly<{
                         </div>
                     </ThemeProvider>
                 </div>
+                <Toaster />
             </body>
         </html>
     );

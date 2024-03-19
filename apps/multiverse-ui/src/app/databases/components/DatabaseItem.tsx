@@ -1,4 +1,3 @@
-import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
 import { RiDatabase2Line } from "react-icons/ri";
@@ -6,11 +5,11 @@ import { RiDatabase2Line } from "react-icons/ri";
 export type DatabaseItemProps = {
   databaseItem: {
     databaseId: string;
-    databaseName: string;
-    databaseCodename: string;
-    databaseRecords: number;
-    databaseDimensions: number;
-    databaseType: string;
+    name: string;
+    codename: string;
+    records: number;
+    dimensions: number;
+    metrics: string;
   };
 };
 
@@ -19,26 +18,26 @@ export default function DatabaseItem({ databaseItem }: DatabaseItemProps) {
         <Link
             href={`/databases/${databaseItem.databaseId}`}
             className={
-                "flex flex-row w-full p-4 border outline-border rounded-2xl items-center"
+                "flex flex-row w-full p-4 border outline-border rounded-2xl items-center hover:bg-secondary transition-all"
             }
         >
             <div className={"flex w-11/12 m-0 p-0"}>
                 <div className={"flex flex-col w-6/12"}>
-                    <h3 className={"text-2xl font-bold"}>{databaseItem.databaseName}</h3>
+                    <h3 className={"text-2xl font-bold"}>{databaseItem.name}</h3>
                     <p className={"text-xl lowercase text-tertiary"}>
-                        {databaseItem.databaseCodename}
+                        {databaseItem.codename}
                     </p>
                 </div>
                 <div className={"flex flex-col w-4/12 items-start text-xl"}>
                     <div className={"flex flex-row h-full justify-start"}>
                         <p className={"font-bold mr-2 text-tertiary"}>
-                            {databaseItem.databaseRecords}
+                            {databaseItem.records}
                         </p>
                         <p className={"text-tertiary"}>records</p>
                     </div>
                     <div className={"flex flex-row "}>
                         <p className={"font-bold mr-2 text-tertiary"}>
-                            {databaseItem.databaseDimensions}
+                            {databaseItem.dimensions}
                         </p>
                         <p className={"text-tertiary"}>dimensions</p>
                     </div>
@@ -48,16 +47,12 @@ export default function DatabaseItem({ databaseItem }: DatabaseItemProps) {
                         "flex w-4/12 justify-start items-center text-xl text-tertiary"
                     }
                 >
-                    {databaseItem.databaseType}
+                    {databaseItem.metrics}
                 </p>
             </div>
-            <Button
-                className={
-                    "flex w-1/12 bg-inherit text-primary-foreground hover:text-middle "
-                }
-            >
-                <RiDatabase2Line className={"w-10 h-10"} />
-            </Button>
+            <div className={"flex w-1/12 justify-center"}>
+                <RiDatabase2Line className={"flex w-10 h-10 text-primary-foreground"} />
+            </div>
         </Link>
     );
 }

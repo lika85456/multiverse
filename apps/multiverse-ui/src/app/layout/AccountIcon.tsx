@@ -43,23 +43,30 @@ export default function AccountIcon() {
                         </AvatarFallback>
                     </Avatar>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className={"bg-secondary border-0 mr-4 mt-1"}>
+                <DropdownMenuContent
+                    className={"bg-card text-card-foreground border-0 mr-4 mt-1"}
+                >
                     <DropdownMenuLabel>{userName}</DropdownMenuLabel>
                     <DropdownMenuSeparator className={"bg-border"} />
                     <Link href={"/account"}>
-                        <DropdownMenuItem className={"font-bold focus:bg-primary"}>
+                        <DropdownMenuItem
+                            className={
+                                "font-bold focus:bg-primary focus:text-primary-foreground"
+                            }
+                        >
                             <FiUser className={"mr-2 h-4 w-4"} />
               Account
                         </DropdownMenuItem>
                     </Link>
-                    {/*<DropdownMenuSeparator className={"bg-border"} />*/}
                     <Link
                         href={"/login"}
                         onClick={() => {
                             console.log("Logging out");
                         }}
                     >
-                        <DropdownMenuItem className={"focus:bg-primary"}>
+                        <DropdownMenuItem
+                            className={"focus:bg-primary focus:text-primary-foreground"}
+                        >
                             <LogOut className="mr-2 h-4 w-4" />
                             <span>Log out</span>
                         </DropdownMenuItem>
