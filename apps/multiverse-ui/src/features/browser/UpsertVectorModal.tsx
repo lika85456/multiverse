@@ -21,7 +21,7 @@ export interface Vector {
   id?: string;
   label: string;
   metadata?: string;
-  value: VectorValues;
+  values: VectorValues;
 }
 
 export interface UpsertVectorModalProps {
@@ -39,11 +39,11 @@ export default function UpsertVectorModal({
     const defaultVector = {
         label: "red tractor",
         metadata: undefined,
-        value: Array(dimensions).fill(0),
+        values: Array(dimensions).fill(0),
     };
 
     const [allowActions, setAllowActions] = useState<boolean>(true);
-    const [error, setError] = useState<string | undefined>();
+    const [errors, setErrors] = useState<string[]>([]);
     const [newVector, setNewVector] = useState<Vector>(defaultVector);
 
     const handleCopyRequest = () => {
@@ -58,77 +58,92 @@ export default function UpsertVectorModal({
     };
 
     const handleUpsertVector = () => {
-        console.log(`Upserting vector with label: ${newVector.label}`);
+        console.log(`Upserting vector with label: ${JSON.stringify(newVector)}`);
         handleCloseModal();
     };
 
-    const validateJson = (value: string | undefined,): { success: boolean; error: string[] } => {
-        if (!value) {
-            return {
-                success: false,
-                error: ["No value"],
-            };
+    const findExcessJsonKeys = (json: any): string[] => {
+        console.log(json);
+        const requiredKeys = ["label", "values", "metadata"];
+        const excessKeys: string[] = [];
+        for (const [key] of Object.entries(json)) {
+            if (!requiredKeys.includes(key)) {
+                excessKeys.push(`${key}`);
+            }
         }
+
+        return excessKeys;
+    };
+
+    const transformJsonToVector = (value: string | undefined,): { foundErrors: string[]; vector?: Vector } => {
         try {
+            if (!value) {
+                return { foundErrors: ["No value"] };
+            }
+            const foundErrors: string[] = [];
             const json = JSON.parse(value);
+
             if (!json.label) {
-                return {
-                    success: false,
-                    error: ["Missing vector label"],
-                };
-            } else if (!json.value) {
-                return {
-                    success: false,
-                    error: ["Missing vector values"],
-                };
-            } else if (json.value.length !== dimensions) {
-                return {
-                    success: false,
-                    error: [
-                        `Invalid vector length (${json.value.length} provided, expected ${dimensions})`,
-                    ],
-                };
+                foundErrors.push("Missing vector label");
+            }
+            if (!json.values) {
+                foundErrors.push("Missing vector values");
+            }
+            if (json.values.length !== dimensions) {
+                foundErrors.push(`Invalid vector length (${json.values.length} provided, expected ${dimensions})`,);
+            }
+
+            const excessKey = findExcessJsonKeys(json);
+            if (excessKey.length > 0) {
+                foundErrors.push(`Excess keys found: ${excessKey.join(", ")} `);
+            }
+
+            if (foundErrors.length > 0) {
+                return { foundErrors };
             }
 
             return {
-                success: true,
-                error: [],
+                foundErrors: [],
+                vector: json as Vector,
             };
-        } catch (e) {
-            console.log("invalid json error");
+        } catch (error) {
+            if (error instanceof SyntaxError) {
+                return { foundErrors: ["Invalid JSON format, please check your input."], };
+            }
 
             return {
-                success: false,
-                error: ["Invalid JSON format, please check your input."],
+                foundErrors: [
+                    "Required keys are \"label\" and \"values\", \"metadata\" is optional. Please provide correct values.",
+                ],
             };
         }
     };
 
     const handleEditorChange = (value: string | undefined) => {
-        const { success, error } = validateJson(value);
-        if (success) {
-            setNewVector(JSON.parse(value as string));
+        const { foundErrors, vector } = transformJsonToVector(value);
+        if (vector) {
+            setNewVector(vector);
             setAllowActions(true);
-            setError(undefined);
+            setErrors(foundErrors);
         } else {
-            setError(error.join("\n"));
+            setErrors(foundErrors);
             setAllowActions(false);
         }
     };
 
     const handleRandomizeData = () => {
-        const newValue: VectorValues = newVector.value.map(() =>
+        const newValue: VectorValues = newVector.values.map(() =>
             Number(Math.random().toFixed(3)),);
         setNewVector({
             ...newVector,
-            value: newValue,
+            values: newValue,
         });
     };
 
     useEffect(() => {
         if (modalOpen) {
             setNewVector(defaultVector);
-            setError(undefined);
+            setErrors([]);
             setAllowActions(true);
         }
     }, [modalOpen]);
@@ -165,14 +180,23 @@ export default function UpsertVectorModal({
                         onChange={handleEditorChange}
                     />
                 </div>
-                {error && <div className={"text-destructive"}>{error}</div>}
-                {!error && (
+
+                <div>
+                    {errors &&
+            errors.map((error, index) => (
+                <ul key={index} className={"text-destructive"}>
+                    {error}
+                </ul>
+            ))}
+                </div>
+                {!errors && (
                     <div className={"text-secondary-foreground"}>
             Provided vector is valid
                     </div>
                 )}
                 <AlertDialogFooter>
                     <Button
+                        disabled={!allowActions}
                         className={
                             "border-0 bg-inherit hover:bg-secondary text-primary-foreground"
                         }
