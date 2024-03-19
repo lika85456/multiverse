@@ -1,10 +1,11 @@
 "use client";
 
-import { IoAdd } from "react-icons/io5";
+import { IoAdd, IoClose } from "react-icons/io5";
 import { Button } from "@/components/ui/button";
 import useModal from "@/features/modals/use-modal";
 import {
     AlertDialog,
+    AlertDialogCancel,
     AlertDialogContent,
     AlertDialogFooter,
     AlertDialogHeader,
@@ -13,7 +14,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { CopyIcon } from "lucide-react";
 import { toast } from "sonner";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import type { VectorValues } from "@/features/browser/QueryHeader";
 import Editor from "@monaco-editor/react";
 
@@ -166,7 +167,17 @@ export default function UpsertVectorModal({
             </AlertDialogTrigger>
             <AlertDialogContent className={"bg-card border-0"}>
                 <AlertDialogHeader>
-                    <AlertDialogTitle>Upsert Vector</AlertDialogTitle>
+                    <div className={"flex flex-row justify-between"}>
+                        <AlertDialogTitle>Upsert Vector</AlertDialogTitle>
+                        <AlertDialogCancel
+                            onClick={handleCloseModal}
+                            className={
+                                "border-0 bg-inherit hover:bg-inherit hover:text-secondary-foreground w-8 h-8 p-0 m-0"
+                            }
+                        >
+                            <IoClose className={"w-8 h-8"} />
+                        </AlertDialogCancel>
+                    </div>
                 </AlertDialogHeader>
                 <div
                     className={`p-1 border-2 rounded-sm ${
@@ -200,7 +211,7 @@ export default function UpsertVectorModal({
                     <Button
                         disabled={!allowActions}
                         className={
-                            "border-0 bg-inherit hover:bg-secondary text-primary-foreground"
+                            "flex w-full border-0 bg-inherit hover:bg-primary text-primary-foreground"
                         }
                         onClick={handleRandomizeData}
                     >
@@ -209,7 +220,7 @@ export default function UpsertVectorModal({
                     <Button
                         disabled={!allowActions}
                         className={
-                            "border border-border bg-inherit hover:bg-secondary text-primary-foreground"
+                            "flex w-full border border-border bg-inherit hover:bg-primary text-primary-foreground"
                         }
                         onClick={handleCopyRequest}
                     >
@@ -218,7 +229,9 @@ export default function UpsertVectorModal({
                     </Button>
                     <Button
                         disabled={!allowActions}
-                        className={"bg-accent hover:bg-accent_light text-accent-foreground"}
+                        className={
+                            "flex w-full bg-accent hover:bg-accent_light text-accent-foreground"
+                        }
                         onClick={handleUpsertVector}
                     >
                         <IoAdd className={"w-6 h-6 mr-2"} />

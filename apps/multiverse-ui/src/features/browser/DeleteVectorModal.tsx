@@ -1,5 +1,6 @@
 import {
     AlertDialog,
+    AlertDialogCancel,
     AlertDialogContent,
     AlertDialogDescription,
     AlertDialogFooter,
@@ -11,6 +12,8 @@ import { CopyIcon, TrashIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import useModal from "@/features/modals/use-modal";
+import { IoClose } from "react-icons/io5";
+import React from "react";
 
 export default function DeleteVectorModal({ id }: { id: string }) {
     const {
@@ -41,9 +44,19 @@ export default function DeleteVectorModal({ id }: { id: string }) {
                     onClick={handleOpenModal}
                 />
             </AlertDialogTrigger>
-            <AlertDialogContent>
+            <AlertDialogContent className={"bg-card border-0"}>
                 <AlertDialogHeader>
-                    <AlertDialogTitle>Delete Vector</AlertDialogTitle>
+                    <div className={"flex flex-row justify-between"}>
+                        <AlertDialogTitle>Delete Vector</AlertDialogTitle>
+                        <AlertDialogCancel
+                            onClick={handleCloseModal}
+                            className={
+                                "border-0 bg-inherit hover:bg-inherit hover:text-secondary-foreground w-8 h-8 p-0 m-0"
+                            }
+                        >
+                            <IoClose className={"w-8 h-8"} />
+                        </AlertDialogCancel>
+                    </div>
                     <AlertDialogDescription>
             Do you really wish to delete this vector? This action cannot be
             undone.
@@ -52,16 +65,15 @@ export default function DeleteVectorModal({ id }: { id: string }) {
                 <AlertDialogFooter>
                     <Button
                         className={
-                            "flex w-full border-0 bg-inherit hover:bg-secondary text-primary-foreground"
+                            "flex w-full border-0 bg-inherit hover:bg-primary text-primary-foreground"
                         }
                         onClick={handleCloseModal}
                     >
-                        <TrashIcon className={"w-6 h-6 mr-2"} />
             Cancel
                     </Button>
                     <Button
                         className={
-                            "flex w-full border border-border bg-inherit hover:bg-secondary text-primary-foreground"
+                            "flex w-full border border-border bg-inherit hover:bg-primary text-primary-foreground"
                         }
                         onClick={handleCopyRequest}
                     >
