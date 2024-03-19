@@ -1,8 +1,8 @@
 import type {
     DatabaseConfiguration, Region, Token
 } from "./DatabaseConfiguration";
-import type { Query, QueryResult } from "./Database/Query";
-import type { NewVector } from "./Vector";
+import type { Query, QueryResult } from "./core/Query";
+import type { NewVector } from "./core/Vector";
 import OrchestratorDeployer from "./Orchestrator/OrchestratorDeployer";
 
 export class MultiverseDatabase {

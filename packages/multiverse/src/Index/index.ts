@@ -1,5 +1,5 @@
-import type { Query, SearchResultVector } from "../Database/Query";
-import type { NewVector } from "../Vector";
+import type { Query, SearchResultVector } from "../core/Query";
+import type { NewVector } from "../core/Vector";
 
 export default interface Index {
     knn(query: Query): Promise<SearchResultVector[]>;

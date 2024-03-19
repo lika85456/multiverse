@@ -7,7 +7,7 @@ import {
     BatchWriteCommand, DynamoDBDocumentClient, QueryCommand
 } from "@aws-sdk/lib-dynamodb";
 import type { StoredVectorChange } from ".";
-import { Vector } from "../Vector";
+import { Vector } from "../core/Vector";
 import type { DatabaseConfiguration } from "../DatabaseConfiguration";
 
 const logger = log.getSubLogger({ name: "DynamoChangesStorageDeployer" });

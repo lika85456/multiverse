@@ -1,5 +1,5 @@
 import log from "@multiverse/log";
-import { Vector } from "../Vector";
+import { Vector } from "../core/Vector";
 import LambdaOrchestratorClient from "./LambdaOrchestratorClient";
 import { DynamoChangesStorageDeployer } from "../ChangesStorage/DynamoChangesStorage";
 import { S3SnapshotStorageDeployer } from "../SnapshotStorage/S3SnapshotStorage";

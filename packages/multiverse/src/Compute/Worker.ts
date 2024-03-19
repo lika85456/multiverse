@@ -2,21 +2,53 @@ import type ChangesStorage from "../ChangesStorage";
 import type Index from "../Index";
 import type { DatabaseConfiguration } from "../DatabaseConfiguration";
 import type SnapshotStorage from "../SnapshotStorage";
-import type {
-    DatabaseClientState, DatabaseQuery, DatabaseQueryResult
-} from "./DatabaseClient";
-import type DatabaseClient from "./DatabaseClient";
 import os from "node-os-utils";
 import fs from "fs/promises";
 import log from "@multiverse/log";
+import { z } from "zod";
+import type { QueryResult } from "../core/Query";
+import { querySchema } from "../core/Query";
+import { storedVectorChangeSchema } from "../ChangesStorage";
 
-export default class DatabaseWorker implements DatabaseClient {
+export const workerQuerySchema = z.object({
+    query: querySchema,
+    updates: z.array(storedVectorChangeSchema).optional(),
+});
+
+export type WorkerQuery = z.infer<typeof workerQuerySchema>;
+
+export type WorkerQueryResult = {
+    result: QueryResult;
+    state: WorkerState;
+};
+
+export type WorkerState = {
+    instanceId: string;
+    lastUpdate: number;
+    memoryUsed: number;
+    memoryLimit: number;
+    ephemeralUsed: number;
+    ephemeralLimit: number;
+};
+
+export interface Worker {
+    query(query: WorkerQuery): Promise<WorkerQueryResult>;
+    wake(wait: number): Promise<void>;
+    saveSnapshot(): Promise<void>;
+    loadLatestSnapshot(): Promise<void>;
+    count(): Promise<{
+        vectors: number,
+        vectorDimensions: number
+    }>;
+}
+
+export default class ComputeWorker implements Worker {
 
     private instanceId = Math.random().toString(36).slice(2);
     private lastUpdate = 0;
 
     constructor(private options: {
-        config: IndexConfiguration,
+        config: DatabaseConfiguration,
         snapshotStorage: SnapshotStorage,
         changesStorage: ChangesStorage,
         index: Index,
@@ -25,24 +57,7 @@ export default class DatabaseWorker implements DatabaseClient {
     }) {
     }
 
-    private async directorySize(path: string): Promise<number> {
-        const files = await fs.readdir(path);
-        let size = 0;
-
-        for (const file of files) {
-            const stats = await fs.stat(`${path}/${file}`);
-
-            if (stats.isDirectory()) {
-                size += await this.directorySize(`${path}/${file}`);
-            } else {
-                size += stats.size;
-            }
-        }
-
-        return size / 1024 / 1024;
-    }
-
-    public async state(): Promise<DatabaseClientState> {
+    public async state(): Promise<WorkerState> {
         return {
             instanceId: this.instanceId,
             lastUpdate: this.lastUpdate,
@@ -53,7 +68,7 @@ export default class DatabaseWorker implements DatabaseClient {
         };
     }
 
-    public async query(query: DatabaseQuery): Promise<DatabaseQueryResult> {
+    public async query(query: WorkerQuery): Promise<WorkerQueryResult> {
         if (query.updates) {
             for (const update of query.updates) {
                 if (update.timestamp < this.lastUpdate) {
@@ -112,5 +127,22 @@ export default class DatabaseWorker implements DatabaseClient {
             vectors: await this.options.index.size(),
             vectorDimensions: await this.options.index.dimensions()
         };
+    }
+
+    private async directorySize(path: string): Promise<number> {
+        const files = await fs.readdir(path);
+        let size = 0;
+
+        for (const file of files) {
+            const stats = await fs.stat(`${path}/${file}`);
+
+            if (stats.isDirectory()) {
+                size += await this.directorySize(`${path}/${file}`);
+            } else {
+                size += stats.size;
+            }
+        }
+
+        return size / 1024 / 1024;
     }
 }

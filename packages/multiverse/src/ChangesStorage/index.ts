@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { newVectorSchema } from "../Vector";
+import { newVectorSchema } from "../core/Vector";
 
 export const storedVectorChangeSchema = z.union([
     z.object({

@@ -15,7 +15,7 @@ describe("<S3SnapshotStorage>", () => {
     const snapshotStorage = new S3SnapshotStorage({
         bucketName,
         region: "eu-central-1",
-        indexName: "test"
+        name: "test"
     });
 
     beforeAll(async() => {
