@@ -1,10 +1,11 @@
 import DeleteVectorModal from "@/features/browser/DeleteVectorModal";
+import ViewVectorModal from "@/features/browser/ViewVectorModal";
 
 export interface QueryResultProps {
   id: string;
   label: string;
   metadata?: string;
-  value: number[];
+  values: number[];
   metrics: number;
 }
 
@@ -19,7 +20,7 @@ export default function QueryResult({ vector }: { vector: QueryResultProps }) {
                 <div className={"w-32 text-primary-foreground truncate"}>
                     {vector.label}
                 </div>
-                <div className={"text-secondary-foreground truncate"}>{`[${vector.value
+                <div className={"text-secondary-foreground truncate"}>{`[${vector.values
                     .slice(0, 10)
                     .map((element) => ` ${element.toFixed(3)}`)} ...]`}</div>
                 <div className={"flex justify-end w-16 text-primary-foreground"}>
@@ -27,6 +28,9 @@ export default function QueryResult({ vector }: { vector: QueryResultProps }) {
                 </div>
             </div>
             <DeleteVectorModal id={vector.id} />
+            <ViewVectorModal
+                vector={{ ...vector, }}
+            />
         </div>
     );
 }
