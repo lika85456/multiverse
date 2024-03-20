@@ -7,10 +7,11 @@ import { useState } from "react";
 import { CopyIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import format from "@/features/statistics/format";
 
 function ParameterSlider({
     slider: {
-        label, min, max
+        label, min, max, formatValue
     },
     onChange,
 }: {
@@ -18,26 +19,34 @@ function ParameterSlider({
     label: string;
     min: number;
     max: number;
+    formatValue: (value: number) => string;
   };
   onChange: (value: number) => void;
 }) {
-    const [value, setValue] = useState([(max + min) / 2]);
+    const [value, setValue] = useState((max + min) / 2);
 
     const handleValueChange = (value: number[]) => {
-        setValue(value);
+        setValue(value[0]);
         onChange(value[0]);
     };
 
+    //TODO use logarithmic or more suitable scale for the slider
+    //TODO make value on the side an input field
     return (
-        <div className="my-16">
+        <div className="flex flex-col w-full items-start my-16">
             <Label className="text-lg mb-4">{label}</Label>
-            <Slider
-                value={value}
-                min={min}
-                max={max}
-                step={1}
-                onValueChange={(value) => handleValueChange(value)}
-            />
+            <div className="flex flex-row w-full h-fit py-4">
+                <Slider
+                    value={[value]}
+                    min={min}
+                    max={max}
+                    step={1}
+                    onValueChange={(value) => handleValueChange(value)}
+                />
+                <div className="flex w-24 ml-4 justify-end">
+                    {formatValue(value).replace(" ", "")}
+                </div>
+            </div>
         </div>
     );
 }
@@ -48,19 +57,28 @@ export default function PriceCalculator() {
             label: "Data size",
             parameter: 1,
             min: 100000,
-            max: 1000000,
+            max: 10000000000000,
+            formatValue: (value: number) => {
+                return `${format(value, "bytes")}`;
+            },
         },
         {
             label: "Queries",
             parameter: 1,
             min: 100000,
             max: 1000000,
+            formatValue: (value: number) => {
+                return `${format(value, "compact")}`;
+            },
         },
         {
             label: "Writes",
             parameter: 1,
             min: 100000,
             max: 1000000,
+            formatValue: (value: number) => {
+                return `${format(value, "compact")}`;
+            },
         },
     ];
 
@@ -106,13 +124,13 @@ export default function PriceCalculator() {
     };
 
     return (
-        <div className="flex flex-col border border-border rounded-2xl p-4">
+        <div className="flex flex-col pb-16">
             <div className="flex flex-row justify-between items-center">
                 <SectionTitle title={"Price calculator"} className="flex h-fit" />
 
                 <Button
                     onClick={handleCopyCalculatedValues}
-                    className="border-0 bg-inherit hover:text-secondary-foreground"
+                    className="border-0 bg-inherit hover:text-secondary-foreground p-0"
                 >
                     <CopyIcon className="w-6 h-6 mr-2 cursor-pointer" /> Copy calculated
           values
