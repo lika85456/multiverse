@@ -1,0 +1,100 @@
+"use client";
+
+import { DateIntervalPicker } from "@/features/statistics/DateIntervalPicker";
+import GeneralStatistics from "@/features/statistics/GeneralStatistics";
+import useDateInterval from "@/features/statistics/use-date-interval";
+import format from "@/features/statistics/format";
+import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import StatisticsGraph from "@/features/statistics/StatisticsGraph";
+import * as React from "react";
+import SectionTitle from "@/app/layout/components/SectionTitle";
+import { Separator } from "@/components/ui/separator";
+import PriceCalculator from "@/features/statistics/calculator/PriceCalculator";
+
+const items = [
+    {
+        label: "Total Cost",
+        value: `$ ${format(27.13, "delim")}`,
+    },
+    {
+        label: "Total Records",
+        value: `${format(7800000, "compact")} (${format(150000000000, "bytes")})`,
+    },
+    {
+        label: "Queries",
+        value: `${format(1200000, "compact")}`,
+    },
+    {
+        label: "Writes",
+        value: `${format(400000, "compact")}`,
+    },
+];
+
+const costs = {
+    title: "Costs",
+    data: {
+        unit: "$",
+        values: [
+            {
+                value: 124,
+                timeString: "2022-01-01",
+            },
+            {
+                value: 25,
+                timeString: "2022-01-02",
+            },
+            {
+                value: 137,
+                timeString: "2022-01-03",
+            },
+            {
+                value: 427,
+                timeString: "2022-01-04",
+            },
+            {
+                value: 102,
+                timeString: "2022-01-05",
+            },
+            {
+                value: 150,
+                timeString: "2022-01-06",
+            },
+            {
+                value: 400,
+                timeString: "2022-01-07",
+            },
+        ],
+    },
+};
+
+export default function PricingStatistics() {
+    const [isAuthenticated, setIsAuthenticated] = useState(true);
+    const { date, handleDateIntervalChange } = useDateInterval();
+
+    return (
+        <div className="flex flex-col w-full">
+            <Button
+                className="flex w-fit"
+                onClick={setIsAuthenticated.bind(null, !isAuthenticated)}
+            >
+        Authentication
+            </Button>
+            {isAuthenticated && (
+                <div className="flex flex-col">
+                    <div className="flex flex-row justify-between items-center pb-8">
+                        <SectionTitle title={"My plan"} className="flex h-fit" />
+                        <DateIntervalPicker
+                            getDate={() => date}
+                            setDate={handleDateIntervalChange}
+                        />
+                    </div>
+                    <GeneralStatistics items={items} className="pb-8" />
+                    <StatisticsGraph title={costs.title} data={costs.data} />
+                    <Separator className="my-4" />
+                </div>
+            )}
+            <PriceCalculator />
+        </div>
+    );
+}

@@ -1,6 +1,7 @@
 "use client";
 
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 export interface GeneralStatisticsItemProps {
   label: string;
@@ -9,6 +10,7 @@ export interface GeneralStatisticsItemProps {
 
 export interface GeneralStatisticsProps {
   items: GeneralStatisticsItemProps[];
+  className?: string;
 }
 
 export function GeneralStatisticsItem({
@@ -38,11 +40,19 @@ export function GeneralStatisticsItem({
     );
 }
 
-export default function GeneralStatistics({ items }: GeneralStatisticsProps) {
+export default function GeneralStatistics({
+    items,
+    className,
+}: GeneralStatisticsProps) {
     const trimmedItems = items.slice(0, 6);
 
     return (
-        <ul className="flex flex-row justify-between space-x-4 w-full">
+        <ul
+            className={cn(
+                "flex flex-row justify-between space-x-4 w-full",
+                className,
+            )}
+        >
             {trimmedItems.map((item) => {
                 return (
                     <GeneralStatisticsItem
