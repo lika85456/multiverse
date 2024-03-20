@@ -17,7 +17,7 @@ describe("<Worker>", () => {
 
     const changesStorage = new MemoryChangesStorage();
 
-    const snapshotStorage = new LocalSnapshotStorage("test");
+    const snapshotStorage = new LocalSnapshotStorage(Math.random().toString(36).substring(7));
 
     const index = new HNSWIndex(config);
 
@@ -91,7 +91,11 @@ describe("<Worker>", () => {
     });
 
     it("should save snapshot", async() => {
+        expect(await snapshotStorage.loadLatest()).toBeUndefined();
+
         await worker.saveSnapshot();
+
+        expect(await snapshotStorage.loadLatest()).toBeDefined();
     });
 
     it("should load snapshot", async() => {
@@ -132,5 +136,45 @@ describe("<Worker>", () => {
         });
 
         expect(result2.result.result.length).toBe(1);
+    });
+
+    it("should add vectors", async() => {
+        const vector = {
+            label: "test",
+            vector: Vector.random(config.dimensions),
+            metadata: { name: "test" }
+        };
+
+        await worker.add([vector]);
+
+        const result = await worker.query({
+            query: {
+                k: 10,
+                vector: vector.vector,
+                metadataExpression: "",
+                sendVector: true
+            },
+            updates: []
+        });
+
+        expect(result.result.result.length).toBe(1);
+
+        expect(result.result.result[0].label).toBe("test");
+    });
+
+    it("should remove vectors", async() => {
+        await worker.remove(["test"]);
+
+        const result = await worker.query({
+            query: {
+                k: 10,
+                vector: Vector.random(config.dimensions),
+                metadataExpression: "",
+                sendVector: true
+            },
+            updates: []
+        });
+
+        expect(result.result.result.length).toBe(0);
     });
 });

@@ -19,6 +19,7 @@ export type StoredVectorChange = z.infer<typeof storedVectorChangeSchema>;
 export default interface ChangesStorage {
     add(changes: StoredVectorChange[]): Promise<void>;
     changesAfter(timestamp: number): AsyncGenerator<StoredVectorChange, void, unknown>;
+    getAllChangesAfter(timestamp: number): Promise<StoredVectorChange[]>;
 
     deploy(): Promise<void>;
     destroy(): Promise<void>;

@@ -57,4 +57,4 @@ ENV DATABASE_CONFIG=${DATABASE_CONFIG}
 ENV PARTITION=${PARTITION}
 
 # Define the command to run your Lambda function
-CMD ["packages/multiverse/src/Database/dist/Database.handler"]
+CMD ["packages/multiverse/src/Compute/dist/index.handler"]

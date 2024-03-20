@@ -100,4 +100,10 @@ describe("<DynamoChangesStorage>", () => {
         const readChanges = await readWholeIterator(storage.changesAfter(50));
         expect(readChanges).toHaveLength(153);
     });
+
+    it("should read correctly getAllChangesAfter", async() => {
+
+        const readChanges = await storage.getAllChangesAfter(50);
+        expect(readChanges).toHaveLength(153);
+    });
 });

@@ -21,6 +21,10 @@ export default class MemoryChangesStorage implements ChangesStorage {
         return;
     }
 
+    public async getAllChangesAfter(timestamp: number): Promise<StoredVectorChange[]> {
+        return this.changes.filter(change => change.timestamp >= timestamp);
+    }
+
     deploy(): Promise<void> {
         return Promise.resolve();
     }

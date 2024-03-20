@@ -7,6 +7,7 @@ import type {
 import type { DatabaseEnvironment } from "./env";
 import type { DatabaseConfiguration } from "../DatabaseConfiguration";
 import { IAM } from "@aws-sdk/client-iam";
+import type { NewVector } from "../core/Vector";
 
 const logger = log.getSubLogger({ name: "LambdaWorker" });
 
@@ -31,24 +32,40 @@ export default class LambdaWorker implements Worker {
         });
 
         const uintPayload = new Uint8Array(result.Payload as ArrayBuffer);
-
-        if (result.FunctionError) {
-            log.error({ result: JSON.parse(Buffer.from(uintPayload).toString("utf-8")) });
-            throw new Error(result.FunctionError);
-        }
+        const payloadString = Buffer.from(uintPayload).toString("utf-8");
+        const parsedPayload = JSON.parse(payloadString);
 
         log.debug("Lambda invoked", {
             lambdaName: this.lambdaName,
-            result: JSON.parse(Buffer.from(uintPayload).toString("utf-8"))
+            result: parsedPayload
         });
 
-        return JSON.parse(JSON.parse(Buffer.from(uintPayload).toString("utf-8")).body);
+        if (result.FunctionError) {
+            log.error(JSON.stringify(parsedPayload, null, 4));
+            throw new Error(parsedPayload);
+        }
+
+        return parsedPayload.body && JSON.parse(parsedPayload.body);
     }
 
     public async query(query: WorkerQuery): Promise<WorkerQueryResult> {
         return await this.invoke({
             event: "query",
             payload: [query]
+        });
+    }
+
+    public async add(vectors: NewVector[]): Promise<void> {
+        await this.invoke({
+            event: "add",
+            payload: [vectors]
+        });
+    }
+
+    public async remove(labels: string[]): Promise<void> {
+        await this.invoke({
+            event: "remove",
+            payload: [labels]
         });
     }
 
@@ -111,23 +128,33 @@ export default class LambdaWorker implements Worker {
             RoleName: roleName,
         });
 
+        log.debug("Created role", { result });
+
         // add logs policy
-        await iam.attachRolePolicy({
+        log.debug(await iam.attachRolePolicy({
             PolicyArn: "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
             RoleName: roleName
-        });
+        }));
 
         // add dynamodb policy
-        await iam.attachRolePolicy({
+        log.debug(await iam.attachRolePolicy({
             PolicyArn: "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess",
             RoleName: roleName
-        });
+        }));
 
         // add invoke policy
-        await iam.attachRolePolicy({
-            PolicyArn: "arn:aws:iam::aws:policy/AWSLambdaRole",
+        log.debug(await iam.attachRolePolicy({
+            PolicyArn: "arn:aws:iam::aws:policy/service-role/AWSLambdaRole",
             RoleName: roleName
-        });
+        }));
+
+        // add s3 policy
+        log.debug(await iam.attachRolePolicy({
+            PolicyArn: "arn:aws:iam::aws:policy/AmazonS3FullAccess",
+            RoleName: roleName
+        }));
+
+        // ! remove role if changing policies
 
         log.debug("Created role", { result });
 
