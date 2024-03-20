@@ -9,7 +9,7 @@ export default function Account() {
     return (
         <>
             <PageTitle title={`${userName} - account`} />
-            <Separator className={"bg-border m-4"} />
+            <Separator className="bg-border m-4" />
             <SectionTitle title={"AWS Token"} />
             <AWSToken />
         </>

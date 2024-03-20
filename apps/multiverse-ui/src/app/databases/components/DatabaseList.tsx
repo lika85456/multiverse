@@ -7,18 +7,18 @@ export interface DatabaseListProps {
 }
 
 export default function DatabaseList({ items }: DatabaseListProps) {
-    const databaseItems = items.map((item) => {
-        return (
-            <li key={item.databaseItem.databaseId}>
-                <DatabaseItem databaseItem={item.databaseItem} />
-            </li>
-        );
-    });
-
     return (
         <>
             <CreateDatabaseModal />
-            <ul className={"flex flex-col w-full py-4 space-y-4"}>{databaseItems}</ul>
+            <ul className="flex flex-col w-full py-4 space-y-4">
+                {items.map((item) => {
+                    return (
+                        <li key={item.databaseItem.databaseId}>
+                            <DatabaseItem databaseItem={item.databaseItem} />
+                        </li>
+                    );
+                })}
+            </ul>
         </>
     );
 }

@@ -36,25 +36,17 @@ export default function AccountIcon() {
                         }`}
                     >
                         <AvatarImage src={userImage} alt="@shadcn" />
-                        <AvatarFallback
-                            className={"text-contrast_primary-foreground bg-contrast_primary"}
-                        >
+                        <AvatarFallback className="text-contrast_primary-foreground bg-contrast_primary">
                             {userInitial}
                         </AvatarFallback>
                     </Avatar>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent
-                    className={"bg-card text-card-foreground border-0 mr-4 mt-1"}
-                >
+                <DropdownMenuContent className="bg-card text-card-foreground border-0 mr-4 mt-1">
                     <DropdownMenuLabel>{userName}</DropdownMenuLabel>
-                    <DropdownMenuSeparator className={"bg-border"} />
+                    <DropdownMenuSeparator className="bg-border" />
                     <Link href={"/account"}>
-                        <DropdownMenuItem
-                            className={
-                                "font-bold focus:bg-primary focus:text-primary-foreground"
-                            }
-                        >
-                            <FiUser className={"mr-2 h-4 w-4"} />
+                        <DropdownMenuItem className="font-bold focus:bg-primary focus:text-primary-foreground">
+                            <FiUser className="mr-2 h-4 w-4" />
               Account
                         </DropdownMenuItem>
                     </Link>
@@ -64,9 +56,7 @@ export default function AccountIcon() {
                             console.log("Logging out");
                         }}
                     >
-                        <DropdownMenuItem
-                            className={"focus:bg-primary focus:text-primary-foreground"}
-                        >
+                        <DropdownMenuItem className="focus:bg-primary focus:text-primary-foreground">
                             <LogOut className="mr-2 h-4 w-4" />
                             <span>Log out</span>
                         </DropdownMenuItem>

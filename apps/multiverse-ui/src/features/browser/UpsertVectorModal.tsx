@@ -47,15 +47,13 @@ export default function UpsertVectorModal({
     const [errors, setErrors] = useState<string[]>([]);
     const [newVector, setNewVector] = useState<Vector>(defaultVector);
 
-    const handleCopyRequest = () => {
-        navigator.clipboard
-            .writeText(`${JSON.stringify(newVector)}`)
-            .then(() => {
-                toast("Request has been copied into your clipboard.");
-            })
-            .catch(() => {
-                console.log("Request could not be copied.");
-            });
+    const handleCopyRequest = async() => {
+        try {
+            await navigator.clipboard.writeText(`${JSON.stringify(newVector)}`);
+            toast("Request has been copied into your clipboard.");
+        } catch (error) {
+            console.log("Request could not be copied.");
+        }
     };
 
     const handleUpsertVector = () => {
@@ -155,27 +153,21 @@ export default function UpsertVectorModal({
         <AlertDialog open={modalOpen}>
             <AlertDialogTrigger asChild>
                 <div className={className} onClick={handleOpenModal}>
-                    <Button
-                        className={
-                            "self-end bg-accent text-accent-foreground hover:bg-accent_light"
-                        }
-                    >
-                        <IoAdd className={"w-6 h-6 mr-2"} />
+                    <Button className="self-end bg-accent text-accent-foreground hover:bg-accent_light">
+                        <IoAdd className="w-6 h-6 mr-2" />
             Upsert
                     </Button>
                 </div>
             </AlertDialogTrigger>
-            <AlertDialogContent className={"bg-card border-0"}>
+            <AlertDialogContent className="bg-card border-0">
                 <AlertDialogHeader>
-                    <div className={"flex flex-row justify-between"}>
+                    <div className="flex flex-row justify-between">
                         <AlertDialogTitle>Upsert Vector</AlertDialogTitle>
                         <AlertDialogCancel
                             onClick={handleCloseModal}
-                            className={
-                                "border-0 bg-inherit hover:bg-inherit hover:text-secondary-foreground w-8 h-8 p-0 m-0"
-                            }
+                            className="border-0 bg-inherit hover:bg-inherit hover:text-secondary-foreground w-8 h-8 p-0 m-0"
                         >
-                            <IoClose className={"w-8 h-8"} />
+                            <IoClose className="w-8 h-8" />
                         </AlertDialogCancel>
                     </div>
                 </AlertDialogHeader>
@@ -197,44 +189,38 @@ export default function UpsertVectorModal({
                 <div>
                     {errors &&
             errors.map((error, index) => (
-                <ul key={index} className={"text-destructive"}>
+                <ul key={index} className="text-destructive">
                     {error}
                 </ul>
             ))}
                 </div>
                 {!errors && (
-                    <div className={"text-secondary-foreground"}>
+                    <div className="text-secondary-foreground">
             Provided vector is valid
                     </div>
                 )}
                 <AlertDialogFooter>
                     <Button
                         disabled={!allowActions}
-                        className={
-                            "flex w-full border-0 bg-inherit hover:bg-primary text-primary-foreground"
-                        }
+                        className="flex w-full border-0 bg-inherit hover:bg-primary text-primary-foreground"
                         onClick={handleRandomizeData}
                     >
             Randomize
                     </Button>
                     <Button
                         disabled={!allowActions}
-                        className={
-                            "flex w-full border border-border bg-inherit hover:bg-primary text-primary-foreground"
-                        }
+                        className="flex w-full border border-border bg-inherit hover:bg-primary text-primary-foreground"
                         onClick={handleCopyRequest}
                     >
-                        <CopyIcon className={"w-6 h-6 mr-2"} />
+                        <CopyIcon className="w-6 h-6 mr-2" />
             Copy request
                     </Button>
                     <Button
                         disabled={!allowActions}
-                        className={
-                            "flex w-full bg-accent hover:bg-accent_light text-accent-foreground"
-                        }
+                        className="flex w-full bg-accent hover:bg-accent_light text-accent-foreground"
                         onClick={handleUpsertVector}
                     >
-                        <IoAdd className={"w-6 h-6 mr-2"} />
+                        <IoAdd className="w-6 h-6 mr-2" />
             Upsert
                     </Button>
                 </AlertDialogFooter>

@@ -21,7 +21,7 @@ export default function ConnectionTokensList() {
     return (
         <>
             <SectionTitle title={"Connection tokens"} />
-            <ul className={"flex w-full flex-col my-4 space-y-4"}>
+            <ul className="flex w-full flex-col my-4 space-y-4">
                 {tokens.map((token) => {
                     return (
                         <li key={token.tokenId}>

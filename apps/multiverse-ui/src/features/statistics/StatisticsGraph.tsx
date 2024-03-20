@@ -30,11 +30,9 @@ const CustomTooltip = ({
 }: any) => {
     if (active && payload && payload.length) {
         return (
-            <div
-                className={"bg-card border border-border bg-opacity-100 p-2 rounded-md"}
-            >
-                <p className={"text-white text-xs"}>{`Date: ${label}`}</p>
-                <p className={"text-white text-xs"}>{`Value: ${payload[0].value}`}</p>
+            <div className="bg-card border border-border bg-opacity-100 p-2 rounded-md">
+                <p className="text-white text-xs">{`Date: ${label}`}</p>
+                <p className="text-white text-xs">{`Value: ${payload[0].value}`}</p>
             </div>
         );
     }
@@ -45,34 +43,32 @@ const CustomTooltip = ({
 export default function StatisticsGraph({ title, data }: StatisticsGraphProps) {
     const { theme } = useTheme();
     const handleCopy = async() => {
-        navigator.clipboard
-            .writeText(`${title}: ${JSON.stringify({
+        try {
+            await navigator.clipboard.writeText(`${title}: ${JSON.stringify({
                 title,
                 data,
-            })}`,)
-            .then(() => {
-                toast("Data have been copied into your clipboard.");
-            })
-            .catch(() => {
-                console.log("Data could not be copied.");
-            });
+            })}`,);
+            toast("Data have been copied into your clipboard.");
+        } catch (error) {
+            console.log("Data could not be copied.");
+        }
     };
 
     return (
-        <div className={"flex flex-col w-full"}>
-            <div className={"flex flex-row w-full items-center justify-between"}>
+        <div className="flex flex-col w-full">
+            <div className="flex flex-row w-full items-center justify-between">
                 <SectionTitle title={title} />
                 <Button
-                    className={"flex flex-row items-center bg-inherit border-0"}
+                    className="flex flex-row items-center bg-inherit border-0"
                     onClick={handleCopy}
                 >
-                    <CopyIcon className={"w-6 h-6 mr-2"} />
+                    <CopyIcon className="w-6 h-6 mr-2" />
           Copy data
                 </Button>
             </div>
             <ResponsiveContainer width={"100%"} height={250}>
                 <LineChart
-                    className={"w-full"}
+                    className="w-full"
                     width={600}
                     height={250}
                     data={data.values.map((value) => {

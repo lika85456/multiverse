@@ -33,7 +33,7 @@ export default function GeneralDatabaseStatistics() {
     if (!database) return null;
 
     return (
-        <div className={"flex flex-col w-full"}>
+        <div className="flex flex-col w-full">
             <SectionTitle title={"Statistics"} />
             <GeneralStatistics items={items} />
         </div>

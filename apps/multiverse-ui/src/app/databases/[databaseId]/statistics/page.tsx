@@ -207,9 +207,9 @@ export default function DatabaseStatistics() {
     }, [date]);
 
     return (
-        <div className={"flex flex-col"}>
+        <div className="flex flex-col">
             <DateIntervalPicker
-                className={"self-end"}
+                className="self-end"
                 getDate={() => date}
                 setDate={handleDateIntervalChange}
             />

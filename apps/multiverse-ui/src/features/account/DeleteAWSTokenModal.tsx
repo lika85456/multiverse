@@ -1,5 +1,3 @@
-"use client";
-
 import {
     AlertDialog,
     AlertDialogAction,
@@ -35,48 +33,38 @@ export function DeleteAWSTokenModal({ setState, }: {
         <AlertDialog open={modalOpen}>
             <AlertDialogTrigger
                 asChild
-                className={"flex w-fit self-end"}
+                className="flex w-fit self-end"
                 onClick={handleOpenModal}
             >
-                <Button
-                    className={
-                        " bg-destructive text-destructive-foreground hover:bg-destructive_light"
-                    }
-                >
-                    <FaRegTrashAlt className={"w-6 h-6 mr-2 "} />
+                <Button className=" bg-destructive text-destructive-foreground hover:bg-destructive_light">
+                    <FaRegTrashAlt className="w-6 h-6 mr-2 " />
           Remove token
                 </Button>
             </AlertDialogTrigger>
-            <AlertDialogContent className={"bg-card border-0"}>
+            <AlertDialogContent className="bg-card border-0">
                 <AlertDialogHeader>
-                    <div className={"flex flex-row justify-between"}>
+                    <div className="flex flex-row justify-between">
                         <AlertDialogTitle>Delete AWS token</AlertDialogTitle>
-                        <AlertDialogCancel
-                            className={"border-0 bg-inherit hover:bg-inherit w-8 h-8 p-0 m-0"}
-                        >
-                            <IoClose className={"w-4 h-4"} />
+                        <AlertDialogCancel className="border-0 bg-inherit hover:bg-inherit w-8 h-8 p-0 m-0">
+                            <IoClose className="w-4 h-4" />
                         </AlertDialogCancel>
                     </div>
-                    <AlertDialogDescription className={"text-secondary-foreground"}>
+                    <AlertDialogDescription className="text-secondary-foreground">
             Do you really wish to delete this AWS Token? This action cannot be
             undone and Multiverse loses access to related AWS Account and
             databases.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                    <AlertDialogCancel
-                        className={"flex w-full bg-inherit hover:bg-primary"}
-                    >
-                        <IoClose className={"w-6 h-6 mr-2"} />
+                    <AlertDialogCancel className="flex w-full bg-inherit hover:bg-primary">
+                        <IoClose className="w-6 h-6 mr-2" />
             Cancel
                     </AlertDialogCancel>
                     <AlertDialogAction
-                        className={
-                            "flex w-full text-destructive-foreground bg-destructive hover:bg-destructive_light"
-                        }
+                        className="flex w-full text-destructive-foreground bg-destructive hover:bg-destructive_light"
                         onClick={onConfirmDelete}
                     >
-                        <TrashIcon className={"w-6 h-6 mr-2"} />
+                        <TrashIcon className="w-6 h-6 mr-2" />
             Delete
                     </AlertDialogAction>
                 </AlertDialogFooter>

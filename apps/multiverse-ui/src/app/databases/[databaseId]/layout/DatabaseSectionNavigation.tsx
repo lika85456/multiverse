@@ -1,17 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useParams, usePathname } from "next/navigation";
+import { notFound, usePathname } from "next/navigation";
 import { getDatabaseById } from "@/features/database/dummy-databases";
-import Page404 from "@/app/not-found";
 
-export default function DatabaseSectionNavigation() {
-    const params = useParams();
+export default function DatabaseSectionNavigation({ databaseId, }: {
+  databaseId: string;
+}) {
     const pathName = usePathname();
-    const databaseId = params.databaseId as string;
     const database = getDatabaseById(databaseId);
 
-    if (!database) return Page404();
+    if (!database) return notFound();
 
     let currentSection = "";
     if (pathName === `/databases/${databaseId}`) {
@@ -23,8 +22,8 @@ export default function DatabaseSectionNavigation() {
     }
 
     return (
-        <ul className={"flex w-full h-11 justify-center items-center space-x-16"}>
-            <li className={""}>
+        <ul className="flex w-full h-11 justify-center items-center space-x-16">
+            <li>
                 <Link
                     href={`/databases/${databaseId}`}
                     className={`text-sm tracking-[0.2rem] px-4 uppercase font-thin hover:underline hover:underline-offset-4 ${
@@ -36,7 +35,7 @@ export default function DatabaseSectionNavigation() {
           General
                 </Link>
             </li>
-            <li className={""}>
+            <li>
                 <Link
                     href={`/databases/${databaseId}/statistics`}
                     className={`text-sm tracking-[0.2rem] px-4 uppercase font-thin hover:underline hover:underline-offset-4 ${

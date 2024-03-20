@@ -12,7 +12,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import React, { useEffect, useState } from "react";
+import React from "react";
 import {
     AlertDialog,
     AlertDialogCancel,
@@ -35,43 +35,38 @@ export default function CreateDatabaseModal() {
         handleCloseModal();
     };
 
-    const handleCopyRequest = () => {
-        console.log("Copying request");
-        navigator.clipboard
-            .writeText(`${"Create database text"}`)
-            .then(() => {
-                toast("Data have been copied into your clipboard.");
-            })
-            .catch(() => {
-                console.log("Data could not be copied.");
-            });
+    const handleCopyRequest = async() => {
+        try {
+            await navigator.clipboard.writeText(`${"Create database text"}`);
+            toast("Data have been copied into your clipboard.");
+        } catch (error) {
+            console.log("Data could not be copied.");
+        }
     };
 
     return (
         <AlertDialog open={modalOpen}>
             <AlertDialogTrigger
                 asChild
-                className={"flex w-fit self-end"}
+                className="flex w-fit self-end"
                 onClick={handleOpenModal}
             >
-                <Button
-                    className={" bg-accent text-accent-foreground hover:bg-accent_light"}
-                >
-                    <IoAdd className={"w-8 h-8 mr-2 "} />
+                <Button className="bg-accent text-accent-foreground hover:bg-accent_light">
+                    <IoAdd className="w-8 h-8 mr-2 " />
           Create database
                 </Button>
             </AlertDialogTrigger>
-            <AlertDialogContent className={"bg-card border-0"}>
+            <AlertDialogContent className="bg-card border-0">
                 <AlertDialogHeader>
-                    <div className={"flex flex-row justify-between"}>
-                        <AlertDialogTitle className={"text-xl"}>
+                    <div className="flex flex-row justify-between">
+                        <AlertDialogTitle className="text-xl">
               Create Database
                         </AlertDialogTitle>
                         <AlertDialogCancel
                             onClick={handleCloseModal}
-                            className={"border-0 bg-inherit hover:bg-inherit w-8 h-8 p-0 m-0"}
+                            className="border-0 bg-inherit hover:bg-inherit w-8 h-8 p-0 m-0"
                         >
-                            <IoClose className={"w-8 h-8"} />
+                            <IoClose className="w-8 h-8" />
                         </AlertDialogCancel>
                     </div>
                 </AlertDialogHeader>
@@ -89,23 +84,21 @@ export default function CreateDatabaseModal() {
                         <SelectTrigger className="w-full bg-inherit">
                             <SelectValue placeholder="Select a locality" />
                         </SelectTrigger>
-                        <SelectContent
-                            className={"bg-card text-secondary-foreground border"}
-                        >
+                        <SelectContent className="bg-card text-secondary-foreground border">
                             <SelectItem
-                                className={"focus:bg-accent_light"}
+                                className="focus:bg-accent_light"
                                 value="central_europe"
                             >
                 Central Europe
                             </SelectItem>
                             <SelectItem
-                                className={"focus:bg-accent_light"}
+                                className="focus:bg-accent_light"
                                 value="northern_europe"
                             >
                 Northern Europe
                             </SelectItem>
                             <SelectItem
-                                className={"focus:bg-accent_light"}
+                                className="focus:bg-accent_light"
                                 value="eastern_europe"
                             >
                 Eastern Europe
@@ -113,7 +106,7 @@ export default function CreateDatabaseModal() {
                         </SelectContent>
                     </Select>
                 </div>
-                <div className={"flex flex-row w-full space-x-4"}>
+                <div className="flex flex-row w-full space-x-4">
                     <div className="flex flex-col w-full items-start gap-4">
                         <Label htmlFor="locality" className="text-right">
               Metrics
@@ -122,22 +115,17 @@ export default function CreateDatabaseModal() {
                             <SelectTrigger className="w-[280px] bg-inherit">
                                 <SelectValue placeholder="Select used metrics" />
                             </SelectTrigger>
-                            <SelectContent
-                                className={"bg-card text-secondary-foreground border"}
-                            >
+                            <SelectContent className="bg-card text-secondary-foreground border">
                                 <SelectItem
-                                    className={"focus:bg-accent_light"}
+                                    className="focus:bg-accent_light"
                                     value="dot_product"
                                 >
                   Dot Product
                                 </SelectItem>
-                                <SelectItem
-                                    className={"focus:bg-accent_light"}
-                                    value="euclidean"
-                                >
+                                <SelectItem className="focus:bg-accent_light" value="euclidean">
                   Euclidean Distance
                                 </SelectItem>
-                                <SelectItem className={"focus:bg-accent_light"} value="cosine">
+                                <SelectItem className="focus:bg-accent_light" value="cosine">
                   Cosine Similarity
                                 </SelectItem>
                             </SelectContent>
@@ -157,21 +145,17 @@ export default function CreateDatabaseModal() {
                 </div>
                 <AlertDialogFooter>
                     <Button
-                        className={
-                            "flex w-fit border border-border bg-inherit hover:bg-primary"
-                        }
+                        className="flex w-fit border border-border bg-inherit hover:bg-primary"
                         onClick={handleCopyRequest}
                     >
-                        <FaRegCopy className={"w-6 h-6 mr-2"} />
+                        <FaRegCopy className="w-6 h-6 mr-2" />
             Copy request
                     </Button>
                     <Button
-                        className={
-                            "flex w-fit text-accent-foreground bg-accent hover:bg-accent_light"
-                        }
+                        className="flex w-fit text-accent-foreground bg-accent hover:bg-accent_light"
                         onClick={handleCreateDatabase}
                     >
-                        <IoAdd className={"w-8 h-8 mr-2"} />
+                        <IoAdd className="w-8 h-8 mr-2" />
             Create
                     </Button>
                 </AlertDialogFooter>

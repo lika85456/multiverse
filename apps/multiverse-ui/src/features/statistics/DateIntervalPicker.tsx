@@ -149,7 +149,7 @@ export function DateIntervalPicker({
                     className="flex flex-row border-0 w-auto p-0 bg-card rounded-xl"
                     align="end"
                 >
-                    <ul className={"w-40 bg-grey30 p-2 rounded-l-xl space-y-2"}>
+                    <ul className="w-40 bg-grey30 p-2 rounded-l-xl space-y-2">
                         {[
                             PredefinedOptions.TODAY,
                             PredefinedOptions.LAST_WEEK,
@@ -170,7 +170,7 @@ export function DateIntervalPicker({
                             );
                         })}
                     </ul>
-                    <div className={"p-4 space-y-4"}>
+                    <div className="p-4 space-y-4">
                         <Calendar
                             initialFocus
                             mode="range"
@@ -181,25 +181,21 @@ export function DateIntervalPicker({
                                 setNewDate(e);
                             }}
                             numberOfMonths={2}
-                            className={"bg-primary rounded-xl"}
+                            className="bg-primary rounded-xl"
                         />
-                        <div className={"flex flex-row justify-end space-x-4"}>
+                        <div className="flex flex-row justify-end space-x-4">
                             <Button
                                 onClick={handleCloseModal}
-                                className={
-                                    "bg-inherit text-primary-foreground border border-border"
-                                }
+                                className="bg-inherit text-primary-foreground border border-border"
                             >
-                                <IoClose className={"w-6 h-6 mr-2"} />
+                                <IoClose className="w-6 h-6 mr-2" />
                 Cancel
                             </Button>
                             <Button
                                 onClick={handleSubmitInterval}
-                                className={
-                                    "bg-accent text-accent-foreground hover:bg-accent_light"
-                                }
+                                className="bg-accent text-accent-foreground hover:bg-accent_light"
                             >
-                                <IoCheckmark className={"w-6 h-6 mr-2"} />
+                                <IoCheckmark className="w-6 h-6 mr-2" />
                 Confirm
                             </Button>
                         </div>

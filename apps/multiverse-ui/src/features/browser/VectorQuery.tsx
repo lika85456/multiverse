@@ -70,66 +70,50 @@ export default function VectorQuery() {
     };
 
     const handleCopyRequest = async(vector: VectorValues, k: number) => {
-        navigator.clipboard
-            .writeText(`{"vector": [${vector.join(",")}],\n"k": ${k}}`)
-            .then(() => {
-                toast("Data have been copied into your clipboard.");
-            })
-            .catch(() => {
-                console.log("Data could not be copied.");
-            });
+        try {
+            await navigator.clipboard.writeText(`{"vector": [${vector.join(",")}],\n"k": ${k}}`,);
+            toast("Data have been copied into your clipboard.");
+        } catch (error) {
+            console.log("Data could not be copied.");
+        }
     };
 
     const handleCopyResult = async() => {
-        navigator.clipboard
-            .writeText(JSON.stringify(results))
-            .then(() => {
-                toast("Resulting vectors have been copied into your clipboard.");
-            })
-            .catch(() => {
-                console.log("Data could not be copied.");
-            });
+        try {
+            await navigator.clipboard.writeText(JSON.stringify(results));
+            toast("Resulting vectors have been copied into your clipboard.");
+        } catch {
+            console.log("Data could not be copied.");
+        }
     };
 
     return (
-        <div className={"flex flex-col w-full"}>
+        <div className="flex flex-col w-full">
             <QueryHeader
                 dimensions={10}
-                runQuery={handleRunQuery}
-                copyRequest={handleCopyRequest}
+                onRunQuery={handleRunQuery}
+                onCopyRequest={handleCopyRequest}
             />
             {!queryRan && (
-                <div
-                    className={
-                        "flex w-full py-8 justify-center text-secondary-foreground"
-                    }
-                >
+                <div className="flex w-full py-8 justify-center text-secondary-foreground">
           Run a query to display vectors
                 </div>
             )}
 
             {queryRan && results.length === 0 && (
-                <div
-                    className={
-                        "flex flex-col justify-between items-center py-8 space-y-4 text-secondary-foreground"
-                    }
-                >
+                <div className="flex flex-col justify-between items-center py-8 space-y-4 text-secondary-foreground">
                     <div>Query result is empty</div>
                     <UpsertVectorModal dimensions={dimensions} />
                 </div>
             )}
             {queryRan && results.length > 0 && (
-                <div className={"flex flex-col pt-8 space-y-4"}>
-                    <ul
-                        className={
-                            "flex flex-row w-full justify-between items-center font-light  text-secondary-foreground tracking-widest"
-                        }
-                    >
-                        <div className={"px-8"}>Label</div>
-                        <div className={"px-8"}>Vector</div>
-                        <div className={"mr-8 px-8"}>Result</div>
+                <div className="flex flex-col pt-8 space-y-4">
+                    <ul className="flex flex-row w-full justify-between items-center font-light  text-secondary-foreground tracking-widest">
+                        <div className="px-8">Label</div>
+                        <div className="px-8">Vector</div>
+                        <div className="mr-8 px-8">Result</div>
                     </ul>
-                    <ul className={"space-y-4"}>
+                    <ul className="space-y-4">
                         {results.map((result) => {
                             return (
                                 <li>
@@ -139,10 +123,10 @@ export default function VectorQuery() {
                         })}
                     </ul>
                     <Button
-                        className={"self-end hover:text-secondary-foreground"}
+                        className="self-end hover:text-secondary-foreground"
                         onClick={handleCopyResult}
                     >
-                        <CopyIcon className={"w-6 h-6 mr-2"} />
+                        <CopyIcon className="w-6 h-6 mr-2" />
             Copy result
                     </Button>
                 </div>

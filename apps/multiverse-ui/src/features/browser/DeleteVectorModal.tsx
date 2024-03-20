@@ -20,15 +20,13 @@ export default function DeleteVectorModal({ id }: { id: string }) {
         modalOpen, handleOpenModal, handleCloseModal
     } = useModal();
 
-    const handleCopyRequest = () => {
-        navigator.clipboard
-            .writeText(`{"id": "${id}"}`)
-            .then(() => {
-                toast("Request has been copied into your clipboard.");
-            })
-            .catch(() => {
-                console.log("Request could not be copied.");
-            });
+    const handleCopyRequest = async() => {
+        try {
+            await navigator.clipboard.writeText(`{"id": "${id}"}`);
+            toast("Request has been copied into your clipboard.");
+        } catch (error) {
+            console.log("Request could not be copied.");
+        }
     };
 
     const handleDeleteVector = () => {
@@ -40,21 +38,19 @@ export default function DeleteVectorModal({ id }: { id: string }) {
         <AlertDialog open={modalOpen}>
             <AlertDialogTrigger asChild>
                 <TrashIcon
-                    className={"w-6 h-6 cursor-pointer ml-4"}
+                    className="w-6 h-6 cursor-pointer ml-4"
                     onClick={handleOpenModal}
                 />
             </AlertDialogTrigger>
-            <AlertDialogContent className={"bg-card border-0"}>
+            <AlertDialogContent className="bg-card border-0">
                 <AlertDialogHeader>
-                    <div className={"flex flex-row justify-between"}>
+                    <div className="flex flex-row justify-between">
                         <AlertDialogTitle>Delete Vector</AlertDialogTitle>
                         <AlertDialogCancel
                             onClick={handleCloseModal}
-                            className={
-                                "border-0 bg-inherit hover:bg-inherit hover:text-secondary-foreground w-8 h-8 p-0 m-0"
-                            }
+                            className="border-0 bg-inherit hover:bg-inherit hover:text-secondary-foreground w-8 h-8 p-0 m-0"
                         >
-                            <IoClose className={"w-8 h-8"} />
+                            <IoClose className="w-8 h-8" />
                         </AlertDialogCancel>
                     </div>
                     <AlertDialogDescription>
@@ -64,29 +60,23 @@ export default function DeleteVectorModal({ id }: { id: string }) {
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                     <Button
-                        className={
-                            "flex w-full border-0 bg-inherit hover:bg-primary text-primary-foreground"
-                        }
+                        className="flex w-full border-0 bg-inherit hover:bg-primary text-primary-foreground"
                         onClick={handleCloseModal}
                     >
             Cancel
                     </Button>
                     <Button
-                        className={
-                            "flex w-full border border-border bg-inherit hover:bg-primary text-primary-foreground"
-                        }
+                        className="flex w-full border border-border bg-inherit hover:bg-primary text-primary-foreground"
                         onClick={handleCopyRequest}
                     >
-                        <CopyIcon className={"w-6 h-6 mr-2"} />
+                        <CopyIcon className="w-6 h-6 mr-2" />
             Copy request
                     </Button>
                     <Button
-                        className={
-                            "flex w-full bg-destructive hover:bg-destructive_light text-destructive-foreground"
-                        }
+                        className="flex w-full bg-destructive hover:bg-destructive_light text-destructive-foreground"
                         onClick={handleDeleteVector}
                     >
-                        <TrashIcon className={"w-6 h-6 mr-2"} />
+                        <TrashIcon className="w-6 h-6 mr-2" />
             Delete
                     </Button>
                 </AlertDialogFooter>

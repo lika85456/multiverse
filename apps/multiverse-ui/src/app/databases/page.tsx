@@ -62,7 +62,7 @@ export default function Databases() {
     return (
         <>
             <GeneralStatistics items={items} />
-            <Separator className={"bg-border m-4"} />
+            <Separator className="bg-border m-4" />
             <DatabaseList items={databaseItems.items} />
         </>
     );
