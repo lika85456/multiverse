@@ -13,9 +13,8 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover";
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import { IoCheckmark, IoClose } from "react-icons/io5";
-import { toast } from "sonner";
 
 enum PredefinedOptions {
   TODAY = "Today",
@@ -63,15 +62,13 @@ export function DateIntervalPicker({
         setModalOpen(false);
     };
 
-    const memoizedGetDate = useMemo(() => getDate, [getDate]);
-
     useEffect(() => {
     // Update newDate state whenever the date changes in the parent component
         setNewDate({
-            from: memoizedGetDate()?.from,
-            to: memoizedGetDate()?.to,
+            from: getDate()?.from,
+            to: getDate()?.to,
         });
-    }, [memoizedGetDate]);
+    }, [getDate]);
 
     useEffect(() => {
         const handleEscape = (event: KeyboardEvent) => {
