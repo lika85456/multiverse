@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
     Avatar, AvatarFallback, AvatarImage
 } from "@/components/ui/avatar";
@@ -15,14 +15,26 @@ import {
 import Link from "next/link";
 import { LogOut } from "lucide-react";
 import { FiUser } from "react-icons/fi";
+import { signOut } from "next-auth/react";
+import { toast } from "sonner";
 
 export default function AccountIcon() {
     const currentPath = usePathname();
+    const router = useRouter();
 
     const userName = "Michal Kornúc";
     const userInitial = userName.length > 0 ? userName.at(0)?.toUpperCase() : "U";
     const userImage =
     "https://e7.pngegg.com/pngimages/178/595/png-clipart-user-profile-computer-icons-login-user-avatars-monochromes-black.png";
+
+    const handleLogOut = async() => {
+        try {
+            await signOut();
+            router.replace("/login"); // Redirect to the home page after logging out using the next
+        } catch (error) {
+            toast("Could not log out. Please try again later.");
+        }
+    };
 
     return (
         <>
@@ -50,17 +62,13 @@ export default function AccountIcon() {
               Account
                         </DropdownMenuItem>
                     </Link>
-                    <Link
-                        href={"/login"}
-                        onClick={() => {
-                            console.log("Logging out");
-                        }}
+                    <DropdownMenuItem
+                        className="focus:bg-primary focus:text-primary-foreground"
+                        onClick={handleLogOut}
                     >
-                        <DropdownMenuItem className="focus:bg-primary focus:text-primary-foreground">
-                            <LogOut className="mr-2 h-4 w-4" />
-                            <span>Log out</span>
-                        </DropdownMenuItem>
-                    </Link>
+                        <LogOut className="mr-2 h-4 w-4" />
+                        <span>Log out</span>
+                    </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
         </>
