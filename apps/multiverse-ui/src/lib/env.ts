@@ -21,6 +21,7 @@ const envSchema = z.object({
     GITHUB_SECRET: z.string(),
     GOOGLE_ID: z.string(),
     GOOGLE_SECRET: z.string(),
+    MONGODB_URI: z.string(),
 });
 
 export const getEnvIssues = (): z.ZodIssue[] => {
