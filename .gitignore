@@ -1,6 +1,9 @@
 # dependencies
 node_modules
 
+# ide
+.idea
+
 # sst
 .sst
 .build
