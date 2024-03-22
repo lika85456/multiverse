@@ -121,9 +121,9 @@ function CalculatorSlider({
 }) {
     //TODO make value on the side an input field
     return (
-        <div className="flex flex-col w-full items-start my-16">
+        <div className="flex flex-col w-full items-start my-8">
             <Label className="text-lg mb-4">{label}</Label>
-            <div className="flex flex-row w-full h-fit py-4">
+            <div className="flex flex-row w-full h-fit">
                 <Slider
                     value={[logarithmic ? Math.log(value) : value]}
                     min={min}

@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/navigation-menu";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { getSession, useSession } from "next-auth/react";
 
 export interface NavigationOptionsProps {
   pages: {
@@ -20,16 +21,10 @@ export interface NavigationOptionsProps {
 export default function NavigationOptions({ pages }: NavigationOptionsProps) {
     const pathName = usePathname();
 
-    const authenticated = true;
-
-    const filteredPages = pages.filter((item) => {
-        return item.requiredAuth || authenticated;
-    });
-
     return (
         <NavigationMenu>
             <NavigationMenuList>
-                {filteredPages.map((page) => {
+                {pages.map((page) => {
                     return (
                         <NavigationMenuItem key={page.path}>
                             <Link href={page.path} legacyBehavior passHref>

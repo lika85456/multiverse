@@ -19,7 +19,7 @@ export const authOptions = {
     // ...add more providers here
     ],
     adapter: MongoDBAdapter(clientPromise),
-    secret: "mojeprdel",
+    secret: ENV.SECRET_KEY,
 };
 
 const handler = NextAuth(authOptions);

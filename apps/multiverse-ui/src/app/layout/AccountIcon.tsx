@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import {
     Avatar, AvatarFallback, AvatarImage
 } from "@/components/ui/avatar";
@@ -18,19 +18,21 @@ import { FiUser } from "react-icons/fi";
 import { signOut } from "next-auth/react";
 import { toast } from "sonner";
 
-export default function AccountIcon() {
+export default function AccountIcon({ user, }: {
+  user:
+    | {
+        name?: string | null | undefined;
+        email?: string | null | undefined;
+        image?: string | null | undefined;
+      }
+    | undefined;
+}) {
     const currentPath = usePathname();
-    const router = useRouter();
-
-    const userName = "Michal Kornúc";
-    const userInitial = userName.length > 0 ? userName.at(0)?.toUpperCase() : "U";
-    const userImage =
-    "https://e7.pngegg.com/pngimages/178/595/png-clipart-user-profile-computer-icons-login-user-avatars-monochromes-black.png";
+    // const router = useRouter();
 
     const handleLogOut = async() => {
         try {
-            await signOut();
-            router.replace("/login"); // Redirect to the home page after logging out using the next
+            await signOut({ callbackUrl: "/login", });
         } catch (error) {
             toast("Could not log out. Please try again later.");
         }
@@ -47,14 +49,18 @@ export default function AccountIcon() {
                                 : ""
                         }`}
                     >
-                        <AvatarImage src={userImage} alt="@shadcn" />
-                        <AvatarFallback className="text-contrast_primary-foreground bg-contrast_primary">
-                            {userInitial}
-                        </AvatarFallback>
+                        {user?.image && <AvatarImage src={user?.image} alt="@shadcn" />}
+                        {!user?.image && (
+                            <AvatarFallback className="text-contrast_primary-foreground bg-contrast_primary">
+                                {user?.name && user?.name.length > 0
+                                    ? user?.name.at(0)?.toUpperCase()
+                                    : "U"}
+                            </AvatarFallback>
+                        )}
                     </Avatar>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="bg-card text-card-foreground border-0 mr-4 mt-1">
-                    <DropdownMenuLabel>{userName}</DropdownMenuLabel>
+                    <DropdownMenuLabel>{user?.name}</DropdownMenuLabel>
                     <DropdownMenuSeparator className="bg-border" />
                     <Link href={"/account"}>
                         <DropdownMenuItem className="font-bold focus:bg-primary focus:text-primary-foreground">

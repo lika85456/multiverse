@@ -17,6 +17,7 @@ const envSchema = z.object({
     NODE_ENV: z
         .enum(["development", "test", "production"])
         .default("development"),
+    SECRET_KEY: z.string(),
     GITHUB_ID: z.string(),
     GITHUB_SECRET: z.string(),
     GOOGLE_ID: z.string(),

@@ -4,6 +4,9 @@ import "./globals.css";
 import MainNav from "@/app/layout/MainNav";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import type { ReactNode } from "react";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -12,9 +15,11 @@ export const metadata: Metadata = {
     description: "Serverless vector database.",
 };
 
-export default function RootLayout({ children, }: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default async function RootLayout({ children, }: {
+  children: ReactNode;
+}) {
+    const session = await getServerSession(authOptions);
+
     return (
         <html lang="en" suppressHydrationWarning>
             <body className={inter.className}>
