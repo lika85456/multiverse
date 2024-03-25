@@ -2,7 +2,7 @@ import { toast } from "sonner";
 
 export interface DatabaseInfoProps {
   database: {
-    codename: string;
+    codeName: string;
     locality: string;
     dimensions: number;
     metrics: string;
@@ -23,9 +23,9 @@ export default function DatabaseInfo({ database }: DatabaseInfoProps) {
         <ul className="flex flex-row space-x-4 lowercase text-secondary-foreground mb-4">
             <li
                 className="flex w-fit bg-card px-2 py-1 rounded-xl cursor-pointer hover:bg-middle transition-all"
-                onClick={handleCopyData.bind(null, database.codename.toLowerCase())}
+                onClick={handleCopyData.bind(null, database.codeName.toLowerCase())}
             >
-                {database.codename}
+                {database.codeName}
             </li>
             <li
                 className="flex w-fit bg-card px-2 py-1 rounded-xl cursor-pointer hover:bg-middle transition-all"

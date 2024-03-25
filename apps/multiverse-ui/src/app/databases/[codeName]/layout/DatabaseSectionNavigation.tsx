@@ -2,22 +2,22 @@
 
 import Link from "next/link";
 import { notFound, usePathname } from "next/navigation";
-import { getDatabaseById } from "@/features/database/dummy-databases";
 
-export default function DatabaseSectionNavigation({ databaseId, }: {
-  databaseId: string;
+import type { serverClient } from "@/_trpc/serverClient";
+
+export default function DatabaseSectionNavigation({ database, }: {
+  database: Awaited<ReturnType<(typeof serverClient)["getDatabaseByCodeName"]>>;
 }) {
     const pathName = usePathname();
-    const database = getDatabaseById(databaseId);
 
     if (!database) return notFound();
 
     let currentSection = "";
-    if (pathName === `/databases/${databaseId}`) {
+    if (pathName === `/databases/${database.codeName}`) {
         currentSection = "general";
-    } else if (pathName === `/databases/${databaseId}/statistics`) {
+    } else if (pathName === `/databases/${database.codeName}/statistics`) {
         currentSection = "statistics";
-    } else if (pathName === `/databases/${databaseId}/browser`) {
+    } else if (pathName === `/databases/${database.codeName}/browser`) {
         currentSection = "browser";
     }
 
@@ -25,7 +25,7 @@ export default function DatabaseSectionNavigation({ databaseId, }: {
         <ul className="flex w-full h-11 justify-center items-center space-x-16">
             <li>
                 <Link
-                    href={`/databases/${databaseId}`}
+                    href={`/databases/${database.codeName}`}
                     className={`text-sm tracking-[0.2rem] px-4 uppercase font-thin hover:underline hover:underline-offset-4 ${
                         currentSection === "general"
                             ? "underline underline-offset-4 text-primary-foreground"
@@ -37,7 +37,7 @@ export default function DatabaseSectionNavigation({ databaseId, }: {
             </li>
             <li>
                 <Link
-                    href={`/databases/${databaseId}/statistics`}
+                    href={`/databases/${database.codeName}/statistics`}
                     className={`text-sm tracking-[0.2rem] px-4 uppercase font-thin hover:underline hover:underline-offset-4 ${
                         currentSection === "statistics"
                             ? "underline underline-offset-4 text-primary-foreground"
@@ -49,7 +49,7 @@ export default function DatabaseSectionNavigation({ databaseId, }: {
             </li>
             <li>
                 <Link
-                    href={`/databases/${databaseId}/browser`}
+                    href={`/databases/${database.codeName}/browser`}
                     className={`text-sm tracking-[0.2rem] px-4 uppercase font-thin hover:underline hover:underline-offset-4 ${
                         currentSection === "browser"
                             ? "underline underline-offset-4 text-primary-foreground"

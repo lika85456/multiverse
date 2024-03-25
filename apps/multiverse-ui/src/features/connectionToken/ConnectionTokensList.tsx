@@ -1,23 +1,14 @@
+"use client";
+
 import SectionTitle from "@/app/layout/components/SectionTitle";
 import ConnectionTokenItem from "@/features/connectionToken/ConnectionTokenItem";
 import CreateConnectionTokenModal from "@/features/connectionToken/CreateConnectionTokenModal";
-
-const tokens = [
-    {
-        tokenId: "1",
-        name: "Token 1",
-        tokenData: "725e6ca495fd5957",
-        validity: Date.now(),
-    },
-    {
-        tokenId: "2",
-        name: "Token 2",
-        tokenData: "725e6ca495fd5957",
-        validity: Date.now(),
-    },
-];
+import { trpc } from "@/_trpc/client";
 
 export default function ConnectionTokensList() {
+    const connectionTokens = trpc.getConnectionTokens.useQuery();
+    const tokens = connectionTokens.data ?? [];
+
     return (
         <>
             <SectionTitle title={"Connection tokens"} />

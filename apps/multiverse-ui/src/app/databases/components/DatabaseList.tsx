@@ -1,24 +1,29 @@
-import type { DatabaseItemProps } from "@/app/databases/components/DatabaseItem";
+"use client";
+
 import DatabaseItem from "@/app/databases/components/DatabaseItem";
 import CreateDatabaseModal from "@/features/database/CreateDatabaseModal";
+import { trpc } from "@/_trpc/client";
+import { Suspense } from "react";
 
-export interface DatabaseListProps {
-  items: DatabaseItemProps[];
-}
+export default function DatabaseList() {
+    const databases = trpc.getDatabases.useQuery();
 
-export default function DatabaseList({ items }: DatabaseListProps) {
     return (
         <>
             <CreateDatabaseModal />
-            <ul className="flex flex-col w-full py-4 space-y-4">
-                {items.map((item) => {
-                    return (
-                        <li key={item.databaseItem.databaseId}>
-                            <DatabaseItem databaseItem={item.databaseItem} />
-                        </li>
-                    );
-                })}
-            </ul>
+            <Suspense fallback={<div>Loading...</div>}>
+                {databases.data && (
+                    <ul className="flex flex-col w-full py-4 space-y-4">
+                        {databases.data.map((database) => {
+                            return (
+                                <li key={database.codeName}>
+                                    <DatabaseItem database={database} />
+                                </li>
+                            );
+                        })}
+                    </ul>
+                )}
+            </Suspense>
         </>
     );
 }

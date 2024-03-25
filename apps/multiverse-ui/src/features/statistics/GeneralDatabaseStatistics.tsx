@@ -1,7 +1,6 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { getDatabaseById } from "@/features/database/dummy-databases";
 import format from "@/features/statistics/format";
 import GeneralStatistics from "@/features/statistics/GeneralStatistics";
 import SectionTitle from "@/app/layout/components/SectionTitle";
@@ -27,10 +26,10 @@ const items = [
 
 export default function GeneralDatabaseStatistics() {
     const params = useParams();
-    const databaseId = params.databaseId as string;
+    const databaseCodeName = params.codeName as string;
 
-    const database = getDatabaseById(databaseId);
-    if (!database) return null;
+    // const database = getDatabaseById(databaseCodeName);
+    // if (!database) return null;
 
     return (
         <div className="flex flex-col w-full">
