@@ -1,6 +1,6 @@
 "use client";
 
-import DatabaseItem from "@/app/databases/components/DatabaseItem";
+import DatabaseItem from "@/app/(auth-required)/databases/components/DatabaseItem";
 import CreateDatabaseModal from "@/features/database/CreateDatabaseModal";
 import { trpc } from "@/_trpc/client";
 import { Suspense } from "react";

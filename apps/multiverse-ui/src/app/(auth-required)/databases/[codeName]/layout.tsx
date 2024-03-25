@@ -1,4 +1,4 @@
-import DatabaseHeader from "@/app/databases/[codeName]/layout/DatabaseHeader";
+import DatabaseHeader from "@/app/(auth-required)/databases/[codeName]/layout/DatabaseHeader";
 import type { ReactNode } from "react";
 
 export default function DatabaseViewLayout({

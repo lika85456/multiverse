@@ -4,8 +4,6 @@ import "./globals.css";
 import MainNav from "@/app/layout/MainNav";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import type { ReactNode } from "react";
 import Provider from "@/_trpc/Provider";
 
@@ -19,8 +17,6 @@ export const metadata: Metadata = {
 export default async function RootLayout({ children, }: {
   children: ReactNode;
 }) {
-    const session = await getServerSession(authOptions);
-
     return (
         <html lang="en" suppressHydrationWarning>
             <body className={inter.className}>
