@@ -4,6 +4,9 @@ export const statisticsMethods = {
     getGeneralStatistics: publicProcedure.query(async() => {
         return {};
     }),
+    getGeneralPricingStatistics: publicProcedure.query(async() => {
+        return {};
+    }),
     getCostsStatistics: publicProcedure.query(async() => {
         return {};
     }),
