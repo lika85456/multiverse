@@ -1,4 +1,4 @@
-import { publicProcedure } from "@/app/server/trpc";
+import { publicProcedure } from "@/server/trpc";
 
 export const databaseBrowserMethods = {
     runVectorQuery: publicProcedure.query(async() => {

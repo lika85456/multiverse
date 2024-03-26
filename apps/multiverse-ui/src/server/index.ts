@@ -1,7 +1,7 @@
-import { router } from "@/app/server/trpc";
-import { databaseMethods } from "@/app/server/methods/database";
-import { statisticsMethods } from "@/app/server/methods/statistics";
-import { accountMethods } from "@/app/server/methods/account";
+import { router } from "@/server/trpc";
+import { databaseMethods } from "@/server/methods/database";
+import { statisticsMethods } from "@/server/methods/statistics";
+import { accountMethods } from "@/server/methods/account";
 
 // export const appRouter = {
 //     getConnectionTokens: publicProcedure.query(async() => {

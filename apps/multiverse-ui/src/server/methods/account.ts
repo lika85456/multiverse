@@ -1,4 +1,4 @@
-import { publicProcedure } from "@/app/server/trpc";
+import { publicProcedure } from "@/server/trpc";
 
 export const accountMethods = {
     getAwsToken: publicProcedure.query(async() => {
