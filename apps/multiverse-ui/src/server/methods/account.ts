@@ -6,6 +6,7 @@ import {
     getAwsTokenByOwner,
     removeAwsToken,
 } from "@/lib/mongodb/collections/aws-token";
+import { deleteAllDatabases } from "@/lib/mongodb/collections/database";
 
 export const accountMethods = {
     getAwsToken: publicProcedure.query(async() => {
@@ -38,6 +39,10 @@ export const accountMethods = {
             });
         }),
     removeAwsToken: publicProcedure.mutation(async() => {
-        return await removeAwsToken();
+        const tokenRemovalResult = await removeAwsToken();
+        const deleteDatabasesResult = await deleteAllDatabases();
+
+        //TODO - perform full cleanup of user data
+        return tokenRemovalResult && deleteDatabasesResult;
     }),
 };

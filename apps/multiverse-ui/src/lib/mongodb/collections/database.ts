@@ -5,3 +5,8 @@ export interface Database {
   dimensions: number;
   space: number;
 }
+
+export const deleteAllDatabases = async() => {
+    // Delete all databases
+    return true;
+};
