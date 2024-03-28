@@ -7,7 +7,10 @@ import AddAWSTokenModal from "@/features/account/AddAWSTokenModal";
 
 export default function AWSToken() {
     const {
-        data: awsToken, isFetched, isError
+        data: awsToken,
+        isFetched,
+        isError,
+        refetch,
     } = trpc.getAwsToken.useQuery();
 
     return (
@@ -22,7 +25,7 @@ export default function AWSToken() {
                                 {awsToken.accessTokenId}
                             </div>
                         </div>
-                        <DeleteAWSTokenModal />
+                        <DeleteAWSTokenModal revalidate={refetch} />
                     </div>
                 )}
                 {isFetched && !awsToken && (
@@ -30,7 +33,7 @@ export default function AWSToken() {
                         <h3 className="self-center text-secondary-foreground">
               No AWS token available
                         </h3>
-                        <AddAWSTokenModal />
+                        <AddAWSTokenModal revalidate={refetch} />
                     </>
                 )}
                 {!isFetched && !isError && <div> Loading... </div>}

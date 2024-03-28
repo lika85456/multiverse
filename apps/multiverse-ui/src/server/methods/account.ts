@@ -19,6 +19,7 @@ export const accountMethods = {
         if (awsToken) {
             return {
                 accessTokenId: awsToken.accessTokenId,
+                // secretAccessKey: awsToken.secretAccessKey, // do not return on frontend
                 ownerId: awsToken.ownerId,
             };
         }
