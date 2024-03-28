@@ -233,6 +233,15 @@ export default class DynamoChangesStorage implements ChangesStorage {
         return;
     }
 
+    public async getAllChangesAfter(timestamp: number): Promise<StoredVectorChange[]> {
+        const changes = [];
+        for await (const change of this.changesAfter(timestamp)) {
+            changes.push(change);
+        }
+
+        return changes;
+    }
+
     public async deploy() {
         logger.info("Deploying dynamo changes storage");
         await this.deployer.deploy();

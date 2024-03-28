@@ -1,8 +1,7 @@
-import type { DatabaseConfiguration, Token } from "../DatabaseConfiguration";
+import type { DatabaseConfiguration } from "../DatabaseConfiguration";
 
 export type Infrastructure = {
     configuration: DatabaseConfiguration;
-    secretTokens: Token[];
 
     /**
      * each partition has multiple compute instances
@@ -31,6 +30,7 @@ export default interface InfrastructureStorage {
     set(dbName: string, infrastructure: Infrastructure): Promise<void>;
     get(dbName: string): Promise<Infrastructure | undefined>;
     remove(dbName: string): Promise<void>;
+    list(): Promise<Infrastructure[]>;
 
     deploy(): Promise<void>;
     destroy(): Promise<void>;

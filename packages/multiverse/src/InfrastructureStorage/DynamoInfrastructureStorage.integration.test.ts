@@ -20,13 +20,23 @@ describe("<DynamoInfrastructureStorage>", () => {
         expect(infrastructure).toBeUndefined();
     });
 
+    it("should read empty list of infrastructures", async() => {
+        const infrastructures = await storage.list();
+        expect(infrastructures).toEqual([]);
+    });
+
     it("should set and read infrastructure", async() => {
         const infrastructure: Infrastructure = {
             configuration: {
                 name: "test",
                 region: "eu-central-1",
                 dimensions: 3,
-                space: "l2"
+                space: "l2",
+                secretTokens: [{
+                    name: "test",
+                    secret: "test",
+                    validUntil: Date.now() + 1000
+                }]
             },
             partitions: [{
                 lambda: [{
@@ -38,17 +48,18 @@ describe("<DynamoInfrastructureStorage>", () => {
                 }],
                 partition: 0
             }],
-            secretTokens: [{
-                name: "test",
-                secret: "test",
-                validUntil: Date.now() + 1000
-            }]
         };
 
         await storage.set("test", infrastructure);
 
         const readInfrastructure = await storage.get("test");
         expect(readInfrastructure).toEqual(infrastructure);
+    });
+
+    it("should list infrastructure", async() => {
+        const infrastructures = await storage.list();
+        expect(infrastructures.length).toBe(1);
+        expect(infrastructures[0].configuration.name).toBe("test");
     });
 
     it("should remove infrastructure", async() => {

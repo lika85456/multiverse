@@ -4,6 +4,9 @@ import type SnapshotStorage from ".";
 import { createReadStream, createWriteStream } from "fs";
 import { mkdir } from "fs/promises";
 import type { Readable } from "stream";
+import log from "@multiverse/log";
+
+const logger = log.getSubLogger({ name: "S3SnapshotStorage" });
 
 export class S3SnapshotStorageDeployer {
 
@@ -84,11 +87,15 @@ export default class S3SnapshotStorage implements SnapshotStorage {
         const now = Date.now();
         const s3Path = `${this.options.name}/${now}.snapshot`;
 
+        logger.debug(`Uploading snapshot to s3://${this.options.bucketName}/${s3Path}`, { filePath });
+
         await this.s3.putObject({
             Bucket: this.options.bucketName,
             Key: s3Path,
             Body: createReadStream(filePath)
         });
+
+        logger.info(`Uploaded snapshot to s3://${this.options.bucketName}/${s3Path}`);
 
         return {
             filePath,
@@ -98,6 +105,9 @@ export default class S3SnapshotStorage implements SnapshotStorage {
     }
 
     public async loadLatest(): Promise<Snapshot | undefined> {
+
+        logger.debug(`Loading latest snapshot from s3://${this.options.bucketName}/${this.options.name}`);
+
         const s3Objects = await this.s3.listObjectsV2({
             Bucket: this.options.bucketName,
             Prefix: this.options.name
@@ -137,6 +147,8 @@ export default class S3SnapshotStorage implements SnapshotStorage {
         });
 
         if (!s3Object.Body) {
+            logger.error(`Failed to download snapshot from s3://${this.options.bucketName}/${latest.filePath} or it is empty`);
+
             return undefined;
         }
 
@@ -149,6 +161,8 @@ export default class S3SnapshotStorage implements SnapshotStorage {
                 .on("finish", resolve)
                 .on("error", reject);
         });
+
+        logger.info(`Downloaded snapshot from s3://${this.options.bucketName}/${latest.filePath}`);
 
         return {
             filePath: `${this.options.downloadPath}/${latest.filePath}`,

@@ -58,7 +58,7 @@ export default class OrchestratorDeployer {
     }
 
     public static lambdaName(databaseConfiguration: DatabaseConfiguration) {
-        return `multiverse-orchestrator-${indexConfiguration.owner}-${indexConfiguration.indexName}`;
+        return `multiverse-orchestrator-${databaseConfiguration.name}`;
     }
 
     private async lambdaRoleARN(): Promise<string> {

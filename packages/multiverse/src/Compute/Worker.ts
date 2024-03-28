@@ -9,6 +9,7 @@ import { z } from "zod";
 import type { QueryResult } from "../core/Query";
 import { querySchema } from "../core/Query";
 import { storedVectorChangeSchema } from "../ChangesStorage";
+import type { NewVector } from "../core/Vector";
 
 export const workerQuerySchema = z.object({
     query: querySchema,
@@ -33,6 +34,8 @@ export type WorkerState = {
 
 export interface Worker {
     query(query: WorkerQuery): Promise<WorkerQueryResult>;
+    add(vectors: NewVector[]): Promise<void>;
+    remove(labels: string[]): Promise<void>;
     wake(wait: number): Promise<void>;
     saveSnapshot(): Promise<void>;
     loadLatestSnapshot(): Promise<void>;
@@ -91,6 +94,14 @@ export default class ComputeWorker implements Worker {
             result: { result },
             state: await this.state()
         };
+    }
+
+    public async add(vectors: NewVector[]): Promise<void> {
+        await this.options.index.add(vectors);
+    }
+
+    public async remove(labels: string[]): Promise<void> {
+        await this.options.index.remove(labels);
     }
 
     public async wake(wait: number): Promise<void> {

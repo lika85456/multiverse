@@ -28,31 +28,39 @@ export default class LocalSnapshotStorage implements SnapshotStorage {
 
     public async loadLatest(): Promise<Snapshot | undefined> {
 
-        const files = await readdir(`${this.path}/${this.databaseName}`);
+        try {
+            const files = await readdir(`${this.path}/${this.databaseName}`);
 
-        if (files.length === 0) {
-            return undefined;
+            if (files.length === 0) {
+                return undefined;
+            }
+
+            const snapshots: Snapshot[] = [];
+
+            for (const file of files) {
+                const filePath = `${this.path}/${this.databaseName}/${file}`;
+
+                const timestamp = +file.split(".")[0];
+
+                snapshots.push({
+                    filePath,
+                    timestamp,
+                    databaseName: this.databaseName
+                });
+            }
+
+            // sort by timestamp
+            snapshots.sort((a, b) => a.timestamp - b.timestamp);
+
+            // return the latest
+            return snapshots[snapshots.length - 1];
+        } catch (e: any) {
+            if (e.code === "ENOENT") {
+                return undefined;
+            }
+
+            throw e;
         }
-
-        const snapshots: Snapshot[] = [];
-
-        for (const file of files) {
-            const filePath = `${this.path}/${this.databaseName}/${file}`;
-
-            const timestamp = +file.split(".")[0];
-
-            snapshots.push({
-                filePath,
-                timestamp,
-                databaseName: this.databaseName
-            });
-        }
-
-        // sort by timestamp
-        snapshots.sort((a, b) => a.timestamp - b.timestamp);
-
-        // return the latest
-        return snapshots[snapshots.length - 1];
     }
 
     public async directoryPath(): Promise<string> {

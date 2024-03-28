@@ -68,4 +68,77 @@ describe("<LambdaWorker>", () => {
             vectorDimensions: 3
         });
     });
+
+    it("should query empty", async() => {
+        const result = await worker.query({
+            query: {
+                k: 10,
+                vector: [1, 2, 3],
+                metadataExpression: "",
+                sendVector: true
+            },
+        });
+
+        expect(result.result.result.length).toBe(0);
+    });
+
+    it("should add vectors", async() => {
+        await worker.add([{
+            label: "test",
+            vector: [1, 2, 3],
+            metadata: { name: "test" }
+        }]);
+    });
+
+    it("should query a vector", async() => {
+        const result = await worker.query({
+            query: {
+                k: 10,
+                vector: [1, 2, 3],
+                metadataExpression: "",
+                sendVector: true
+            },
+        });
+
+        expect(result.result.result.length).toBe(1);
+        expect(result.result.result[0].label).toBe("test");
+        expect(result.result.result[0].metadata).toEqual({ name: "test" });
+    });
+
+    it("should save snapshot", async() => {
+        await worker.saveSnapshot();
+
+        expect(await snapshotStorage.loadLatest()).toBeDefined();
+    });
+
+    it("should load a snapshot", async() => {
+        // first remove the added vector
+        await worker.remove(["test"]);
+
+        // should be empty
+        const result = await worker.query({
+            query: {
+                k: 10,
+                vector: [1, 2, 3],
+                metadataExpression: "",
+                sendVector: true
+            },
+        });
+        expect(result.result.result.length).toBe(0);
+
+        // load snapshot
+        await worker.loadLatestSnapshot();
+
+        // should have one item
+        const result2 = await worker.query({
+            query: {
+                k: 10,
+                vector: [1, 2, 3],
+                metadataExpression: "",
+                sendVector: true
+            },
+        });
+
+        expect(result2.result.result.length).toBe(1);
+    });
 });
