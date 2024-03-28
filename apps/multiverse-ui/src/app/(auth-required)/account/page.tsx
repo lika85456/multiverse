@@ -12,7 +12,6 @@ export default function Account() {
         <>
             <PageTitle title={`${userName} - account`} />
             <Separator className="bg-border m-4" />
-            <SectionTitle title={"AWS Token"} />
             <AWSToken />
         </>
     );

@@ -1,81 +1,45 @@
 "use client";
 
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import {
-    IoAdd, IoClose, IoCheckmark
-} from "react-icons/io5";
-import { useState } from "react";
+import { IoAdd } from "react-icons/io5";
 import { DeleteAWSTokenModal } from "@/features/account/DeleteAWSTokenModal";
 import { trpc } from "@/_trpc/client";
-
-enum AWSTokenState {
-  VIEW = 0,
-  NO_TOKEN = 1,
-  ADD_TOKEN = 2,
-}
+import SectionTitle from "@/app/layout/components/SectionTitle";
 
 export default function AWSToken() {
-    const [state, setState] = useState<AWSTokenState>(AWSTokenState.VIEW);
-    const mutation = trpc.addAwsToken.useMutation();
-    const handleAddAwsToken = () => {
-        mutation.mutate({
-            accessTokenId: "123",
-            secretAccessKey: "123",
-        });
-    };
+    const {
+        data: awsToken, isFetched, isError
+    } = trpc.getAwsToken.useQuery();
 
     return (
-        <div className="flex flex-col w-full space-y-4">
-            <Button onClick={handleAddAwsToken}>Add AWS Token</Button>
-            {state === AWSTokenState.VIEW && (
-                <>
-                    <h3 className="text-tertiary-foreground">Public Key</h3>
-                    <Textarea title={"public"} placeholder="public key" />
-                    <h3 className="text-tertiary-foreground">Private Key</h3>
-                    <Textarea title={"private"} placeholder="private key" />
-                    <DeleteAWSTokenModal setState={setState} />
-                </>
-            )}
-            {state === AWSTokenState.NO_TOKEN && (
-                <>
-                    <h3 className="self-center text-secondary-foreground">
-            No AWS token available
-                    </h3>
-                    <Button
-                        className="self-center flex w-fit bg-accent text-accent-foreground hover:bg-accent_light"
-                        onClick={() => setState(2)}
-                    >
-                        <IoAdd className="w-6 h-6 mr-2" />
-            Add AWS Token
-                    </Button>
-                </>
-            )}
-            {state === AWSTokenState.ADD_TOKEN && (
-                <>
-                    <h3 className="text-tertiary-foreground">Public Key</h3>
-                    <Textarea title={"public"} placeholder="public key" />
-                    <h3 className="text-tertiary-foreground">Private Key</h3>
-                    <Textarea title={"private"} placeholder="private key" />
-                    <div className="flex flex-row justify-end space-x-4">
-                        <Button
-                            variant={"outline"}
-                            className="self-end flex w-fit bg-inherit text-primary-foreground outline-border hover:bg-secondary"
-                            onClick={() => setState(1)}
-                        >
-                            <IoClose className="w-6 h-6 mr-2" />
-              Cancel
-                        </Button>
-                        <Button
-                            className="self-end flex w-fit bg-accent text-accent-foreground hover:bg-accent_light"
-                            onClick={() => setState(0)}
-                        >
-                            <IoCheckmark className="w-6 h-6 mr-2" />
-              Confirm
-                        </Button>
+        <>
+            <SectionTitle title={"AWS Token"} />
+            <div className="flex flex-col w-full space-y-4">
+                {isFetched && awsToken && (
+                    <div className="flex flex-row items-center w-full border border-border rounded-xl p-4">
+                        <div className="flex flex-col w-full">
+                            <h3 className="text-tertiary-foreground">Access Token Id</h3>
+                            <div className="text-primary-foreground py-2">
+                                {awsToken.accessTokenId}
+                            </div>
+                        </div>
+                        <DeleteAWSTokenModal />
                     </div>
-                </>
-            )}
-        </div>
+                )}
+                {isFetched && !awsToken && (
+                    <>
+                        <h3 className="self-center text-secondary-foreground">
+              No AWS token available
+                        </h3>
+                        <Button className="self-center flex w-fit bg-accent text-accent-foreground hover:bg-accent_light">
+                            <IoAdd className="w-6 h-6 mr-2" />
+              Add AWS Token
+                        </Button>
+                    </>
+                )}
+                {!isFetched && !isError && <div> Loading... </div>}
+                {isError && <div> Error </div>}
+            </div>
+        </>
     );
 }

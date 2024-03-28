@@ -15,25 +15,20 @@ import { IoClose } from "react-icons/io5";
 import { TrashIcon } from "lucide-react";
 import useModal from "@/features/modals/use-modal";
 
-export function DeleteAWSTokenModal({ setState, }: {
-  setState: (state: number) => void;
-}) {
+export function DeleteAWSTokenModal() {
     const {
         modalOpen, handleOpenModal, handleCloseModal
     } = useModal();
 
     const onConfirmDelete = () => {
-        if (true) {
-            setState(1);
-            handleCloseModal();
-        }
+        handleCloseModal();
     };
 
     return (
         <AlertDialog open={modalOpen}>
             <AlertDialogTrigger
                 asChild
-                className="flex w-fit self-end"
+                className="flex w-fit"
                 onClick={handleOpenModal}
             >
                 <Button className=" bg-destructive text-destructive-foreground hover:bg-destructive_light">
@@ -45,9 +40,10 @@ export function DeleteAWSTokenModal({ setState, }: {
                 <AlertDialogHeader>
                     <div className="flex flex-row justify-between">
                         <AlertDialogTitle>Delete AWS token</AlertDialogTitle>
-                        <AlertDialogCancel className="border-0 bg-inherit hover:bg-inherit w-8 h-8 p-0 m-0">
-                            <IoClose className="w-4 h-4" />
-                        </AlertDialogCancel>
+                        <IoClose
+                            onClick={handleCloseModal}
+                            className="w-4 h-4 cursor-pointer hover:text-secondary-foreground transition-all "
+                        />
                     </div>
                     <AlertDialogDescription className="text-secondary-foreground">
             Do you really wish to delete this AWS Token? This action cannot be
