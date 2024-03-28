@@ -12,12 +12,20 @@ export default class MemoryChangesStorage implements ChangesStorage {
     }
 
     public async* changesAfter(timestamp: number): AsyncGenerator<StoredVectorChange, void, unknown> {
-        const changes = this.changes.filter(change => change.timestamp > timestamp);
+        const changes = this.changes.filter(change => change.timestamp >= timestamp);
 
         for (const change of changes) {
             yield change;
         }
 
         return;
+    }
+
+    deploy(): Promise<void> {
+        return Promise.resolve();
+    }
+
+    destroy(): Promise<void> {
+        return Promise.resolve();
     }
 }

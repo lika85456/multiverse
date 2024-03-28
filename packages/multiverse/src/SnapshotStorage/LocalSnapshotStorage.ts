@@ -1,5 +1,6 @@
 import {
-    cp, mkdir, readdir
+    cp, mkdir, readdir,
+    rm
 } from "fs/promises";
 import type { Snapshot } from ".";
 import type SnapshotStorage from ".";
@@ -56,5 +57,14 @@ export default class LocalSnapshotStorage implements SnapshotStorage {
 
     public async directoryPath(): Promise<string> {
         return `${this.path}/${this.databaseName}`;
+    }
+
+    public async deploy(): Promise<void> {
+        await mkdir(this.path, { recursive: true });
+    }
+
+    public async destroy(): Promise<void> {
+        // delete the folder
+        await rm(this.path, { recursive: true });
     }
 }

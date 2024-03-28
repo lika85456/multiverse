@@ -4,10 +4,10 @@ import {
     Lambda, PackageType, waitUntilFunctionActive
 } from "@aws-sdk/client-lambda";
 import type { DatabaseConfiguration } from "../DatabaseConfiguration";
-import type InfrastructureStorage from "../InfrastructureStorage/InfrastructureStorage";
-import type { DatabaseInfrastructure } from "../InfrastructureStorage/InfrastructureStorage";
+import type InfrastructureStorage from "../InfrastructureStorage/DynamoInfrastructureStorage";
+import type { DatabaseInfrastructure } from "../InfrastructureStorage/DynamoInfrastructureStorage";
 import log from "@multiverse/log";
-import type { DatabaseEnvironment } from "../Database/DatabaseEnvironment";
+import type { DatabaseEnvironment } from "../Compute/env";
 import OrchestratorDeployer from "./OrchestratorDeployer";
 
 export default class InfrastructureManager {
@@ -152,7 +152,7 @@ export default class InfrastructureManager {
             EphemeralStorage: { Size: 1024 },
             Environment: {
                 Variables: {
-                    INDEX_CONFIG: JSON.stringify(this.options.indexConfiguration) as unknown,
+                    DATABASE_CONFIG: JSON.stringify(this.options.indexConfiguration) as unknown,
                     PARTITION: partitionIndex.toString() as unknown,
                     CHANGES_TABLE: this.options.changesTable,
                     SNAPSHOT_BUCKET: this.options.snapshotBucket,

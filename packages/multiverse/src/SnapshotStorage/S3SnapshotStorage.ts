@@ -62,21 +62,27 @@ export class S3SnapshotStorageDeployer {
 
 export default class S3SnapshotStorage implements SnapshotStorage {
 
+    private deployer;
+
     private s3: S3;
 
     constructor(private options: {
         bucketName: string;
         region: string;
-        indexName: string;
+        name: string;
         downloadPath?: string;
     }) {
         this.s3 = new S3({ region: options.region });
         this.options.downloadPath = this.options.downloadPath || "/tmp/s3-snapshots";
+        this.deployer = new S3SnapshotStorageDeployer({
+            bucketName: this.options.bucketName,
+            region: this.options.region
+        });
     }
 
     public async create(filePath: string): Promise<Snapshot> {
         const now = Date.now();
-        const s3Path = `${this.options.indexName}/${now}.snapshot`;
+        const s3Path = `${this.options.name}/${now}.snapshot`;
 
         await this.s3.putObject({
             Bucket: this.options.bucketName,
@@ -87,14 +93,14 @@ export default class S3SnapshotStorage implements SnapshotStorage {
         return {
             filePath,
             timestamp: now,
-            databaseName: this.options.indexName
+            databaseName: this.options.name
         };
     }
 
     public async loadLatest(): Promise<Snapshot | undefined> {
         const s3Objects = await this.s3.listObjectsV2({
             Bucket: this.options.bucketName,
-            Prefix: this.options.indexName
+            Prefix: this.options.name
         });
 
         if (!s3Objects.Contents || s3Objects.Contents.length === 0) {
@@ -115,7 +121,7 @@ export default class S3SnapshotStorage implements SnapshotStorage {
             snapshots.push({
                 filePath,
                 timestamp: +timestamp,
-                databaseName: this.options.indexName
+                databaseName: this.options.name
             });
         }
 
@@ -135,7 +141,7 @@ export default class S3SnapshotStorage implements SnapshotStorage {
         }
 
         // create if not exists the folder for the index
-        await mkdir(`${this.options.downloadPath}/${this.options.indexName}`, { recursive: true });
+        await mkdir(`${this.options.downloadPath}/${this.options.name}`, { recursive: true });
 
         // pipe body to filePath
         await new Promise((resolve, reject) => {
@@ -147,11 +153,19 @@ export default class S3SnapshotStorage implements SnapshotStorage {
         return {
             filePath: `${this.options.downloadPath}/${latest.filePath}`,
             timestamp: latest.timestamp,
-            databaseName: this.options.indexName
+            databaseName: this.options.name
         };
     }
 
     public async directoryPath(): Promise<string> {
-        return `${this.options.downloadPath}/${this.options.indexName}`;
+        return `${this.options.downloadPath}/${this.options.name}`;
+    }
+
+    public async deploy(): Promise<void> {
+        await this.deployer.deploy();
+    }
+
+    public async destroy(): Promise<void> {
+        await this.deployer.destroy();
     }
 }

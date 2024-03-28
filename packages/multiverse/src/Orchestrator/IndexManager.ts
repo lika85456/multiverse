@@ -1,13 +1,13 @@
-import type { NewVector } from "../Vector";
-import type { Query, QueryResult } from "../Database/Query";
+import type { NewVector } from "../core/Vector";
+import type { Query, QueryResult } from "../core/Query";
 import type { DatabaseConfiguration } from "../DatabaseConfiguration";
-import type DatabaseClient from "../Database/DatabaseClient";
+import type ComputeWorker from "../Compute/ComputeWorker";
 import type ChangesStorage from "../ChangesStorage";
-import type InfrastructureStorage from "../InfrastructureStorage/InfrastructureStorage";
+import type InfrastructureStorage from "../InfrastructureStorage/DynamoInfrastructureStorage";
 import log from "@multiverse/log";
 import type { StoredVectorChange } from "../ChangesStorage";
 import mergeResults from "../Index/mergeResults";
-import type { DatabaseInfrastructure } from "../InfrastructureStorage/InfrastructureStorage";
+import type { DatabaseInfrastructure } from "../InfrastructureStorage/DynamoInfrastructureStorage";
 
 export default class IndexManager {
 
@@ -18,7 +18,7 @@ export default class IndexManager {
 
     constructor(private options: {
         indexConfiguration: IndexConfiguration;
-        databasePartitionFactory: (partitionIndex: number, infrastructure: DatabaseInfrastructure) => DatabaseClient;
+        databasePartitionFactory: (partitionIndex: number, infrastructure: DatabaseInfrastructure) => ComputeWorker;
         changesStorage: ChangesStorage;
         infrastructureStorage: InfrastructureStorage;
     }) {

@@ -11,15 +11,15 @@ import IndexManager from "./IndexManager";
 import InfrastructureManager from "./InfrastructureManager";
 import { ORCHESTRATOR_ENV } from "./OrchestratorEnvironment";
 import DynamoChangesStorage from "../ChangesStorage/DynamoChangesStorage";
-import InfrastructureStorage from "../InfrastructureStorage/InfrastructureStorage";
-import lambdaDatabaseClientFactory from "../Database/LambdaDatabaseClientFactory";
+import InfrastructureStorage from "../InfrastructureStorage/DynamoInfrastructureStorage";
+import lambdaDatabaseClientFactory from "../Compute/LambdaWorker";
 
 type OrchestratorEvent = {
     event: keyof OrchestratorWorker,
     payload: Parameters<OrchestratorWorker[keyof OrchestratorWorker]>
 };
 
-const indexConfiguration = ORCHESTRATOR_ENV.INDEX_CONFIG;
+const indexConfiguration = ORCHESTRATOR_ENV.DATABASE_CONFIG;
 
 const changesStorage = new DynamoChangesStorage({
     ...indexConfiguration,

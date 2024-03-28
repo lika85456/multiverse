@@ -1,4 +1,4 @@
-import type { SearchResultVector } from "../Database/Query";
+import type { SearchResultVector } from "../core/Query";
 
 export default function mergeResults(results: SearchResultVector[][]): SearchResultVector[] {
     const merged: SearchResultVector[] = [];
