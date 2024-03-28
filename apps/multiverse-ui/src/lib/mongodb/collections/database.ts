@@ -8,5 +8,6 @@ export interface Database {
 
 export const deleteAllDatabases = async() => {
     // Delete all databases
+
     return true;
 };
