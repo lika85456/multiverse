@@ -7,6 +7,7 @@ import {
 } from "react-icons/io5";
 import { useState } from "react";
 import { DeleteAWSTokenModal } from "@/features/account/DeleteAWSTokenModal";
+import { trpc } from "@/_trpc/client";
 
 enum AWSTokenState {
   VIEW = 0,
@@ -16,9 +17,17 @@ enum AWSTokenState {
 
 export default function AWSToken() {
     const [state, setState] = useState<AWSTokenState>(AWSTokenState.VIEW);
+    const mutation = trpc.addAwsToken.useMutation();
+    const handleAddAwsToken = () => {
+        mutation.mutate({
+            accessTokenId: "123",
+            secretAccessKey: "123",
+        });
+    };
 
     return (
         <div className="flex flex-col w-full space-y-4">
+            <Button onClick={handleAddAwsToken}>Add AWS Token</Button>
             {state === AWSTokenState.VIEW && (
                 <>
                     <h3 className="text-tertiary-foreground">Public Key</h3>
