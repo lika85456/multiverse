@@ -1,10 +1,9 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { IoAdd } from "react-icons/io5";
 import { DeleteAWSTokenModal } from "@/features/account/DeleteAWSTokenModal";
 import { trpc } from "@/_trpc/client";
 import SectionTitle from "@/app/layout/components/SectionTitle";
+import AddAWSTokenModal from "@/features/account/AddAWSTokenModal";
 
 export default function AWSToken() {
     const {
@@ -31,10 +30,7 @@ export default function AWSToken() {
                         <h3 className="self-center text-secondary-foreground">
               No AWS token available
                         </h3>
-                        <Button className="self-center flex w-fit bg-accent text-accent-foreground hover:bg-accent_light">
-                            <IoAdd className="w-6 h-6 mr-2" />
-              Add AWS Token
-                        </Button>
+                        <AddAWSTokenModal />
                     </>
                 )}
                 {!isFetched && !isError && <div> Loading... </div>}

@@ -11,7 +11,7 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
     title: "Multiverse UI",
-    description: "Serverless vector database.",
+    description: "Serverless vector mongodb.",
 };
 
 export default async function RootLayout({ children, }: {

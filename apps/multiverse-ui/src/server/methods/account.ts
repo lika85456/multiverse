@@ -1,22 +1,29 @@
 import { publicProcedure } from "@/server/trpc";
 import z from "zod";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { getSessionUser } from "@/lib/mongodb/collections/user";
+import {
+    addAwsToken,
+    getAwsTokenByOwner,
+    removeAwsToken,
+} from "@/lib/mongodb/collections/aws-token";
 
 export const accountMethods = {
     getAwsToken: publicProcedure.query(async() => {
-        if (true) {
+        const user = await getSessionUser();
+        if (!user) {
+            throw new Error("User not found");
+        }
+
+        const awsToken = await getAwsTokenByOwner(user._id);
+
+        if (awsToken) {
             return {
-                accessTokenId: "44b2d438d65261a9eb14f61b215a13e974342afe8f5d811",
-                secretAccessKey:
-          "c975e5a171bcde0588a51e2d7a5d6b2e7696a38639aba7f92724dedaa37b6c4c650d9f7f72e174314c172874f4314e5a746066c26c35c9631",
+                accessTokenId: awsToken.accessTokenId,
+                ownerId: awsToken.ownerId,
             };
         }
 
-        return undefined;
-    }),
-    removeAwsToken: publicProcedure.query(async() => {
-        return {};
+        return null;
     }),
     addAwsToken: publicProcedure
         .input(z.object({
@@ -24,12 +31,12 @@ export const accountMethods = {
             secretAccessKey: z.string(),
         }),)
         .mutation(async(opts) => {
-            const session = await getServerSession(authOptions);
-            const sessionUser = session?.user;
-            if (!sessionUser || !sessionUser.email) {
-                throw new Error("Session not found");
-            }
-
-            return {};
+            return await addAwsToken({
+                accessTokenId: opts.input.accessTokenId,
+                secretAccessKey: opts.input.secretAccessKey,
+            });
         }),
+    removeAwsToken: publicProcedure.mutation(async() => {
+        return await removeAwsToken();
+    }),
 };

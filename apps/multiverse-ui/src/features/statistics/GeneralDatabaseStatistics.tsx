@@ -28,8 +28,8 @@ export default function GeneralDatabaseStatistics() {
     const params = useParams();
     const databaseCodeName = params.codeName as string;
 
-    // const database = getDatabaseById(databaseCodeName);
-    // if (!database) return null;
+    // const mongodb = getDatabaseById(databaseCodeName);
+    // if (!mongodb) return null;
 
     return (
         <div className="flex flex-col w-full">

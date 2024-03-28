@@ -31,13 +31,13 @@ export default function CreateDatabaseModal() {
     } = useModal();
 
     const handleCreateDatabase = () => {
-        console.log("Creating database");
+        console.log("Creating mongodb");
         handleCloseModal();
     };
 
     const handleCopyRequest = async() => {
         try {
-            await navigator.clipboard.writeText(`${"Create database text"}`);
+            await navigator.clipboard.writeText(`${"Create mongodb text"}`);
             toast("Data have been copied into your clipboard.");
         } catch (error) {
             console.log("Data could not be copied.");

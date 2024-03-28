@@ -26,7 +26,7 @@ export default function DeleteDatabaseModal() {
     const [typedDatabaseName, setTypedDatabaseName] = useState("");
 
     const handleDeleteDatabase = () => {
-        console.log("Deleting database");
+        console.log("Deleting mongodb");
         handleCloseModal();
         router.push("/databases");
     };

@@ -1,7 +1,5 @@
 import {
     AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
     AlertDialogContent,
     AlertDialogDescription,
     AlertDialogFooter,
@@ -14,14 +12,23 @@ import { FaRegTrashAlt } from "react-icons/fa";
 import { IoClose } from "react-icons/io5";
 import { TrashIcon } from "lucide-react";
 import useModal from "@/features/modals/use-modal";
+import { trpc } from "@/_trpc/client";
+import { toast } from "sonner";
 
 export function DeleteAWSTokenModal() {
+    const mutation = trpc.removeAwsToken.useMutation();
     const {
         modalOpen, handleOpenModal, handleCloseModal
     } = useModal();
 
-    const onConfirmDelete = () => {
-        handleCloseModal();
+    const onConfirmDelete = async() => {
+        const result = await mutation.mutateAsync();
+        if (result) {
+            toast("AWS Token removed");
+            handleCloseModal();
+        } else {
+            toast("Error removing AWS Token");
+        }
     };
 
     return (
@@ -52,17 +59,20 @@ export function DeleteAWSTokenModal() {
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                    <AlertDialogCancel className="flex w-full bg-inherit hover:bg-primary">
+                    <Button
+                        className="flex w-full bg-inherit hover:bg-primary"
+                        onClick={handleCloseModal}
+                    >
                         <IoClose className="w-6 h-6 mr-2" />
             Cancel
-                    </AlertDialogCancel>
-                    <AlertDialogAction
+                    </Button>
+                    <Button
                         className="flex w-full text-destructive-foreground bg-destructive hover:bg-destructive_light"
                         onClick={onConfirmDelete}
                     >
                         <TrashIcon className="w-6 h-6 mr-2" />
             Delete
-                    </AlertDialogAction>
+                    </Button>
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>

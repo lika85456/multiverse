@@ -1,9 +1,11 @@
 import { trpc } from "@/_trpc/client";
+import { IoAdd } from "react-icons/io5";
+import { Button } from "@/components/ui/button";
 
 export default function AddAWSTokenModal() {
-    const handleAddAwsToken = () => {
-        const mutation = trpc.addAwsToken.useMutation();
+    const mutation = trpc.addAwsToken.useMutation();
 
+    const handleAddAwsToken = () => {
         mutation.mutate({
             accessTokenId: "44b2d438d65261a9eb14f61b215a13e974342afe8f5d811",
             secretAccessKey:
@@ -11,5 +13,13 @@ export default function AddAWSTokenModal() {
         });
     };
 
-    return <div>ahoj</div>;
+    return (
+        <Button
+            className="self-center flex w-fit bg-accent text-accent-foreground hover:bg-accent_light"
+            onClick={handleAddAwsToken}
+        >
+            <IoAdd className="w-6 h-6 mr-2" />
+      Add AWS Token
+        </Button>
+    );
 }
