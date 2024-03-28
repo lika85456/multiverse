@@ -15,9 +15,8 @@ import useModal from "@/features/modals/use-modal";
 import { trpc } from "@/_trpc/client";
 import { toast } from "sonner";
 
-export function DeleteAWSTokenModal({ revalidate, }: {
-  revalidate: () => void;
-}) {
+export function DeleteAWSTokenModal() {
+    const refetchToken = trpc.useUtils().getAwsToken.refetch;
     const mutation = trpc.removeAwsToken.useMutation();
     const {
         modalOpen, handleOpenModal, handleCloseModal
@@ -27,7 +26,7 @@ export function DeleteAWSTokenModal({ revalidate, }: {
         const result = await mutation.mutateAsync();
         if (result) {
             toast("AWS Token removed");
-            revalidate();
+            await refetchToken();
             handleCloseModal();
         } else {
             toast("Error removing AWS Token");

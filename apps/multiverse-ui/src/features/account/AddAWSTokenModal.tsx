@@ -3,9 +3,8 @@ import { IoAdd } from "react-icons/io5";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
-export default function AddAWSTokenModal({ revalidate, }: {
-  revalidate: () => void;
-}) {
+export default function AddAWSTokenModal() {
+    const refetchToken = trpc.useUtils().getAwsToken.refetch;
     const mutation = trpc.addAwsToken.useMutation();
 
     const handleAddAwsToken = async() => {
@@ -15,7 +14,7 @@ export default function AddAWSTokenModal({ revalidate, }: {
         "c975e5a171bcde0588a51e2d7a5d6b2e7696a38639aba7f92724dedaa37b6c4c650d9f7f72e174314c172874f4314e5a746066c26c35c9631",
         });
         if (result) {
-            revalidate();
+            await refetchToken();
             toast("AWS Token added");
         } else {
             toast("Error adding AWS Token");
