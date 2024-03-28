@@ -3,7 +3,7 @@ import {
 } from "@aws-sdk/client-dynamodb";
 import {
     DeleteCommand,
-    DynamoDBDocumentClient, GetCommand, PutCommand
+    DynamoDBDocumentClient, GetCommand, PutCommand, ScanCommand
 } from "@aws-sdk/lib-dynamodb";
 import log from "@multiverse/log";
 import type InfrastructureStorage from ".";
@@ -133,6 +133,11 @@ export default class DynamoInfrastructureStorage implements InfrastructureStorag
             TableName: this.options.tableName,
             Key: { pk: dbName }
         }));
+    }
+
+    public async list(): Promise<Infrastructure[]> {
+        return this.dynamo.send(new ScanCommand({ TableName: this.options.tableName }))
+            .then(res => res.Items?.map(i => i.infrastructure) as Infrastructure[]);
     }
 
     public async deploy() {

@@ -6,20 +6,22 @@ export type Region = "eu-central-1";
 export type Token = {
     name: string;
     secret: string;
-    validUntil: number;
+    validUntil: number; // unix timestamp
 };
 
 export const DatabaseConfiguration = z.object({
     // identifiers
     name: z.string(),
-    // owner: z.string(), // name is not needed here, that will be added in some outer layer
+
+    // auth
+    secretTokens: z.array(z.object({
+        name: z.string(),
+        secret: z.string(),
+        validUntil: z.number().positive(),
+    })),
 
     // infrastructure
     region: z.string() as unknown as z.ZodType<Region>,
-
-    // other settings should be set by service
-    // secondaryRegions: z.array(z.string()),
-    // awakeInstances: z.number().positive().default(1),
 
     // index
     dimensions: z.number().positive().max(10000),

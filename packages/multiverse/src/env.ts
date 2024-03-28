@@ -7,8 +7,9 @@ config({ path: path.join(__dirname, "..", "..", "..", process.env.NODE_ENV === "
 
 const envSchema = z.object({
     NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
-    CHANGES_TABLE: z.string(),
-    SNAPSHOT_BUCKET: z.string(),
+
+    AWS_ACCESS_KEY_ID: z.string().optional(),
+    AWS_SECRET_ACCESS_KEY: z.string().optional(),
 });
 
 export const getEnvIssues = (): z.ZodIssue[] => {
