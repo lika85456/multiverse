@@ -40,23 +40,35 @@ export const databaseMethods = {
             };
         }),
 
-    createDatabase: publicProcedure.mutation(async(opts) => {
+    createDatabase: publicProcedure.input(z.object({
+        name: z.string(),
+        secretTokens: z.array(z.object({
+            name: z.string(),
+            secret: z.string(),
+            validUntil: z.number(),
+        })),
+        dimensions: z.number(),
+        region: z.string(),
+        space: z.string(),
+    })).mutation(async(opts) => {
         const multiverse = new MultiverseMock();
 
         const database: DatabaseConfiguration = {
-            name: "test",
-            secretTokens: [
-                {
-                    name: "token1",
-                    secret: "secretsecret",
-                    validUntil: 12345678,
-                },
-            ],
-            dimensions: 1536,
-            region: "eu-central-1",
-            space: "l2",
+            name: opts.input.name,
+            secretTokens: opts.input.secretTokens,
+            dimensions: opts.input.dimensions,
+            region: opts.input.region as "eu-central-1",
+            space: opts.input.space as "l2" | "cosine" | "ip"
         };
 
-        await multiverse.createDatabase(database);
+        try {
+            await multiverse.createDatabase(database);
+
+            return true;
+        } catch (error) {
+            console.log(error);
+
+            return false;
+        }
     }),
 };

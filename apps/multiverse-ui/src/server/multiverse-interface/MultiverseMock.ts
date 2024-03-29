@@ -17,28 +17,13 @@ import * as fs from "fs";
 //     "dimensions": 1536,
 //     "region": "eu-central-1",
 //     "space": "l2"
-//   },
-//   {
-//     "name": "database_2",
-//     "secretTokens": [{
-//       "name": "token1",
-//       "secret": "secretsecret",
-//       "validUntil": 12345678
-//     }],
-//     "dimensions": 1536,
-//     "region": "eu-central-1",
-//     "space": "l2"
 //   }
 // ]
 
-let areLoaded = false;
 const databases = new Map<string, IMultiverseDatabase>();
 const file = "./src/server/multiverse-interface/multiverseMock.json";
 
 function loadJsonFile() {
-    if (areLoaded) {
-        return;
-    }
     try {
         if (!fs.existsSync(file)) {
             // If file doesn't exist, create it and write []
@@ -49,14 +34,12 @@ function loadJsonFile() {
         if (!jsonData) {
             return;
         }
-        console.log("jsonData", jsonData);
+        // console.log("jsonData", jsonData);
 
         const parsedData = JSON.parse(jsonData);
         for (const database of parsedData) {
             databases.set(database.name, new MultiverseDatabaseMock(database));
         }
-
-        areLoaded = true;
     } catch (error) {
         console.error("Error loading databases:", error);
     }
@@ -86,7 +69,7 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
     add(vector: NewVector[]): Promise<void> {
         console.log(vector);
 
-        saveJsonFile();
+        saveJsonFile().then();
 
         return Promise.resolve(undefined);
     }
@@ -94,7 +77,7 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
     addToken(token: Token): Promise<void> {
         console.log(token);
 
-        saveJsonFile();
+        saveJsonFile().then();
 
         return Promise.resolve(undefined);
     }
@@ -121,7 +104,7 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
     remove(label: string[]): Promise<void> {
         console.log(label);
 
-        saveJsonFile();
+        saveJsonFile().then();
 
         return Promise.resolve();
     }
@@ -129,7 +112,7 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
     removeToken(tokenName: string): Promise<void> {
         console.log(tokenName);
 
-        saveJsonFile();
+        saveJsonFile().then();
 
         return Promise.resolve();
     }
@@ -143,28 +126,32 @@ export class MultiverseMock implements IMultiverse {
     }
 
     createDatabase(options: Omit<DatabaseConfiguration, "region">): Promise<void> {
+        loadJsonFile();
         databases.set(options.name, new MultiverseDatabaseMock({
             ...options,
             region: this.region as "eu-central-1"
         }));
-
-        saveJsonFile();
+        saveJsonFile().then();
 
         return Promise.resolve();
     }
 
     getDatabase(name: string): Promise<IMultiverseDatabase | undefined> {
+        loadJsonFile();
+
         return Promise.resolve(databases.get(name));
     }
 
     listDatabases(): Promise<IMultiverseDatabase[]> {
+        loadJsonFile();
+
         return Promise.resolve(Array.from(databases.values()));
     }
 
     removeDatabase(name: string): Promise<void> {
         databases.delete(name);
 
-        saveJsonFile();
+        saveJsonFile().then();
 
         return Promise.resolve();
     }

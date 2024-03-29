@@ -39,10 +39,6 @@ export default function AddAWSTokenModal() {
             accessTokenId: "",
             secretAccessKey: "",
         }
-        // defaultValues: {
-        //     accessTokenId: "9daff09a7328358dfa44cdb321c38df3",
-        //     secretAccessKey: "2ed1487f8d68b49a5ca24e0657d2e21e54d7e2e942b3ab9ff485404da7c8912bddca20babe337c0736b6974f875e972410e2ad9800188f7c426225cf2cf30bd1",
-        // }
     });
 
     async function onSubmit(values: z.infer<typeof AwsTokenSchema>) {
