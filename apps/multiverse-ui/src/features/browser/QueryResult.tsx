@@ -2,11 +2,10 @@ import DeleteVectorModal from "@/features/browser/DeleteVectorModal";
 import ViewVectorModal from "@/features/browser/ViewVectorModal";
 
 export interface QueryResultProps {
-  id: string;
   label: string;
-  metadata?: string;
+  metadata?: Record<string, string>
   values: number[];
-  metrics: number;
+  resultDistance: number;
 }
 
 export default function QueryResult({ vector }: { vector: QueryResultProps }) {
@@ -20,10 +19,10 @@ export default function QueryResult({ vector }: { vector: QueryResultProps }) {
                     .slice(0, 10)
                     .map((element) => ` ${element.toFixed(3)}`)} ...]`}</div>
                 <div className="flex justify-end w-16 text-primary-foreground">
-                    {vector.metrics}
+                    {vector.resultDistance}
                 </div>
             </div>
-            <DeleteVectorModal id={vector.id} />
+            <DeleteVectorModal id={vector.label} />
             <ViewVectorModal vector={{ ...vector }} />
         </div>
     );

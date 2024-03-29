@@ -9,64 +9,30 @@ import { useState } from "react";
 import UpsertVectorModal from "@/features/browser/UpsertVectorModal";
 import { Button } from "@/components/ui/button";
 import { CopyIcon } from "lucide-react";
-
-const dummyResults = [
-    {
-        id: "1",
-        label: "red tractor",
-        values: [
-            0.1, 0.2, 0.312, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 0.2, 0.3, 0.312, 0.4,
-            0.5, 0.6, 0.7, 0.8, 0.9, 1,
-        ],
-        metrics: 48.371,
-    },
-    {
-        id: "2",
-        label: "blue tractor",
-        values: [
-            0.1, 0.2, 0.312, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 0.2, 0.3, 0.312, 0.4,
-            0.5, 0.6, 0.7, 0.8, 0.9, 1,
-        ],
-        metrics: 52.371,
-    },
-    {
-        id: "3",
-        label: "green tractor",
-        values: [
-            0.1, 0.2, 0.312, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 0.2, 0.3, 0.312, 0.4,
-            0.5, 0.6, 0.7, 0.8, 0.9, 1,
-        ],
-        metrics: 58.371,
-    },
-    {
-        id: "4",
-        label: "yellow tractor",
-        values: [
-            0.1, 0.2, 0.312, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 0.2, 0.3, 0.312, 0.4,
-            0.5, 0.6, 0.7, 0.8, 0.9, 1,
-        ],
-        metrics: 68.371,
-    },
-    {
-        id: "5",
-        label: "purple tractor",
-        values: [
-            0.1, 0.2, 0.312, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 0.2, 0.3, 0.312, 0.4,
-            0.5, 0.6, 0.7, 0.8, 0.9, 1,
-        ],
-        metrics: 78.371,
-    },
-];
+import { trpc } from "@/_trpc/client";
 
 export default function VectorQuery() {
     const [queryRan, setQueryRan] = useState<boolean>(false);
     const [results, setResults] = useState<QueryResultProps[]>([]);
     const dimensions = 10;
+    const mutation = trpc.runVectorQuery.useMutation();
 
-    const handleRunQuery = (vector: VectorValues, k: number) => {
-        console.log(`running query ${vector} with k=${k}`);
+    const handleRunQuery = async(vector: VectorValues, k: number) => {
+        const result = await mutation.mutateAsync({
+            database: "database_1",
+            vector: vector,
+            k: k,
+        });
+        console.log(result);
         setQueryRan(true);
-        setResults(dummyResults);
+        setResults(result.result.map((vector): QueryResultProps => {
+            return {
+                label: vector.label,
+                metadata: vector.metadata,
+                values: vector.vector || [],
+                resultDistance: vector.distance,
+            };
+        }));
     };
 
     const handleCopyRequest = async(vector: VectorValues, k: number) => {
@@ -117,7 +83,7 @@ export default function VectorQuery() {
                         {results.map((result) => {
                             return (
                                 <li>
-                                    <QueryResult key={result.id} vector={result} />
+                                    <QueryResult key={result.label} vector={result} />
                                 </li>
                             );
                         })}
