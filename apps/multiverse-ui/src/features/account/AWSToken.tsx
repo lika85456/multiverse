@@ -14,6 +14,16 @@ export default function AWSToken() {
         <>
             <SectionTitle title={"AWS Token"} />
             <div className="flex flex-col w-full space-y-4">
+                {!isFetched && !isError && <div> Loading... </div>}
+                {isError && <div> Error </div>}
+                {isFetched && !awsToken && (
+                    <>
+                        <h3 className="self-center text-secondary-foreground">
+                            No AWS token provided
+                        </h3>
+                        <AddAWSTokenModal />
+                    </>
+                )}
                 {isFetched && awsToken && (
                     <div className="flex flex-row items-center w-full border border-border rounded-xl p-4">
                         <div className="flex flex-col w-full">
@@ -25,16 +35,7 @@ export default function AWSToken() {
                         <DeleteAWSTokenModal />
                     </div>
                 )}
-                {isFetched && !awsToken && (
-                    <>
-                        <h3 className="self-center text-secondary-foreground">
-              No AWS token available
-                        </h3>
-                        <AddAWSTokenModal />
-                    </>
-                )}
-                {!isFetched && !isError && <div> Loading... </div>}
-                {isError && <div> Error </div>}
+
             </div>
         </>
     );

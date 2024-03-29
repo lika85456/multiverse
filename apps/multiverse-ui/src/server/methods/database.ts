@@ -1,4 +1,4 @@
-import { publicProcedure, router } from "@/server/trpc";
+import { publicProcedure } from "@/server/trpc";
 import { dummyData } from "@/server/dummy_data";
 import z from "zod";
 

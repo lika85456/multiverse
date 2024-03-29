@@ -39,10 +39,10 @@ export const accountMethods = {
             });
         }),
     removeAwsToken: publicProcedure.mutation(async() => {
-        const tokenRemovalResult = await removeAwsToken();
         const deleteDatabasesResult = await deleteAllDatabases();
-
         //TODO - perform full cleanup of user data
+        const tokenRemovalResult = await removeAwsToken();
+
         return tokenRemovalResult && deleteDatabasesResult;
     }),
 };

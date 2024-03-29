@@ -2,6 +2,7 @@
 
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { trpc } from "@/_trpc/client";
 
 export interface GeneralStatisticsItemProps {
   label: string;
@@ -44,6 +45,11 @@ export default function GeneralStatistics({
     items,
     className,
 }: GeneralStatisticsProps) {
+    const awsToken = trpc.getAwsToken.useQuery();
+    if (!awsToken.data) {
+        return null;
+    }
+
     const trimmedItems = items.slice(0, 6);
 
     return (
