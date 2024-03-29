@@ -1,9 +1,9 @@
-export interface Database {
+export interface DatabaseGet {
   codeName: string;
   name: string;
-  locality: string;
+  region: string;
   dimensions: number;
-  space: number;
+  space: "l2" | "cosine" | "ip";
 }
 
 export const deleteAllDatabases = async() => {

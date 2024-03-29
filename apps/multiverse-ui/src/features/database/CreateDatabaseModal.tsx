@@ -24,13 +24,17 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import useModal from "@/features/modals/use-modal";
+import { trpc } from "@/_trpc/client";
 
 export default function CreateDatabaseModal() {
+    const mutation = trpc.createDatabase.useMutation();
+
     const {
         modalOpen, handleOpenModal, handleCloseModal
     } = useModal();
 
-    const handleCreateDatabase = () => {
+    const handleCreateDatabase = async() => {
+        await mutation.mutateAsync();
         console.log("Creating mongodb");
         handleCloseModal();
     };

@@ -17,20 +17,21 @@ export default function DatabaseHeader({
   databaseCodeName: string;
   children: ReactNode;
 }) {
-    const database = trpc.getDatabaseByCodeName.useQuery(databaseCodeName);
-
-    if (!database.data) return Page404();
+    const {
+        data: database, isError, isFetched
+    } = trpc.getDatabaseByCodeName.useQuery(databaseCodeName);
+    if (!database) return Page404();
 
     return (
         <div className="flex flex-col w-full">
             <div className="flex flex-row w-full items-center justify-between">
-                <PageTitle title={database.data.name} />
+                <PageTitle title={database.name} />
                 <Link href={"/databases"}>
                     <IoClose className="w-8 h-8 ml-auto" />
                 </Link>
             </div>
-            <DatabaseInfo database={database.data} />
-            <DatabaseSectionNavigation database={database.data} />
+            <DatabaseInfo database={database} />
+            <DatabaseSectionNavigation database={database} />
             <Separator className="mb-4" />
             {children}
         </div>

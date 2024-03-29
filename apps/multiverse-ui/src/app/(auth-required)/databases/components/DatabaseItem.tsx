@@ -8,7 +8,7 @@ export type DatabaseItemProps = {
     name: string;
     records: number;
     dimensions: number;
-    metrics: string;
+    space: string;
   };
 };
 
@@ -36,7 +36,7 @@ export default function DatabaseItem({ database }: DatabaseItemProps) {
                     </div>
                 </div>
                 <p className="flex w-4/12 justify-start items-center text-xl text-tertiary">
-                    {database.metrics}
+                    {database.space}
                 </p>
             </div>
             <div className="flex w-1/12 justify-center">

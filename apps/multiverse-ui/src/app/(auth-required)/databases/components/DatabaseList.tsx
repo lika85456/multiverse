@@ -6,18 +6,23 @@ import { trpc } from "@/_trpc/client";
 import { Suspense } from "react";
 
 export default function DatabaseList() {
-    const databases = trpc.getDatabases.useQuery();
+    const {
+        data: databases, isError, isFetched
+    } = trpc.getDatabases.useQuery();
 
     return (
         <>
             <CreateDatabaseModal />
             <Suspense fallback={<div>Loading...</div>}>
-                {databases.data && (
+                {databases && (
                     <ul className="flex flex-col w-full py-4 space-y-4">
-                        {databases.data.map((database) => {
+                        {databases.map((database) => {
                             return (
                                 <li key={database.codeName}>
-                                    <DatabaseItem database={database} />
+                                    <DatabaseItem database={{
+                                        ...database,
+                                        records: 0,
+                                    }} />
                                 </li>
                             );
                         })}
