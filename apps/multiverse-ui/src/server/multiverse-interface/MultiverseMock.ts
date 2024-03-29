@@ -1,66 +1,86 @@
-import type { DatabaseConfiguration, Token } from "./DatabaseConfiguration";
-import type { Query, QueryResult } from "./core/Query";
-import type { NewVector } from "./core/Vector";
-import type { IMultiverseDatabase } from "@multiverse/multiverse";
+import type { IMultiverse, IMultiverseDatabase } from "@multiverse/multiverse/src";
+
+import type { DatabaseConfiguration, Token } from "@multiverse/multiverse/src/DatabaseConfiguration";
+import type { Query, QueryResult } from "@multiverse/multiverse/src/core/Query";
+import type { NewVector } from "@multiverse/multiverse/src/core/Vector";
 
 class MultiverseDatabaseMock implements IMultiverseDatabase {
-    constructor(private configuration: DatabaseConfiguration) {}
-
-    public async query(query: Query): Promise<QueryResult> {
-        console.log(query);
-
-        return { data: [] };
-    }
-
-    public async add(vector: NewVector[]) {
+    add(vector: NewVector[]): Promise<void> {
         console.log(vector);
 
-        return;
+        return Promise.resolve(undefined);
     }
 
-    public async remove(label: string[]) {
-        console.log(label);
-
-        return;
-    }
-
-    public async getConfiguration() {
-        return this.configuration;
-    }
-
-    public async addToken(token: Token) {
+    addToken(token: Token): Promise<void> {
         console.log(token);
 
-        return;
+        return Promise.resolve(undefined);
     }
 
-    public async removeToken(tokenName: string) {
+    getConfiguration(): Promise<DatabaseConfiguration> {
+        const databaseConfiguration: DatabaseConfiguration = {
+            name: "databazen",
+            secretTokens: [{
+                name: "token1",
+                secret: "secret1",
+                validUntil: new Date().getMilliseconds()
+            }],
+            dimensions: 1536,
+            region: "eu-central-1",
+            space: "cosine"
+        };
+
+        return Promise.resolve(databaseConfiguration);
+    }
+
+    query(query: Query): Promise<QueryResult> {
+        console.log(query);
+        const result: QueryResult = {
+            result: [{
+                label: "label",
+                metadata: {},
+                vector: [0, 0, 0, 0],
+                distance: 1
+            }]
+        };
+
+        return Promise.resolve(result);
+    }
+
+    remove(label: string[]): Promise<void> {
+        console.log(label);
+
+        return Promise.resolve();
+    }
+
+    removeToken(tokenName: string): Promise<void> {
         console.log(tokenName);
 
-        return;
+        return Promise.resolve();
     }
 }
 
-class MockMultiverse implements IMultiverse {
-    public async createDatabase(options: Omit<DatabaseConfiguration, "region">) {
+export class MultiverseMock implements IMultiverse {
+    createDatabase(options: Omit<DatabaseConfiguration, "region">): Promise<void> {
         console.log(options);
 
-        return;
+        return Promise.resolve();
     }
 
-    public async removeDatabase(name: string) {
+    getDatabase(name: string): Promise<IMultiverseDatabase | undefined> {
         console.log(name);
 
-        return;
+        return Promise.resolve(new MultiverseDatabaseMock() as IMultiverseDatabase);
     }
 
-    public async getDatabase(name: string) {
+    listDatabases(): Promise<IMultiverseDatabase[]> {
+        return Promise.resolve([]);
+    }
+
+    removeDatabase(name: string): Promise<void> {
         console.log(name);
 
-        return;
+        return Promise.resolve();
     }
 
-    public async listDatabases() {
-        return [];
-    }
 }
