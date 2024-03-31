@@ -1,34 +1,46 @@
+import type ChangesStorage from "../ChangesStorage";
+import type { Worker } from "../Compute/Worker";
+import mergeResults from "../Index/mergeResults";
+import type InfrastructureStorage from "../InfrastructureStorage";
 import type { Query, QueryResult } from "../core/Query";
 import type { NewVector } from "../core/Vector";
-import type IndexManager from "./IndexManager";
-import type InfrastructureManager from "./InfrastructureManager";
 import type OrchestratorClient from "./OrchestratorClient";
 
 export default class OrchestratorWorker implements OrchestratorClient {
     constructor(private options: {
-        indexManager: IndexManager;
-        infrastructureManager: InfrastructureManager;
+        changesStorage: ChangesStorage,
+        infrastructureStorage: InfrastructureStorage,
+        workers: {
+            worker: Worker,
+            partition: number,
+        }[],
     }) {
 
     }
 
-    query(query: Query): Promise<QueryResult> {
-        return this.options.indexManager.query(query);
+    public async query(query: Query): Promise<QueryResult> {
+        const results = await Promise.all(this.options.workers.map(async worker => {
+            return (await worker.worker.query({ query })).result.result;
+        }));
+
+        const mergedResult = mergeResults(results);
+
+        return { result: mergedResult, };
     }
 
-    add(vectors: NewVector[]): Promise<void> {
-        return this.options.indexManager.add(vectors);
-    }
-
-    remove(label: string[]): Promise<void> {
-        return this.options.indexManager.remove(label);
-    }
-
-    wake(): Promise<void> {
+    public async add(vector: NewVector[]): Promise<void> {
         throw new Error("Method not implemented.");
     }
 
-    count(): Promise<{ vectors: number; vectorDimensions: number; }> {
-        return this.options.indexManager.count();
+    public async remove(label: string[]): Promise<void> {
+        throw new Error("Method not implemented.");
+    }
+
+    public async wake(): Promise<void> {
+
+    }
+
+    public async count(): Promise<{ vectors: number; vectorDimensions: number; }> {
+        throw new Error("Method not implemented.");
     }
 }
