@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import useModal from "@/features/modals/use-modal";
-import { trpc } from "@/_trpc/client";
+import { trpc } from "@/lib/trpc/client";
 import z from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -64,8 +64,19 @@ const DatabaseFormSchema = z.object({
 });
 
 export default function CreateDatabaseModal() {
-    const mutation = trpc.createDatabase.useMutation();
     const util = trpc.useUtils();
+    const mutation = trpc.createDatabase.useMutation({
+        onSuccess: async() => {
+            try {
+                toast("Database created");
+                await util.getDatabases.refetch();
+                form.reset();
+                handleCloseModal();
+            } catch (error) {
+                toast("Error creating database");
+            }
+        }
+    });
 
     const {
         modalOpen, handleOpenModal, handleCloseModal
@@ -82,21 +93,14 @@ export default function CreateDatabaseModal() {
     });
 
     async function onSubmit(values: z.infer<typeof DatabaseFormSchema>) {
-        const result = await mutation.mutateAsync({
+        await mutation.mutateAsync({
             name: values.name,
             region: values.region,
             space: values.space,
             dimensions: values.dimensions,
             secretTokens: [],
         });
-        if (result) {
-            toast("Database created");
-            await util.getDatabases.refetch();
-            form.reset();
-            handleCloseModal();
-        } else {
-            toast("Error creating database");
-        }
+
     }
 
     const handleCopyRequest = async() => {

@@ -4,7 +4,7 @@ import GeneralStatistics from "@/features/statistics/GeneralStatistics";
 import { Separator } from "@/components/ui/separator";
 import DatabaseList from "@/app/(auth-required)/databases/components/DatabaseList";
 import format from "@/features/statistics/format";
-import { trpc } from "@/_trpc/client";
+import { trpc } from "@/lib/trpc/client";
 import AddAWSTokenModal from "@/features/account/AddAWSTokenModal";
 
 const items = [
@@ -28,20 +28,20 @@ const items = [
 
 export default function Databases() {
     const {
-        data: awsToken, isFetched, isError
+        data: awsToken, isLoading, isSuccess, isError
     } = trpc.getAwsToken.useQuery();
 
     return (
         <>
-            {!isFetched && !isError && <div> Loading... </div>}
+            {isLoading && <div> Loading... </div>}
             {isError && <div> Error </div>}
-            {!awsToken && isFetched && (
+            {isSuccess && !awsToken && (
                 <div className="flex flex-col w-full py-16 items-center">
                     <h3 className="flex w-80 mb-8 text-center">Missing AWS Token. To view your databases, please provide AWS Token.</h3>
                     <AddAWSTokenModal />
                 </div>
             )}
-            {awsToken && isFetched && (
+            {isSuccess && awsToken && (
                 <>
                     <GeneralStatistics items={items} />
                     <Separator className="bg-border m-4" />

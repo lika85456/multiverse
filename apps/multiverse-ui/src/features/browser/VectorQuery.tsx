@@ -9,7 +9,7 @@ import { useState } from "react";
 import UpsertVectorModal from "@/features/browser/UpsertVectorModal";
 import { Button } from "@/components/ui/button";
 import { CopyIcon } from "lucide-react";
-import { trpc } from "@/_trpc/client";
+import { trpc } from "@/lib/trpc/client";
 
 export default function VectorQuery() {
     const [queryRan, setQueryRan] = useState<boolean>(false);

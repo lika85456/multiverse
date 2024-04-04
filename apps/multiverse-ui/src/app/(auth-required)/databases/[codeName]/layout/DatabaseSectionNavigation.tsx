@@ -1,16 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { notFound, usePathname } from "next/navigation";
-
-import type { serverClient } from "@/_trpc/serverClient";
+import { usePathname } from "next/navigation";
+import type { DatabaseGet } from "@/lib/mongodb/collections/database";
 
 export default function DatabaseSectionNavigation({ database, }: {
-  database: Awaited<ReturnType<(typeof serverClient)["getDatabaseByCodeName"]>>;
+  database: DatabaseGet;
 }) {
     const pathName = usePathname();
-
-    if (!database) return notFound();
 
     let currentSection = "";
     if (pathName === `/databases/${database.codeName}`) {

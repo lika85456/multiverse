@@ -102,12 +102,16 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
     }
 
     remove(label: string[]): Promise<void> {
-        const vectors = databases.get(this.databaseConfiguration.name)?.vectors;
-        if (!vectors) {
+        const database = databases.get(this.databaseConfiguration.name);
+        if (!database) {
             return Promise.resolve();
         }
-        // databases.get(this.databaseConfiguration.name)!.vectors = vectors.filter((vector) => !label.includes(vector.label));
+        const vectors = database.vectors;
 
+        databases.set(this.databaseConfiguration.name, {
+            multiverseDatabase: database.multiverseDatabase,
+            vectors: vectors.filter((vector) => !label.includes(vector.label))
+        });
         saveJsonFile().then();
 
         return Promise.resolve();
@@ -128,11 +132,7 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
             };
         }).sort((a, b) => a.distance - b.distance).slice(0, query.k);
 
-        console.log("results", results);
-
-        const result: QueryResult = { result: results };
-
-        return Promise.resolve(result);
+        return Promise.resolve({ result: results });
     }
 
     addToken(token: Token): Promise<void> {
@@ -188,8 +188,8 @@ export class MultiverseMock implements IMultiverse {
     }
 
     removeDatabase(name: string): Promise<void> {
+        loadJsonFile();
         databases.delete(name);
-
         saveJsonFile().then();
 
         return Promise.resolve();

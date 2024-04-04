@@ -2,7 +2,7 @@
 
 import DatabaseItem from "@/app/(auth-required)/databases/components/DatabaseItem";
 import CreateDatabaseModal from "@/features/database/CreateDatabaseModal";
-import { trpc } from "@/_trpc/client";
+import { trpc } from "@/lib/trpc/client";
 import { Suspense } from "react";
 
 export default function DatabaseList() {

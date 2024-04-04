@@ -49,12 +49,10 @@ export default function AccountIcon({ user, }: {
                                 : ""
                         }`}
                     >
-                        {user?.image && <AvatarImage src={user?.image} alt="@shadcn" />}
+                        {user?.image && <AvatarImage src={user.image} alt="User's profile image"/>}
                         {!user?.image && (
-                            <AvatarFallback className="text-contrast_primary-foreground bg-contrast_primary">
-                                {user?.name && user?.name.length > 0
-                                    ? user?.name.at(0)?.toUpperCase()
-                                    : "U"}
+                            <AvatarFallback className="text-contrast_primary-foreground bg-contrast_primary uppercase">
+                                {user?.name?.at(0) ?? "U"}
                             </AvatarFallback>
                         )}
                     </Avatar>

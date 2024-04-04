@@ -8,7 +8,7 @@ import StatisticsGraph from "@/features/statistics/StatisticsGraph";
 import * as React from "react";
 import SectionTitle from "@/app/layout/components/SectionTitle";
 import { Separator } from "@/components/ui/separator";
-import { trpc } from "@/_trpc/client";
+import { trpc } from "@/lib/trpc/client";
 import AddAWSTokenModal from "@/features/account/AddAWSTokenModal";
 
 const items = [
@@ -71,20 +71,20 @@ export default function PricingStatistics() {
     const { date, handleDateIntervalChange } = useDateInterval();
 
     const {
-        data: awsToken, isFetched, isError
+        data: awsToken, isLoading, isSuccess, isError
     } = trpc.getAwsToken.useQuery();
 
     return (
         <>
-            {!isFetched && !isError && <div> Loading... </div>}
+            {isLoading && <div> Loading... </div>}
             {isError && <div> Error </div>}
-            {!awsToken && isFetched && (
+            {isSuccess && !awsToken && (
                 <div className="flex flex-col w-full py-16 items-center">
                     <h3 className="flex w-80 mb-8 text-center">Missing AWS Token. To see your pricing, please provide AWS Token.</h3>
                     <AddAWSTokenModal />
                 </div>
             )}
-            {awsToken && isFetched && (<div className="flex flex-col w-full">
+            {isSuccess && awsToken && (<div className="flex flex-col w-full">
                 <div className="flex flex-col">
                     <div className="flex flex-row justify-between items-center pb-8">
                         <SectionTitle title={"My plan"} className="flex h-fit" />

@@ -2,7 +2,7 @@
 
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { trpc } from "@/_trpc/client";
+import { trpc } from "@/lib/trpc/client";
 
 export interface GeneralStatisticsItemProps {
   label: string;

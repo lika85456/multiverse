@@ -1,4 +1,4 @@
-import { trpc } from "@/_trpc/client";
+import { trpc } from "@/lib/trpc/client";
 import {
     IoAdd, IoCheckmark, IoClose
 } from "react-icons/io5";
@@ -27,7 +27,16 @@ const AwsTokenSchema = z.object({
 
 export default function AddAWSTokenModal() {
     const refetchToken = trpc.useUtils().getAwsToken.refetch;
-    const mutation = trpc.addAwsToken.useMutation();
+    const mutation = trpc.addAwsToken.useMutation({
+        onSuccess: async() => {
+            try {
+                await refetchToken();
+                toast("AWS Token added");
+            } catch (error) {
+                toast("Error adding AWS Token");
+            }
+        }
+    });
 
     const {
         modalOpen, handleOpenModal, handleCloseModal
@@ -42,16 +51,10 @@ export default function AddAWSTokenModal() {
     });
 
     async function onSubmit(values: z.infer<typeof AwsTokenSchema>) {
-        const result = await mutation.mutateAsync({
+        await mutation.mutateAsync({
             accessTokenId: values.accessTokenId,
             secretAccessKey: values.secretAccessKey,
         });
-        if (result) {
-            await refetchToken();
-            toast("AWS Token added");
-        } else {
-            toast("Error adding AWS Token");
-        }
     }
 
     return (

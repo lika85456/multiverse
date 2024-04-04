@@ -3,7 +3,7 @@
 import SectionTitle from "@/app/layout/components/SectionTitle";
 import ConnectionTokenItem from "@/features/connectionToken/ConnectionTokenItem";
 import CreateConnectionTokenModal from "@/features/connectionToken/CreateConnectionTokenModal";
-import { trpc } from "@/_trpc/client";
+import { trpc } from "@/lib/trpc/client";
 
 export default function ConnectionTokensList() {
     const connectionTokens = trpc.getConnectionTokens.useQuery();

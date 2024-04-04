@@ -18,6 +18,7 @@ const envSchema = z.object({
         .enum(["development", "test", "production"])
         .default("development"),
     SECRET_KEY: z.string(),
+    NEXTAUTH_SECRET_KEY: z.string(),
     GITHUB_ID: z.string(),
     GITHUB_SECRET: z.string(),
     GOOGLE_ID: z.string(),

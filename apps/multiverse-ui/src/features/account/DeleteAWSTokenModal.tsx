@@ -12,25 +12,28 @@ import { FaRegTrashAlt } from "react-icons/fa";
 import { IoClose } from "react-icons/io5";
 import { TrashIcon } from "lucide-react";
 import useModal from "@/features/modals/use-modal";
-import { trpc } from "@/_trpc/client";
+import { trpc } from "@/lib/trpc/client";
 import { toast } from "sonner";
 
 export function DeleteAWSTokenModal() {
     const refetchToken = trpc.useUtils().getAwsToken.refetch;
-    const mutation = trpc.removeAwsToken.useMutation();
+    const mutation = trpc.removeAwsToken.useMutation({
+        onSuccess: async() => {
+            try {
+                toast("AWS Token removed");
+                await refetchToken();
+                handleCloseModal();
+            } catch (error) {
+                toast("Error removing AWS Token");
+            }
+        }
+    });
     const {
         modalOpen, handleOpenModal, handleCloseModal
     } = useModal();
 
     const onConfirmDelete = async() => {
-        const result = await mutation.mutateAsync();
-        if (result) {
-            toast("AWS Token removed");
-            await refetchToken();
-            handleCloseModal();
-        } else {
-            toast("Error removing AWS Token");
-        }
+        await mutation.mutateAsync();
     };
 
     return (

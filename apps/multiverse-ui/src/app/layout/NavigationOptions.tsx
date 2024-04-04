@@ -8,7 +8,6 @@ import {
 } from "@/components/ui/navigation-menu";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { getSession, useSession } from "next-auth/react";
 
 export interface NavigationOptionsProps {
   pages: {

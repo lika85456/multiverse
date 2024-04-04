@@ -2,7 +2,7 @@ import { publicProcedure } from "@/server/trpc";
 import z from "zod";
 import { getSessionUser } from "@/lib/mongodb/collections/user";
 import {
-    addAwsToken,
+    addAwsToken, getAwsTokenByAccessTokenId,
     getAwsTokenByOwner,
     removeAwsToken,
 } from "@/lib/mongodb/collections/aws-token";
@@ -33,6 +33,11 @@ export const accountMethods = {
             secretAccessKey: z.string(),
         }),)
         .mutation(async(opts) => {
+            const existingToken = await getAwsTokenByAccessTokenId(opts.input.accessTokenId);
+            if (existingToken) {
+                throw new Error("Token already exists");
+            }
+
             return await addAwsToken({
                 accessTokenId: opts.input.accessTokenId,
                 secretAccessKey: opts.input.secretAccessKey,

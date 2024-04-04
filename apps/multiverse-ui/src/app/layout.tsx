@@ -5,7 +5,7 @@ import MainNav from "@/app/layout/MainNav";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import type { ReactNode } from "react";
-import Provider from "@/_trpc/Provider";
+import Provider from "@/lib/trpc/Provider";
 
 const inter = Inter({ subsets: ["latin"] });
 

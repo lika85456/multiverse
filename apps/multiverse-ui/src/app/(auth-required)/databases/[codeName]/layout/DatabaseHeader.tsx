@@ -8,7 +8,7 @@ import DatabaseInfo from "@/app/(auth-required)/databases/[codeName]/layout/Data
 import DatabaseSectionNavigation from "@/app/(auth-required)/databases/[codeName]/layout/DatabaseSectionNavigation";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { trpc } from "@/_trpc/client";
+import { trpc } from "@/lib/trpc/client";
 
 export default function DatabaseHeader({
     databaseCodeName,
