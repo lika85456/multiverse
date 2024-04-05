@@ -1,14 +1,12 @@
 import { router } from "@/server/trpc";
-import { databaseMethods } from "@/server/methods/database";
-import { statisticsMethods } from "@/server/methods/statistics";
-import { accountMethods } from "@/server/methods/account";
-import { databaseBrowserMethods } from "@/server/methods/database-browser";
+import { database, } from "@/server/procedures/database";
+import { statistics, } from "@/server/procedures/statistics";
+import { awsToken } from "@/server/procedures/awsToken";
 
 export const appRouter = router({
-    ...databaseMethods,
-    ...statisticsMethods,
-    ...accountMethods,
-    ...databaseBrowserMethods,
+    database,
+    statistics,
+    awsToken
 });
 
 export type AppRouter = typeof appRouter;

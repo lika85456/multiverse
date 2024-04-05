@@ -19,9 +19,8 @@ import type { VectorValues } from "@/features/browser/QueryHeader";
 import Editor from "@monaco-editor/react";
 
 export interface Vector {
-  id?: string;
   label: string;
-  metadata?: any;
+  metadata?: Record<string, string>;
   values: VectorValues;
 }
 

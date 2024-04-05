@@ -65,11 +65,11 @@ const DatabaseFormSchema = z.object({
 
 export default function CreateDatabaseModal() {
     const util = trpc.useUtils();
-    const mutation = trpc.createDatabase.useMutation({
+    const mutation = trpc.database.post.useMutation({
         onSuccess: async() => {
             try {
                 toast("Database created");
-                await util.getDatabases.refetch();
+                await util.database.get.refetch();
                 form.reset();
                 handleCloseModal();
             } catch (error) {

@@ -7,24 +7,20 @@ import { IoEyeOffOutline } from "react-icons/io5";
 import { CopyIcon } from "lucide-react";
 import { toast } from "sonner";
 import DeleteConnectionTokenModal from "@/features/connectionToken/DeleteConnectionTokenModal";
+import type { SecretToken } from "@/lib/mongodb/collections/database";
 
 export interface ConnectionTokenItemProps {
-  token: {
-    tokenId: string;
-    name: string;
-    tokenData: string;
-    validity: number;
-  };
+  token: SecretToken;
 }
 
 export default function ConnectionTokenItem({ token, }: ConnectionTokenItemProps) {
     const [tokenVisible, setTokenVisible] = useState(false);
 
-    const hiddenValue = "·".repeat(token.tokenData.length);
+    const hiddenValue = "·".repeat(token.secret.length);
 
     const handleCopyToken = async() => {
         try {
-            await navigator.clipboard.writeText(token.tokenData);
+            await navigator.clipboard.writeText(token.secret);
             toast("Token have been copied into your clipboard.");
         } catch (error) {
             console.log("Token could not be copied.");
@@ -38,7 +34,7 @@ export default function ConnectionTokenItem({ token, }: ConnectionTokenItemProps
                 <div className="flex flex-row text-sm text-accent_light-foreground font-mono h-6 tracking-[0.1rem] items-center bg-accent_light rounded-full px-2 mx-4 my-1">
                     {tokenVisible && (
                         <div className="flex flex-row items-center select-none">
-                            {token.tokenData}
+                            {token.secret}
                             <IoEyeOutline
                                 className="w-4 h-4 mx-2 cursor-pointer"
                                 onClick={() => setTokenVisible(!tokenVisible)}
@@ -64,7 +60,7 @@ export default function ConnectionTokenItem({ token, }: ConnectionTokenItemProps
             Valid until
                     </div>
                     <div className="font-bold select-none">
-                        {new Date(token.validity).toLocaleDateString("en-US")}
+                        {new Date(token.validUntil).toLocaleDateString("en-US")}
                     </div>
                 </div>
             </div>

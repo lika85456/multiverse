@@ -26,8 +26,8 @@ const AwsTokenSchema = z.object({
 });
 
 export default function AddAWSTokenModal() {
-    const refetchToken = trpc.useUtils().getAwsToken.refetch;
-    const mutation = trpc.addAwsToken.useMutation({
+    const refetchToken = trpc.useUtils().awsToken.get.refetch;
+    const mutation = trpc.awsToken.post.useMutation({
         onSuccess: async() => {
             try {
                 await refetchToken();

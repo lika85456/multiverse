@@ -23,7 +23,7 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

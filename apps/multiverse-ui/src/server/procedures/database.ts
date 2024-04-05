@@ -1,11 +1,12 @@
-import { publicProcedure } from "@/server/trpc";
+import { publicProcedure, router } from "@/server/trpc";
 import z from "zod";
 import { MultiverseMock } from "@/server/multiverse-interface/MultiverseMock";
 import type { DatabaseConfiguration } from "@multiverse/multiverse/src/DatabaseConfiguration";
 import type { DatabaseGet } from "@/lib/mongodb/collections/database";
+import { vector } from "@/server/procedures/vector";
 
-export const databaseMethods = {
-    getDatabases: publicProcedure.query(async(): Promise<DatabaseGet[]> => {
+export const database = router({
+    list: publicProcedure.query(async(): Promise<DatabaseGet[]> => {
         const multiverse = new MultiverseMock();
         const multiverseDatabases = await multiverse.listDatabases();
 
@@ -18,10 +19,11 @@ export const databaseMethods = {
                 region: configuration.region,
                 dimensions: configuration.dimensions,
                 space: configuration.space,
+                secretTokens: configuration.secretTokens
             };
         })) ;
     }),
-    getDatabaseByCodeName: publicProcedure
+    get: publicProcedure
         .input(z.string())
         .query(async(opts): Promise<DatabaseGet | undefined> => {
             const multiverse = new MultiverseMock();
@@ -37,10 +39,11 @@ export const databaseMethods = {
                 region: configuration.region,
                 dimensions: configuration.dimensions,
                 space: configuration.space,
+                secretTokens: configuration.secretTokens
             };
         }),
 
-    createDatabase: publicProcedure.input(z.object({
+    post: publicProcedure.input(z.object({
         name: z.string(),
         secretTokens: z.array(z.object({
             name: z.string(),
@@ -71,4 +74,5 @@ export const databaseMethods = {
             return false;
         }
     }),
-};
+    vector
+});

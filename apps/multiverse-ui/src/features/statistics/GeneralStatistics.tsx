@@ -45,7 +45,7 @@ export default function GeneralStatistics({
     items,
     className,
 }: GeneralStatisticsProps) {
-    const awsToken = trpc.getAwsToken.useQuery();
+    const awsToken = trpc.awsToken.get.useQuery();
     if (!awsToken.data) {
         return null;
     }

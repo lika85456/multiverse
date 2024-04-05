@@ -8,7 +8,7 @@ import AddAWSTokenModal from "@/features/account/AddAWSTokenModal";
 export default function AWSToken() {
     const {
         data: awsToken, isLoading, isSuccess, isError
-    } = trpc.getAwsToken.useQuery();
+    } = trpc.awsToken.get.useQuery();
 
     return (
         <>

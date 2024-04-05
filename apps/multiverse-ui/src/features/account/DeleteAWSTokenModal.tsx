@@ -16,8 +16,8 @@ import { trpc } from "@/lib/trpc/client";
 import { toast } from "sonner";
 
 export function DeleteAWSTokenModal() {
-    const refetchToken = trpc.useUtils().getAwsToken.refetch;
-    const mutation = trpc.removeAwsToken.useMutation({
+    const refetchToken = trpc.useUtils().awsToken.get.refetch;
+    const mutation = trpc.awsToken.delete.useMutation({
         onSuccess: async() => {
             try {
                 toast("AWS Token removed");

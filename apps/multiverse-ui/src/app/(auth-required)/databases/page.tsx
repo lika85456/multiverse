@@ -29,7 +29,7 @@ const items = [
 export default function Databases() {
     const {
         data: awsToken, isLoading, isSuccess, isError
-    } = trpc.getAwsToken.useQuery();
+    } = trpc.awsToken.get.useQuery();
 
     return (
         <>

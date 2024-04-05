@@ -72,7 +72,7 @@ export default function PricingStatistics() {
 
     const {
         data: awsToken, isLoading, isSuccess, isError
-    } = trpc.getAwsToken.useQuery();
+    } = trpc.awsToken.get.useQuery();
 
     return (
         <>

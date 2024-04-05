@@ -18,22 +18,27 @@ export default function DatabaseHeader({
   children: ReactNode;
 }) {
     const {
-        data: database, isError, isFetched
-    } = trpc.getDatabaseByCodeName.useQuery(databaseCodeName);
-    if (!database) return Page404();
+        data: database, isError, isSuccess, isLoading
+    } = trpc.database.get.useQuery(databaseCodeName);
+    if (!isLoading && !database) return Page404();
 
     return (
-        <div className="flex flex-col w-full">
-            <div className="flex flex-row w-full items-center justify-between">
-                <PageTitle title={database.name} />
-                <Link href={"/databases"}>
-                    <IoClose className="w-8 h-8 ml-auto" />
-                </Link>
-            </div>
-            <DatabaseInfo database={database} />
-            <DatabaseSectionNavigation database={database} />
-            <Separator className="mb-4" />
-            {children}
-        </div>
+        <>
+            {isLoading && <div> Loading... </div>}
+            {isError && <div> Error </div>}
+            {isSuccess && database && (
+                <div className="flex flex-col w-full">
+                    <div className="flex flex-row w-full items-center justify-between">
+                        <PageTitle title={database.name} />
+                        <Link href={"/databases"}>
+                            <IoClose className="w-8 h-8 ml-auto" />
+                        </Link>
+                    </div>
+                    <DatabaseInfo database={database} />
+                    <DatabaseSectionNavigation database={database} />
+                    <Separator className="mb-4" />
+                    {children}
+                </div>)}
+        </>
     );
 }

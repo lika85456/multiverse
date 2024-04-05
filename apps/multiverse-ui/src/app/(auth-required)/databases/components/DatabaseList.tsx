@@ -8,7 +8,7 @@ import { Suspense } from "react";
 export default function DatabaseList() {
     const {
         data: databases, isError, isFetched
-    } = trpc.getDatabases.useQuery();
+    } = trpc.database.list.useQuery();
 
     return (
         <>

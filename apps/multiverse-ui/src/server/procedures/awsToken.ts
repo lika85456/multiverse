@@ -1,4 +1,4 @@
-import { publicProcedure } from "@/server/trpc";
+import { publicProcedure, router } from "@/server/trpc";
 import z from "zod";
 import { getSessionUser } from "@/lib/mongodb/collections/user";
 import {
@@ -8,8 +8,8 @@ import {
 } from "@/lib/mongodb/collections/aws-token";
 import { deleteAllDatabases } from "@/lib/mongodb/collections/database";
 
-export const accountMethods = {
-    getAwsToken: publicProcedure.query(async() => {
+export const awsToken = router({
+    get: publicProcedure.query(async() => {
         const user = await getSessionUser();
         if (!user) {
             throw new Error("User not found");
@@ -27,7 +27,7 @@ export const accountMethods = {
 
         return null;
     }),
-    addAwsToken: publicProcedure
+    post: publicProcedure
         .input(z.object({
             accessTokenId: z.string(),
             secretAccessKey: z.string(),
@@ -43,11 +43,11 @@ export const accountMethods = {
                 secretAccessKey: opts.input.secretAccessKey,
             });
         }),
-    removeAwsToken: publicProcedure.mutation(async() => {
+    delete: publicProcedure.mutation(async() => {
         const deleteDatabasesResult = await deleteAllDatabases();
         //TODO - perform full cleanup of user data
         const tokenRemovalResult = await removeAwsToken();
 
         return tokenRemovalResult && deleteDatabasesResult;
     }),
-};
+});

@@ -1,11 +1,11 @@
-import { publicProcedure } from "@/server/trpc";
+import { publicProcedure, router } from "@/server/trpc";
 import type { QueryResult } from "@multiverse/multiverse/src/core/Query";
 import z from "zod";
 import { MultiverseMock } from "@/server/multiverse-interface/MultiverseMock";
 import type { IMultiverse } from "@multiverse/multiverse/src";
 
-export const databaseBrowserMethods = {
-    runVectorQuery: publicProcedure.input(z.object({
+export const vector = router({
+    query: publicProcedure.input(z.object({
         database: z.string(),
         vector: z.array(z.number()),
         k: z.number(),
@@ -23,4 +23,4 @@ export const databaseBrowserMethods = {
             sendVector: false
         });
     }),
-};
+});

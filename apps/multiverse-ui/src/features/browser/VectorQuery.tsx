@@ -15,10 +15,9 @@ export default function VectorQuery() {
     const [queryRan, setQueryRan] = useState<boolean>(false);
     const [results, setResults] = useState<QueryResultProps[]>([]);
     const dimensions = 10;
-    const mutation = trpc.runVectorQuery.useMutation();
-
+    const query = trpc.database.vector.query.useMutation();
     const handleRunQuery = async(vector: VectorValues, k: number) => {
-        const result = await mutation.mutateAsync({
+        const result = await query.mutateAsync({
             database: "database_1",
             vector: vector,
             k: k,

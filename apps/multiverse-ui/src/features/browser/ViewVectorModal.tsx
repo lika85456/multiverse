@@ -24,7 +24,6 @@ export default function ViewVectorModal({ vector }: { vector: Vector }) {
         modalOpen, handleOpenModal, handleCloseModal
     } = useModal();
     const vectorData = {
-        id: vector.id,
         label: vector.label,
         metadata: vector.metadata,
         values: vector.values,
