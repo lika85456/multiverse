@@ -1,15 +1,9 @@
 import { toast } from "sonner";
+import type { DatabaseGet } from "@/lib/mongodb/collections/database";
 
-export interface DatabaseInfoProps {
-  database: {
-    codeName: string;
-    region: string;
-    dimensions: number;
-    space: string;
-  };
-}
-
-export default function DatabaseInfo({ database }: DatabaseInfoProps) {
+export default function DatabaseInfo({ database }: {
+    database: DatabaseGet;
+}) {
     const handleCopyData = async(value: string) => {
         try {
             await navigator.clipboard.writeText(value);

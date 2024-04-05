@@ -2,16 +2,20 @@ import { addDays } from "date-fns";
 import * as React from "react";
 import type { DateRange } from "react-day-picker";
 import { toast } from "sonner";
-import { useEffect } from "react";
+
+export interface DefinedDateRange {
+    from: Date;
+    to: Date;
+}
 
 export default function useDateInterval() {
-    const defaultInterval = {
+    const defaultInterval: DefinedDateRange = {
         from: addDays(new Date(), -7),
         to: new Date(),
     };
     const currentDate = new Date();
 
-    const [date, setDate] = React.useState<DateRange | undefined>(defaultInterval,);
+    const [date, setDate] = React.useState<DefinedDateRange>(defaultInterval,);
     const handleDateIntervalChange = (newDate: DateRange | undefined) => {
         if (!newDate) {
             toast("No date interval selected. Displaying last 7 days.");
@@ -50,9 +54,6 @@ export default function useDateInterval() {
         }
     };
 
-    useEffect(() => {
-        console.log("Date interval changed to ", date);
-    }, [date]);
 
     return {
         date,
