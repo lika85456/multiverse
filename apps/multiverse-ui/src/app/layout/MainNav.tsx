@@ -5,8 +5,12 @@ import { IoDocumentTextOutline } from "react-icons/io5";
 import NavigationOptions from "@/app/layout/NavigationOptions";
 import ThemePicker from "@/app/layout/ThemePicker";
 import LoginOptions from "@/app/layout/LoginOptions";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
-export default function MainNav() {
+export default async function MainNav() {
+    const session = await getServerSession(authOptions);
+
     const pages = [
         {
             path: "/databases",
@@ -26,14 +30,18 @@ export default function MainNav() {
                 <MultiverseLogo />
             </Link>
             <div className="flex flex-1 flex-row mx-4">
-                <NavigationOptions pages={pages} />
+                <NavigationOptions
+                    pages={pages.filter((item) => {
+                        return !item.requiredAuth || !!session?.user;
+                    })}
+                />
             </div>
             <div className="flex flex-row items-center">
                 <Link href={"/docs"}>
                     <IoDocumentTextOutline className="w-6 h-6 text-foreground m-2.5" />
                 </Link>
                 <ThemePicker />
-                <LoginOptions />
+                <LoginOptions user={session?.user} />
             </div>
         </nav>
     );

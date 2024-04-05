@@ -1,78 +1,42 @@
 "use client";
 
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-import {
-    IoAdd, IoClose, IoCheckmark
-} from "react-icons/io5";
-import { useState } from "react";
 import { DeleteAWSTokenModal } from "@/features/account/DeleteAWSTokenModal";
-
-enum AWSTokenState {
-  VIEW = 0,
-  NO_TOKEN = 1,
-  ADD_TOKEN = 2,
-}
+import { trpc } from "@/lib/trpc/client";
+import SectionTitle from "@/app/layout/components/SectionTitle";
+import AddAWSTokenModal from "@/features/account/AddAWSTokenModal";
 
 export default function AWSToken() {
-    const [state, setState] = useState<AWSTokenState>(AWSTokenState.VIEW);
+    const {
+        data: awsToken, isLoading, isSuccess, isError
+    } = trpc.awsToken.get.useQuery();
 
     return (
         <>
-            {state === AWSTokenState.VIEW && (
-                <div className={"flex flex-col w-full space-y-4"}>
-                    <h3 className={"text-tertiary-foreground"}>Public Key</h3>
-                    <Textarea title={"public"} placeholder="public key" />
-                    <h3 className={"text-tertiary-foreground"}>Private Key</h3>
-                    <Textarea title={"private"} placeholder="private key" />
-                    <DeleteAWSTokenModal setState={setState} />
-                </div>
-            )}
-            {state === AWSTokenState.NO_TOKEN && (
-                <div className={"flex flex-col w-full space-y-4"}>
-                    <h3 className={"self-center text-secondary-foreground"}>
-            No AWS token available
-                    </h3>
-                    <Button
-                        className={
-                            "self-center flex w-fit bg-accent text-accent-foreground hover:bg-accent_light"
-                        }
-                        onClick={() => setState(2)}
-                    >
-                        <IoAdd className={"w-6 h-6 mr-2"} />
-            Add AWS Token
-                    </Button>
-                </div>
-            )}
-            {state === AWSTokenState.ADD_TOKEN && (
-                <div className={"flex flex-col w-full space-y-4"}>
-                    <h3 className={"text-tertiary-foreground"}>Public Key</h3>
-                    <Textarea title={"public"} placeholder="public key" />
-                    <h3 className={"text-tertiary-foreground"}>Private Key</h3>
-                    <Textarea title={"private"} placeholder="private key" />
-                    <div className={"flex flex-row justify-end space-x-4"}>
-                        <Button
-                            variant={"outline"}
-                            className={
-                                "self-end flex w-fit bg-inherit text-primary-foreground outline-border hover:bg-secondary"
-                            }
-                            onClick={() => setState(1)}
-                        >
-                            <IoClose className={"w-6 h-6 mr-2"} />
-              Cancel
-                        </Button>
-                        <Button
-                            className={
-                                "self-end flex w-fit bg-accent text-accent-foreground hover:bg-accent_light"
-                            }
-                            onClick={() => setState(0)}
-                        >
-                            <IoCheckmark className={"w-6 h-6 mr-2"} />
-              Confirm
-                        </Button>
+            <SectionTitle title={"AWS Token"} />
+            <div className="flex flex-col w-full space-y-4">
+                {isLoading && <div> Loading... </div>}
+                {isError && <div> Error </div>}
+                {isSuccess && !awsToken && (
+                    <>
+                        <h3 className="self-center text-secondary-foreground">
+                            No AWS token provided
+                        </h3>
+                        <AddAWSTokenModal />
+                    </>
+                )}
+                {isSuccess && awsToken && (
+                    <div className="flex flex-row items-center w-full border border-border rounded-xl p-4">
+                        <div className="flex flex-col w-full">
+                            <h3 className="text-tertiary-foreground">Access Token Id</h3>
+                            <div className="text-primary-foreground py-2">
+                                {awsToken.accessTokenId}
+                            </div>
+                        </div>
+                        <DeleteAWSTokenModal />
                     </div>
-                </div>
-            )}
+                )}
+
+            </div>
         </>
     );
 }

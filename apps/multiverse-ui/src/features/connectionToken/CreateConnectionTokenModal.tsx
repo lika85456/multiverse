@@ -23,56 +23,52 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import useModal from "@/features/modals/use-modal";
+import useModal from "@/features/hooks/use-modal";
+import { trpc } from "@/lib/trpc/client";
 
-export default function CreateConnectionTokenModal() {
+export default function CreateConnectionTokenModal({ codeName }: {codeName: string}) {
     const {
         modalOpen, handleOpenModal, handleCloseModal
     } = useModal();
     const [date, setDate] = React.useState<Date>();
     const [tokenName, setTokenName] = useState("");
-    const [disabledSubmit, setDisabledSubmit] = useState(true);
     const [focused, setFocused] = useState(false);
-
-    const onConfirmCreate = () => {
-        if (true) {
-            console.log(`Creating token ${tokenName} with validity ${date}`);
-            handleCloseModal();
-        } else {
-            toast("Token could not be created.");
-        }
+    const disabledSubmit = !(date && date > new Date() && tokenName.length > 0);
+    const mutation = trpc.database.secretToken.post.useMutation();
+    const util = trpc.useUtils();
+    const onConfirmCreate = async() => {
+        await mutation.mutateAsync({
+            codeName: codeName,
+            secretToken: {
+                name: tokenName,
+                validUntil: date?.getTime() ?? 0,
+            }
+        });
+        await util.database.invalidate();
+        toast("Token created");
+        handleCloseModal();
     };
-
-    useEffect(() => {
-        date && date > new Date() && tokenName.length > 0
-            ? setDisabledSubmit(false)
-            : setDisabledSubmit(true);
-    }, [tokenName, date]);
 
     return (
         <AlertDialog open={modalOpen}>
             <AlertDialogTrigger asChild onClick={handleOpenModal}>
-                <Button
-                    className={
-                        "flex w-fit self-end text-accent-foreground bg-accent hover:bg-accent_light"
-                    }
-                >
-                    <IoAdd className={"w-6 h-6 mr-2"} /> Create token
+                <Button className="flex w-fit self-end text-accent-foreground bg-accent hover:bg-accent_light">
+                    <IoAdd className="w-6 h-6 mr-2" /> Create token
                 </Button>
             </AlertDialogTrigger>
-            <AlertDialogContent className={"bg-card border-0"}>
+            <AlertDialogContent className="bg-card border-0">
                 <AlertDialogHeader>
-                    <div className={"flex flex-row justify-between"}>
+                    <div className="flex flex-row justify-between">
                         <AlertDialogTitle>Create Token</AlertDialogTitle>
                         <AlertDialogCancel
                             onClick={handleCloseModal}
-                            className={"border-0 bg-inherit hover:bg-inherit w-8 h-8 p-0 m-0"}
+                            className="border-0 bg-inherit hover:bg-inherit w-8 h-8 p-0 m-0"
                         >
-                            <IoClose className={"w-8 h-8"} />
+                            <IoClose className="w-8 h-8" />
                         </AlertDialogCancel>
                     </div>
                 </AlertDialogHeader>
@@ -115,9 +111,9 @@ export default function CreateConnectionTokenModal() {
                     <Button
                         disabled={disabledSubmit}
                         onClick={onConfirmCreate}
-                        className={"bg-accent hover:bg-accent_light text-accent-foreground"}
+                        className="bg-accent hover:bg-accent_light text-accent-foreground"
                     >
-                        <IoAdd className={"w-6 h-6 mr-2"} />
+                        <IoAdd className="w-6 h-6 mr-2" />
             Create
                     </Button>
                 </AlertDialogFooter>

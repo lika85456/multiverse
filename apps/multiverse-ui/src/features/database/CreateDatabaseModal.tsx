@@ -2,7 +2,6 @@
 
 import { Button } from "@/components/ui/button";
 import { IoAdd, IoClose } from "react-icons/io5";
-import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { FaRegCopy } from "react-icons/fa";
 import {
@@ -12,7 +11,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import React, { useEffect, useState } from "react";
+import React from "react";
 import {
     AlertDialog,
     AlertDialogCancel,
@@ -23,158 +22,240 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import useModal from "@/features/modals/use-modal";
+import useModal from "@/features/hooks/use-modal";
+import { trpc } from "@/lib/trpc/client";
+import z from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+    Form, FormControl, FormField, FormItem, FormLabel, FormMessage
+} from "@/components/ui/form";
+
+const Regions = [{
+    code: "eu-central-1",
+    name: "Central Europe",
+}];
+
+//"l2" | "cosine" | "ip"
+const Spaces = [
+    {
+        code: "l2",
+        name: "L2",
+    },
+    {
+        code: "cosine",
+        name: "Cosine Similarity",
+    },
+    {
+        code: "ip",
+        name: "IP",
+    },
+];
+
+const DatabaseFormSchema = z.object({
+    name: z.string().min(4).max(64),
+    region: z.string().refine((value) => {
+        return Regions.some((region) => region.code === value);
+    }, { message: "Invalid region" }),
+    space: z.string().refine((value) => {
+        return Spaces.some((space) => space.code === value);
+    }, { message: "Invalid space" }),
+    dimensions: z.number().min(1),
+});
 
 export default function CreateDatabaseModal() {
+    const util = trpc.useUtils();
+    const mutation = trpc.database.post.useMutation({
+        onSuccess: async() => {
+            try {
+                form.reset();
+                toast("Database created");
+                await util.database.invalidate();
+                handleCloseModal();
+            } catch (error) {
+                toast("Error creating database");
+            }
+        }
+    });
+
     const {
         modalOpen, handleOpenModal, handleCloseModal
     } = useModal();
 
-    const handleCreateDatabase = () => {
-        console.log("Creating database");
-        handleCloseModal();
-    };
+    const form = useForm<z.infer<typeof DatabaseFormSchema>>({
+        resolver: zodResolver(DatabaseFormSchema),
+        defaultValues: {
+            name: "",
+            region: "",
+            space: "",
+            dimensions: 1536,
+        }
+    });
 
-    const handleCopyRequest = () => {
-        console.log("Copying request");
-        navigator.clipboard
-            .writeText(`${"Create database text"}`)
-            .then(() => {
-                toast("Data have been copied into your clipboard.");
-            })
-            .catch(() => {
-                console.log("Data could not be copied.");
-            });
+    async function onSubmit(values: z.infer<typeof DatabaseFormSchema>) {
+        await mutation.mutateAsync({
+            name: values.name,
+            region: values.region,
+            space: values.space,
+            dimensions: values.dimensions,
+            secretTokens: [],
+        });
+
+    }
+
+    const handleCopyRequest = async() => {
+        try {
+            await navigator.clipboard.writeText(`${"Create mongodb text"}`);
+            toast("Data have been copied into your clipboard.");
+        } catch (error) {
+            console.log("Data could not be copied.");
+        }
     };
 
     return (
         <AlertDialog open={modalOpen}>
             <AlertDialogTrigger
                 asChild
-                className={"flex w-fit self-end"}
+                className="flex w-fit self-end"
                 onClick={handleOpenModal}
             >
-                <Button
-                    className={" bg-accent text-accent-foreground hover:bg-accent_light"}
-                >
-                    <IoAdd className={"w-8 h-8 mr-2 "} />
+                <Button className="bg-accent text-accent-foreground hover:bg-accent_light">
+                    <IoAdd className="w-8 h-8 mr-2 " />
           Create database
                 </Button>
             </AlertDialogTrigger>
-            <AlertDialogContent className={"bg-card border-0"}>
-                <AlertDialogHeader>
-                    <div className={"flex flex-row justify-between"}>
-                        <AlertDialogTitle className={"text-xl"}>
-              Create Database
-                        </AlertDialogTitle>
-                        <AlertDialogCancel
-                            onClick={handleCloseModal}
-                            className={"border-0 bg-inherit hover:bg-inherit w-8 h-8 p-0 m-0"}
-                        >
-                            <IoClose className={"w-8 h-8"} />
-                        </AlertDialogCancel>
-                    </div>
-                </AlertDialogHeader>
-                <div className="flex flex-col items-start gap-4">
-                    <Label htmlFor="dbName" className="text-right">
-            Database name
-                    </Label>
-                    <Input id="dbName" defaultValue="Database1" className="bg-inherit" />
-                </div>
-                <div className="flex flex-col w-full items-start gap-4">
-                    <Label htmlFor="locality" className="text-right">
-            Locality
-                    </Label>
-                    <Select>
-                        <SelectTrigger className="w-full bg-inherit">
-                            <SelectValue placeholder="Select a locality" />
-                        </SelectTrigger>
-                        <SelectContent
-                            className={"bg-card text-secondary-foreground border"}
-                        >
-                            <SelectItem
-                                className={"focus:bg-accent_light"}
-                                value="central_europe"
+            <AlertDialogContent className="bg-card border-0">
+                <Form {...form}>
+                    <AlertDialogHeader>
+                        <div className="flex flex-row justify-between">
+                            <AlertDialogTitle className="text-xl">
+                                Create Database
+                            </AlertDialogTitle>
+                            <AlertDialogCancel
+                                onClick={handleCloseModal}
+                                className="border-0 bg-inherit hover:bg-inherit w-8 h-8 p-0 m-0"
                             >
-                Central Europe
-                            </SelectItem>
-                            <SelectItem
-                                className={"focus:bg-accent_light"}
-                                value="northern_europe"
-                            >
-                Northern Europe
-                            </SelectItem>
-                            <SelectItem
-                                className={"focus:bg-accent_light"}
-                                value="eastern_europe"
-                            >
-                Eastern Europe
-                            </SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-                <div className={"flex flex-row w-full space-x-4"}>
-                    <div className="flex flex-col w-full items-start gap-4">
-                        <Label htmlFor="locality" className="text-right">
-              Metrics
-                        </Label>
-                        <Select>
-                            <SelectTrigger className="w-[280px] bg-inherit">
-                                <SelectValue placeholder="Select used metrics" />
-                            </SelectTrigger>
-                            <SelectContent
-                                className={"bg-card text-secondary-foreground border"}
-                            >
-                                <SelectItem
-                                    className={"focus:bg-accent_light"}
-                                    value="dot_product"
-                                >
-                  Dot Product
-                                </SelectItem>
-                                <SelectItem
-                                    className={"focus:bg-accent_light"}
-                                    value="euclidean"
-                                >
-                  Euclidean Distance
-                                </SelectItem>
-                                <SelectItem className={"focus:bg-accent_light"} value="cosine">
-                  Cosine Similarity
-                                </SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div className="flex flex-col w-full items-start gap-4">
-                        <Label htmlFor="dimensions" className="text-right">
-              Dimensions
-                        </Label>
-                        <Input
-                            id="dimensions"
-                            defaultValue="1536"
-                            type={"number"}
-                            className="bg-inherit"
+                                <IoClose className="w-8 h-8" />
+                            </AlertDialogCancel>
+                        </div>
+                    </AlertDialogHeader>
+
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                        <FormField
+                            control={form.control}
+                            name="name"
+                            render={({ field }) => (
+
+                                <FormItem className="flex flex-col items-start">
+                                    <FormLabel>Database name</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="Database Name" {...field} className="bg-inherit" />
+                                    </FormControl>
+                                    <FormMessage className="py-0"/>
+                                </FormItem>
+
+                            )}
                         />
-                    </div>
-                </div>
-                <AlertDialogFooter>
-                    <Button
-                        className={
-                            "flex w-fit border border-border bg-inherit hover:bg-primary"
-                        }
-                        onClick={handleCopyRequest}
-                    >
-                        <FaRegCopy className={"w-6 h-6 mr-2"} />
-            Copy request
-                    </Button>
-                    <Button
-                        className={
-                            "flex w-fit text-accent-foreground bg-accent hover:bg-accent_light"
-                        }
-                        onClick={handleCreateDatabase}
-                    >
-                        <IoAdd className={"w-8 h-8 mr-2"} />
-            Create
-                    </Button>
-                </AlertDialogFooter>
+
+                        <FormField
+                            control={form.control}
+                            name="region"
+                            render={({ field }) => (
+                                <FormItem className="flex flex-col w-full items-start">
+                                    <FormLabel>Region</FormLabel>
+                                    <Select onValueChange={field.onChange}>
+                                        <FormControl>
+                                            <SelectTrigger className="w-full bg-inherit">
+                                                <SelectValue placeholder="Select a locality"/>
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent className="bg-card text-secondary-foreground border">
+                                            {Regions.map((region) => (
+                                                <SelectItem
+                                                    key={region.code}
+                                                    className="focus:bg-accent_light"
+                                                    value={region.code}
+                                                >
+                                                    {region.code}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        <div className="flex flex-row w-full space-x-4">
+                            <FormField
+                                control={form.control}
+                                name="space"
+                                render={({ field }) => (
+                                    <FormItem className="flex flex-col w-full items-start">
+                                        <FormLabel>Vector space</FormLabel>
+                                        <Select onValueChange={field.onChange}>
+                                            <FormControl>
+                                                <SelectTrigger className="w-full bg-inherit">
+                                                    <SelectValue placeholder="Select a vector space"/>
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent className="bg-card text-secondary-foreground border">
+                                                {Spaces.map((space) => (
+                                                    <SelectItem
+                                                        key={space.code}
+                                                        className="focus:bg-accent_light"
+                                                        value={space.code}
+                                                    >
+                                                        {space.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="dimensions"
+                                render={({ field }) => (
+                                    <FormItem className="flex flex-col items-start">
+                                        <FormLabel>Dimensions</FormLabel>
+                                        <FormControl>
+                                            <div className="flex flex-col w-full items-start gap-4">
+                                                <Input
+                                                    id="dimensions"
+                                                    defaultValue="1536"
+                                                    type={"number"}
+                                                    className="bg-inherit"
+                                                    {...field}
+                                                />
+                                            </div>
+                                        </FormControl>
+                                        <FormMessage/>
+                                    </FormItem>
+                                )}
+                            />
+
+                        </div>
+                        <AlertDialogFooter>
+                            <Button
+                                className="flex w-fit border border-border bg-inherit hover:bg-primary"
+                                onClick={handleCopyRequest}
+                            >
+                                <FaRegCopy className="w-6 h-6 mr-2"/>
+                                Copy request
+                            </Button>
+                            <Button
+                                type="submit"
+                                className="flex w-fit text-accent-foreground bg-accent hover:bg-accent_light"
+                            >
+                                <IoAdd className="w-8 h-8 mr-2"/>
+                                Create
+                            </Button>
+                        </AlertDialogFooter>
+                    </form>
+                </Form>
             </AlertDialogContent>
         </AlertDialog>
     );

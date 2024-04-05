@@ -15,14 +15,28 @@ import {
 import Link from "next/link";
 import { LogOut } from "lucide-react";
 import { FiUser } from "react-icons/fi";
+import { signOut } from "next-auth/react";
+import { toast } from "sonner";
 
-export default function AccountIcon() {
+export default function AccountIcon({ user, }: {
+  user:
+    | {
+        name?: string | null | undefined;
+        email?: string | null | undefined;
+        image?: string | null | undefined;
+      }
+    | undefined;
+}) {
     const currentPath = usePathname();
+    // const router = useRouter();
 
-    const userName = "Michal Kornúc";
-    const userInitial = userName.length > 0 ? userName.at(0)?.toUpperCase() : "U";
-    const userImage =
-    "https://e7.pngegg.com/pngimages/178/595/png-clipart-user-profile-computer-icons-login-user-avatars-monochromes-black.png";
+    const handleLogOut = async() => {
+        try {
+            await signOut({ callbackUrl: "/login", });
+        } catch (error) {
+            toast("Could not log out. Please try again later.");
+        }
+    };
 
     return (
         <>
@@ -35,42 +49,30 @@ export default function AccountIcon() {
                                 : ""
                         }`}
                     >
-                        <AvatarImage src={userImage} alt="@shadcn" />
-                        <AvatarFallback
-                            className={"text-contrast_primary-foreground bg-contrast_primary"}
-                        >
-                            {userInitial}
-                        </AvatarFallback>
+                        {user?.image && <AvatarImage src={user.image} alt="User's profile image"/>}
+                        {!user?.image && (
+                            <AvatarFallback className="text-contrast_primary-foreground bg-contrast_primary uppercase">
+                                {user?.name?.at(0) ?? "U"}
+                            </AvatarFallback>
+                        )}
                     </Avatar>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent
-                    className={"bg-card text-card-foreground border-0 mr-4 mt-1"}
-                >
-                    <DropdownMenuLabel>{userName}</DropdownMenuLabel>
-                    <DropdownMenuSeparator className={"bg-border"} />
+                <DropdownMenuContent className="bg-card text-card-foreground border-0 mr-4 mt-1">
+                    <DropdownMenuLabel>{user?.name}</DropdownMenuLabel>
+                    <DropdownMenuSeparator className="bg-border" />
                     <Link href={"/account"}>
-                        <DropdownMenuItem
-                            className={
-                                "font-bold focus:bg-primary focus:text-primary-foreground"
-                            }
-                        >
-                            <FiUser className={"mr-2 h-4 w-4"} />
+                        <DropdownMenuItem className="font-bold focus:bg-primary focus:text-primary-foreground">
+                            <FiUser className="mr-2 h-4 w-4" />
               Account
                         </DropdownMenuItem>
                     </Link>
-                    <Link
-                        href={"/login"}
-                        onClick={() => {
-                            console.log("Logging out");
-                        }}
+                    <DropdownMenuItem
+                        className="focus:bg-primary focus:text-primary-foreground"
+                        onClick={handleLogOut}
                     >
-                        <DropdownMenuItem
-                            className={"focus:bg-primary focus:text-primary-foreground"}
-                        >
-                            <LogOut className="mr-2 h-4 w-4" />
-                            <span>Log out</span>
-                        </DropdownMenuItem>
-                    </Link>
+                        <LogOut className="mr-2 h-4 w-4" />
+                        <span>Log out</span>
+                    </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
         </>

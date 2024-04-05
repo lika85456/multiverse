@@ -13,12 +13,11 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover";
-import { useEffect, useMemo } from "react";
+import { useCallback, useEffect } from "react";
 import { IoCheckmark, IoClose } from "react-icons/io5";
-import { toast } from "sonner";
 
 enum PredefinedOptions {
-  TODAY = "Today",
+  // TODAY = "Today",
   LAST_WEEK = "Last Week",
   LAST_MONTH = "Last Month",
   LAST_YEAR = "Last Year",
@@ -51,11 +50,11 @@ export function DateIntervalPicker({
         setModalOpen(true);
     };
 
-    const handleCloseModal = () => {
+    const handleCloseModal = useCallback(() => {
         setNewDate(getDate());
         setNewPredefinedChoice(prevPredefinedChoice);
         setModalOpen(false);
-    };
+    }, [getDate, prevPredefinedChoice]);
 
     const handleSubmitInterval = () => {
         setDate(newDate);
@@ -63,15 +62,13 @@ export function DateIntervalPicker({
         setModalOpen(false);
     };
 
-    const memoizedGetDate = useMemo(() => getDate, [getDate]);
-
     useEffect(() => {
     // Update newDate state whenever the date changes in the parent component
         setNewDate({
-            from: memoizedGetDate()?.from,
-            to: memoizedGetDate()?.to,
+            from: getDate()?.from,
+            to: getDate()?.to,
         });
-    }, [memoizedGetDate]);
+    }, [getDate]);
 
     useEffect(() => {
         const handleEscape = (event: KeyboardEvent) => {
@@ -82,16 +79,16 @@ export function DateIntervalPicker({
         window.addEventListener("keydown", handleEscape);
 
         return () => window.removeEventListener("keydown", handleEscape);
-    }, []);
+    }, [handleCloseModal]);
 
     const handlePredefinedOptionChoice = (option: PredefinedOptions) => {
         switch (option) {
-        case PredefinedOptions.TODAY:
-            setNewDate({
-                from: new Date(),
-                to: new Date(),
-            });
-            break;
+        // case PredefinedOptions.TODAY:
+        //     setNewDate({
+        //         from: new Date(),
+        //         to: new Date(),
+        //     });
+        //     break;
         case PredefinedOptions.LAST_WEEK:
             setNewDate({
                 from: addDays(new Date(), -7),
@@ -149,9 +146,9 @@ export function DateIntervalPicker({
                     className="flex flex-row border-0 w-auto p-0 bg-card rounded-xl"
                     align="end"
                 >
-                    <ul className={"w-40 bg-grey30 p-2 rounded-l-xl space-y-2"}>
+                    <ul className="w-40 bg-grey30 p-2 rounded-l-xl space-y-2">
                         {[
-                            PredefinedOptions.TODAY,
+                            // PredefinedOptions.TODAY,
                             PredefinedOptions.LAST_WEEK,
                             PredefinedOptions.LAST_MONTH,
                             PredefinedOptions.LAST_YEAR,
@@ -170,7 +167,7 @@ export function DateIntervalPicker({
                             );
                         })}
                     </ul>
-                    <div className={"p-4 space-y-4"}>
+                    <div className="p-4 space-y-4">
                         <Calendar
                             initialFocus
                             mode="range"
@@ -181,25 +178,21 @@ export function DateIntervalPicker({
                                 setNewDate(e);
                             }}
                             numberOfMonths={2}
-                            className={"bg-primary rounded-xl"}
+                            className="bg-primary rounded-xl"
                         />
-                        <div className={"flex flex-row justify-end space-x-4"}>
+                        <div className="flex flex-row justify-end space-x-4">
                             <Button
                                 onClick={handleCloseModal}
-                                className={
-                                    "bg-inherit text-primary-foreground border border-border"
-                                }
+                                className="bg-inherit text-primary-foreground border border-border"
                             >
-                                <IoClose className={"w-6 h-6 mr-2"} />
+                                <IoClose className="w-6 h-6 mr-2" />
                 Cancel
                             </Button>
                             <Button
                                 onClick={handleSubmitInterval}
-                                className={
-                                    "bg-accent text-accent-foreground hover:bg-accent_light"
-                                }
+                                className="bg-accent text-accent-foreground hover:bg-accent_light"
                             >
-                                <IoCheckmark className={"w-6 h-6 mr-2"} />
+                                <IoCheckmark className="w-6 h-6 mr-2" />
                 Confirm
                             </Button>
                         </div>
