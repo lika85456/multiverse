@@ -10,12 +10,16 @@ import UpsertVectorModal from "@/features/browser/UpsertVectorModal";
 import { Button } from "@/components/ui/button";
 import { CopyIcon } from "lucide-react";
 import { trpc } from "@/lib/trpc/client";
+import { notFound, useParams } from "next/navigation";
 
 export default function VectorQuery() {
+    const codeName = useParams().codeName as string;
     const [queryRan, setQueryRan] = useState<boolean>(false);
     const [results, setResults] = useState<QueryResultProps[]>([]);
-    const dimensions = 10;
+
+    const { data: database, isSuccess } = trpc.database.get.useQuery(codeName);
     const query = trpc.database.vector.query.useMutation();
+
     const handleRunQuery = async(vector: VectorValues, k: number) => {
         const result = await query.mutateAsync({
             database: "database_1",
@@ -28,7 +32,7 @@ export default function VectorQuery() {
             return {
                 label: vector.label,
                 metadata: vector.metadata,
-                values: vector.vector || [],
+                vector: vector.vector || [],
                 resultDistance: vector.distance,
             };
         }));
@@ -52,6 +56,10 @@ export default function VectorQuery() {
         }
     };
 
+    if (!database && isSuccess) {
+        return notFound();
+    }
+
     return (
         <div className="flex flex-col w-full">
             <QueryHeader
@@ -65,13 +73,13 @@ export default function VectorQuery() {
                 </div>
             )}
 
-            {queryRan && results.length === 0 && (
+            {queryRan && results.length === 0 && database && (
                 <div className="flex flex-col justify-between items-center py-8 space-y-4 text-secondary-foreground">
                     <div>Query result is empty</div>
-                    <UpsertVectorModal dimensions={dimensions} />
+                    <UpsertVectorModal />
                 </div>
             )}
-            {queryRan && results.length > 0 && (
+            {queryRan && results.length > 0 && database && (
                 <div className="flex flex-col pt-8 space-y-4">
                     <ul className="flex flex-row w-full justify-between items-center font-light  text-secondary-foreground tracking-widest">
                         <div className="px-8">Label</div>
@@ -82,7 +90,7 @@ export default function VectorQuery() {
                         {results.map((result) => {
                             return (
                                 <li>
-                                    <QueryResult key={result.label} vector={result} />
+                                    <QueryResult key={result.label} vector={result} codeName={codeName} />
                                 </li>
                             );
                         })}

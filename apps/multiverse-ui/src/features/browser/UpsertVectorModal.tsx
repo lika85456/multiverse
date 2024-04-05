@@ -14,33 +14,39 @@ import {
 } from "@/components/ui/alert-dialog";
 import { CopyIcon } from "lucide-react";
 import { toast } from "sonner";
-import React, { useEffect, useState } from "react";
-import type { VectorValues } from "@/features/browser/QueryHeader";
+import React, {
+    useCallback, useEffect, useState
+} from "react";
 import Editor from "@monaco-editor/react";
+import { trpc } from "@/lib/trpc/client";
+import { notFound, useParams } from "next/navigation";
+import type { NewVector } from "@multiverse/multiverse/src/core/Vector";
 
 export interface Vector {
   label: string;
   metadata?: Record<string, string>;
-  values: VectorValues;
+  vector: number[];
 }
 
-export interface UpsertVectorModalProps {
-  dimensions: number;
-  className?: string;
-}
-
-export default function UpsertVectorModal({
-    className,
-    dimensions,
-}: UpsertVectorModalProps) {
+export default function UpsertVectorModal({ className, }: {className?: string }) {
     const {
         modalOpen, handleOpenModal, handleCloseModal
     } = useModal();
-    const defaultVector = {
-        label: "red tractor",
-        metadata: undefined,
-        values: Array(dimensions).fill(0),
-    };
+
+    const codeName = useParams().codeName as string;
+    const { data: database, isSuccess } = trpc.database.get.useQuery(codeName);
+    const mutation = trpc.database.vector.post.useMutation();
+
+    const dimensions = database?.dimensions;
+    const defaultVector = useCallback(() => {
+        const vector: Vector = {
+            label: "red tractor",
+            metadata: undefined,
+            vector: Array(dimensions).fill(0),
+        };
+
+        return vector;
+    }, [dimensions]);
 
     const [allowActions, setAllowActions] = useState<boolean>(true);
     const [errors, setErrors] = useState<string[]>([]);
@@ -55,14 +61,17 @@ export default function UpsertVectorModal({
         }
     };
 
-    const handleUpsertVector = () => {
-        console.log(`Upserting vector with label: ${JSON.stringify(newVector)}`);
+    const handleUpsertVector = async() => {
+        const newVectors: NewVector[] = [newVector];
+        await mutation.mutateAsync({
+            database: codeName,
+            vector: newVectors
+        });
         handleCloseModal();
     };
 
     const findExcessJsonKeys = (json: any): string[] => {
-        console.log(json);
-        const requiredKeys = ["label", "values", "metadata"];
+        const requiredKeys = ["label", "vector", "metadata"];
         const excessKeys: string[] = [];
         for (const [key] of Object.entries(json)) {
             if (!requiredKeys.includes(key)) {
@@ -84,11 +93,11 @@ export default function UpsertVectorModal({
             if (!json.label) {
                 foundErrors.push("Missing vector label");
             }
-            if (!json.values) {
-                foundErrors.push("Missing vector values");
+            if (!json.vector) {
+                foundErrors.push("Missing vector data");
             }
-            if (json.values.length !== dimensions) {
-                foundErrors.push(`Invalid vector length (${json.values.length} provided, expected ${dimensions})`,);
+            if (json.vector.length !== dimensions) {
+                foundErrors.push(`Invalid vector length (${json.vector.length} provided, expected ${dimensions})`,);
             }
 
             const excessKey = findExcessJsonKeys(json);
@@ -113,7 +122,7 @@ export default function UpsertVectorModal({
 
             return {
                 foundErrors: [
-                    "Required keys are \"label\" and \"values\", \"metadata\" is optional. Please provide correct values.",
+                    "Required keys are \"label\" and \"vector\", \"metadata\" is optional. Please provide correct values.",
                 ],
             };
         }
@@ -132,11 +141,11 @@ export default function UpsertVectorModal({
     };
 
     const handleRandomizeData = () => {
-        const newValue: VectorValues = newVector.values.map(() =>
+        const newValue: number[] = newVector.vector.map(() =>
             Number(Math.random().toFixed(3)),);
         setNewVector({
             ...newVector,
-            values: newValue,
+            vector: newValue,
         });
     };
 
@@ -146,7 +155,11 @@ export default function UpsertVectorModal({
             setErrors([]);
             setAllowActions(true);
         }
-    }, [modalOpen]);
+    }, [defaultVector, modalOpen]);
+
+    if (!isSuccess && !database) {
+        return notFound();
+    }
 
     return (
         <AlertDialog open={modalOpen}>

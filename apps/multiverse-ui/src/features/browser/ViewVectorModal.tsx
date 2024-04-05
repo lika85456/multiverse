@@ -23,10 +23,10 @@ export default function ViewVectorModal({ vector }: { vector: Vector }) {
     const {
         modalOpen, handleOpenModal, handleCloseModal
     } = useModal();
-    const vectorData = {
+    const vectorData: Vector = {
         label: vector.label,
         metadata: vector.metadata,
-        values: vector.values,
+        vector: vector.vector,
     };
 
     const handleCopyData = async() => {

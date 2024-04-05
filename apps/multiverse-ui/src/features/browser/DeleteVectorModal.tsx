@@ -14,23 +14,30 @@ import { toast } from "sonner";
 import useModal from "@/features/hooks/use-modal";
 import { IoClose } from "react-icons/io5";
 import React from "react";
+import { trpc } from "@/lib/trpc/client";
 
-export default function DeleteVectorModal({ id }: { id: string }) {
+export default function DeleteVectorModal({ label, codeName }: { label: string, codeName: string}) {
     const {
         modalOpen, handleOpenModal, handleCloseModal
     } = useModal();
+    const mutation = trpc.database.vector.delete.useMutation();
 
     const handleCopyRequest = async() => {
         try {
-            await navigator.clipboard.writeText(`{"id": "${id}"}`);
+            await navigator.clipboard.writeText(`{"id": "${label}"}`);
             toast("Request has been copied into your clipboard.");
         } catch (error) {
             console.log("Request could not be copied.");
         }
     };
 
-    const handleDeleteVector = () => {
-        console.log(`Deleting vector with id: ${id}`);
+    const handleDeleteVector = async() => {
+        await mutation.mutateAsync({
+            label: label,
+            database: codeName
+        });
+
+        console.log(`Deleting vector with label: ${label}`);
         handleCloseModal();
     };
 

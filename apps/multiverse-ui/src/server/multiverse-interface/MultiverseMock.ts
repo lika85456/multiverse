@@ -100,7 +100,15 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
     }
 
     add(vector: NewVector[]): Promise<void> {
-        databases.get(this.databaseConfiguration.name)?.vectors.push(...vector);
+        const database = databases.get(this.databaseConfiguration.name);
+        if (!database) {
+            return Promise.resolve();
+        }
+        const newValue: DatabaseWrapper = {
+            multiverseDatabase: database.multiverseDatabase,
+            vectors: [...database.vectors, ...vector]
+        };
+        databases.set(this.databaseConfiguration.name, newValue);
         refresh();
 
         return Promise.resolve(undefined);
