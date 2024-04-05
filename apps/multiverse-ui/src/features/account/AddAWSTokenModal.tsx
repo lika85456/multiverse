@@ -4,7 +4,7 @@ import {
 } from "react-icons/io5";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import useModal from "@/features/modals/use-modal";
+import useModal from "@/features/hooks/use-modal";
 import {
     AlertDialog,
     AlertDialogContent, AlertDialogFooter,

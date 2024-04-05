@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
 import type { Vector } from "@/features/browser/UpsertVectorModal";
-import useModal from "@/features/modals/use-modal";
+import useModal from "@/features/hooks/use-modal";
 
 import Editor from "@monaco-editor/react";
 

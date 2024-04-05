@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { TrashIcon } from "lucide-react";
 import { IoClose } from "react-icons/io5";
-import useModal from "@/features/modals/use-modal";
+import useModal from "@/features/hooks/use-modal";
 
 export default function DeleteConnectionTokenModal() {
     const {

@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { FaRegTrashAlt } from "react-icons/fa";
 import { IoClose } from "react-icons/io5";
 import { TrashIcon } from "lucide-react";
-import useModal from "@/features/modals/use-modal";
+import useModal from "@/features/hooks/use-modal";
 import { trpc } from "@/lib/trpc/client";
 import { toast } from "sonner";
 

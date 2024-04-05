@@ -7,29 +7,12 @@ import format from "@/features/statistics/format";
 import { trpc } from "@/lib/trpc/client";
 import AddAWSTokenModal from "@/features/account/AddAWSTokenModal";
 
-const items = [
-    {
-        label: "Total Cost",
-        value: `$ ${format(12.47)}`,
-    },
-    {
-        label: "Data Size",
-        value: `${format(2300000000, "bytes")}`,
-    },
-    {
-        label: "Total Records",
-        value: `${format(2537291)}`,
-    },
-    {
-        label: "Queries",
-        value: `${format(627000, "compact")}`,
-    },
-];
-
 export default function Databases() {
     const {
         data: awsToken, isLoading, isSuccess, isError
     } = trpc.awsToken.get.useQuery();
+
+    const { data: items } = trpc.statistics.general.get.useQuery({});
 
     return (
         <>

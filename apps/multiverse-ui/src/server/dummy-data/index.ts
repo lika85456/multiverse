@@ -1,4 +1,4 @@
-export const requests = {
+export const requestsStatistics = {
     title: "Requests",
     data: {
         unit: undefined,
@@ -35,7 +35,7 @@ export const requests = {
     },
 };
 
-export const costs = {
+export const costsStatistics = {
     title: "Costs",
     data: {
         unit: "$",
@@ -72,7 +72,7 @@ export const costs = {
     },
 };
 
-export const responseTime = {
+export const responseTimeStatistics = {
     title: "Response Time",
     data: {
         unit: "ms",
@@ -109,7 +109,7 @@ export const responseTime = {
     },
 };
 
-export const writeCount = {
+export const writeCountStatistics = {
     title: "Write Count",
     data: {
         unit: undefined,
@@ -145,3 +145,41 @@ export const writeCount = {
         ],
     },
 };
+
+export const generalDatabaseStatistics = [
+    {
+        label: "Total Cost",
+        value: `$ ${12.47}`,
+    },
+    {
+        label: "Data Size",
+        value: "2.3 GB",
+    },
+    {
+        label: "Total Records",
+        value: "2,537,291",
+    },
+    {
+        label: "Queries",
+        value: "627,291",
+    },
+];
+
+export const generalStatistics = [
+    {
+        label: "Total Cost",
+        value: `$ ${27.47}`,
+    },
+    {
+        label: "Data Size",
+        value: "9.3 GB",
+    },
+    {
+        label: "Total Records",
+        value: "4,194,098",
+    },
+    {
+        label: "Queries",
+        value: "1,203,394",
+    },
+];

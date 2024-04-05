@@ -218,7 +218,7 @@ export default function PriceCalculator() {
                     onChange={(value) =>
                         setDimensions(Math.ceil(Math.pow(Math.E, value)))
                     }
-                    formatValue={(v) => format(v, "compact")}
+                    formatValue={(v) => format(v)}
                     logarithmic
                 />
             </ul>

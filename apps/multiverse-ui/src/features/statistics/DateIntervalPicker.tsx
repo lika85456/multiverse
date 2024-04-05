@@ -13,11 +13,11 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover";
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { IoCheckmark, IoClose } from "react-icons/io5";
 
 enum PredefinedOptions {
-  TODAY = "Today",
+  // TODAY = "Today",
   LAST_WEEK = "Last Week",
   LAST_MONTH = "Last Month",
   LAST_YEAR = "Last Year",
@@ -50,11 +50,11 @@ export function DateIntervalPicker({
         setModalOpen(true);
     };
 
-    const handleCloseModal = () => {
+    const handleCloseModal = useCallback(() => {
         setNewDate(getDate());
         setNewPredefinedChoice(prevPredefinedChoice);
         setModalOpen(false);
-    };
+    }, [getDate, prevPredefinedChoice]);
 
     const handleSubmitInterval = () => {
         setDate(newDate);
@@ -79,16 +79,16 @@ export function DateIntervalPicker({
         window.addEventListener("keydown", handleEscape);
 
         return () => window.removeEventListener("keydown", handleEscape);
-    }, []);
+    }, [handleCloseModal]);
 
     const handlePredefinedOptionChoice = (option: PredefinedOptions) => {
         switch (option) {
-        case PredefinedOptions.TODAY:
-            setNewDate({
-                from: new Date(),
-                to: new Date(),
-            });
-            break;
+        // case PredefinedOptions.TODAY:
+        //     setNewDate({
+        //         from: new Date(),
+        //         to: new Date(),
+        //     });
+        //     break;
         case PredefinedOptions.LAST_WEEK:
             setNewDate({
                 from: addDays(new Date(), -7),
@@ -148,7 +148,7 @@ export function DateIntervalPicker({
                 >
                     <ul className="w-40 bg-grey30 p-2 rounded-l-xl space-y-2">
                         {[
-                            PredefinedOptions.TODAY,
+                            // PredefinedOptions.TODAY,
                             PredefinedOptions.LAST_WEEK,
                             PredefinedOptions.LAST_MONTH,
                             PredefinedOptions.LAST_YEAR,

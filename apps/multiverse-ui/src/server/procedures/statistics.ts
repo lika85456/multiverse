@@ -1,25 +1,52 @@
 import { publicProcedure, router } from "@/server/trpc";
 import {
-    costs, requests, responseTime, writeCount
+    costsStatistics,
+    generalDatabaseStatistics,
+    generalStatistics,
+    requestsStatistics,
+    responseTimeStatistics,
+    writeCountStatistics
 } from "@/server/dummy-data";
-import { DateRange } from "react-day-picker";
 import z from "zod";
+import format from "@/features/statistics/format";
 
 export const statistics = router({
     general: router({
-        get: publicProcedure.query(async() => {
-            return {
-                totalCost: 12.47,
-                dataSize: 2_300_000_000,
-                totalRecords: 2_537_291,
-                queries: 627_291,
-            };
+        get: publicProcedure.input(z.object({
+            databaseCodeName: z.optional(z.string().min(3)),
+            from: z.optional(z.string().refine((v) => new Date(v) instanceof Date, { message: "Invalid date", })),
+            to: z.optional(z.string().refine((v) => new Date(v) instanceof Date, { message: "Invalid date", })),
+        })).query(async(opts) => {
+            console.log("general statistics for", opts.input.databaseCodeName);
+            if (!opts.input.databaseCodeName) {
+                console.log("no database specified, returning data for all databases");
 
+                return generalStatistics;
+            }
+
+            return generalDatabaseStatistics;
         }),
     }),
     generalPricing: router({
         get: publicProcedure.query(async() => {
-            return {};
+            return [
+                {
+                    label: "Total Cost",
+                    value: `$ ${format(27.13, "delim")}`,
+                },
+                {
+                    label: "Total Records",
+                    value: `${format(7800000, "compact")} (${format(150000000000, "bytes")})`,
+                },
+                {
+                    label: "Queries",
+                    value: `${format(1200000, "compact")}`,
+                },
+                {
+                    label: "Writes",
+                    value: `${format(400000, "compact")}`,
+                },
+            ];
         }),
     }),
     graphStatistics: router({
@@ -31,17 +58,20 @@ export const statistics = router({
             console.log(opts.input.to);
 
             return {
-                costs: costs,
-                requests: requests,
-                responseTime: responseTime,
-                writeCount: writeCount
+                costs: costsStatistics,
+                requests: requestsStatistics,
+                responseTime: responseTimeStatistics,
+                writeCount: writeCountStatistics
             };
         }),
     }),
 
     costs: router({
-        get: publicProcedure.query(async() => {
-            return costs;
+        get: publicProcedure.input(z.object({
+            from: z.string().refine((v) => new Date(v) instanceof Date, { message: "Invalid date", }), // { "from": "2021-08-01" }
+            to: z.string().refine((v) => new Date(v) instanceof Date, { message: "Invalid date", }), // { "from": "2021-08-01" },
+        })).query(async() => {
+            return costsStatistics;
         }),
     }),
     requests: router({

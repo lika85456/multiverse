@@ -27,7 +27,7 @@ import React, { useState } from "react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import useModal from "@/features/modals/use-modal";
+import useModal from "@/features/hooks/use-modal";
 
 export default function CreateConnectionTokenModal() {
     const {

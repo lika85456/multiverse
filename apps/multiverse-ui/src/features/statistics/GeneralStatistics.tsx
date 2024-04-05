@@ -10,7 +10,7 @@ export interface GeneralStatisticsItemProps {
 }
 
 export interface GeneralStatisticsProps {
-  items: GeneralStatisticsItemProps[];
+  items: GeneralStatisticsItemProps[] | undefined;
   className?: string;
 }
 
@@ -50,8 +50,6 @@ export default function GeneralStatistics({
         return null;
     }
 
-    const trimmedItems = items.slice(0, 6);
-
     return (
         <ul
             className={cn(
@@ -59,7 +57,7 @@ export default function GeneralStatistics({
                 className,
             )}
         >
-            {trimmedItems.map((item) => {
+            {items && items.slice(0, 6).map((item) => {
                 return (
                     <GeneralStatisticsItem
                         key={item.label}

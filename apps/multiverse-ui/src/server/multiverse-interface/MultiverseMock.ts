@@ -65,21 +65,26 @@ function loadJsonFile() {
     }
 }
 
-async function saveJsonFile() {
-    const data = await Promise.all(Array.from(databases.values()).map(async(database) => {
+function saveJsonFile() {
+    Promise.all(Array.from(databases.values()).map(async(database) => {
         const databaseConfig = await database.multiverseDatabase.getConfiguration();
 
         return {
             multiverseDatabase: { ...databaseConfig },
             vectors: database.vectors
         };
-    }));
+    })).then((data) => {
+        try {
+            fs.writeFileSync(file, JSON.stringify(data, null, 2));
+        } catch (error) {
+            console.error("Error saving databases:", error);
+        }
+    });
+}
 
-    try {
-        fs.writeFileSync(file, JSON.stringify(data, null, 2));
-    } catch (error) {
-        console.error("Error saving databases:", error);
-    }
+function refresh() {
+    saveJsonFile();
+    loadJsonFile();
 }
 
 class MultiverseDatabaseMock implements IMultiverseDatabase {
@@ -96,7 +101,7 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
 
     add(vector: NewVector[]): Promise<void> {
         databases.get(this.databaseConfiguration.name)?.vectors.push(...vector);
-        saveJsonFile().then();
+        refresh();
 
         return Promise.resolve(undefined);
     }
@@ -112,7 +117,7 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
             multiverseDatabase: database.multiverseDatabase,
             vectors: vectors.filter((vector) => !label.includes(vector.label))
         });
-        saveJsonFile().then();
+        refresh();
 
         return Promise.resolve();
     }
@@ -137,7 +142,7 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
 
     addToken(token: Token): Promise<void> {
         this.databaseConfiguration.secretTokens.push(token);
-        saveJsonFile().then();
+        refresh();
 
         return Promise.resolve(undefined);
     }
@@ -148,7 +153,7 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
         if (index !== -1) {
             this.databaseConfiguration.secretTokens.splice(index, 1);
         }
-        saveJsonFile().then();
+        refresh();
 
         return Promise.resolve();
     }
@@ -170,7 +175,7 @@ export class MultiverseMock implements IMultiverse {
             }),
             vectors: []
         });
-        saveJsonFile().then();
+        refresh();
 
         return Promise.resolve();
     }
@@ -190,7 +195,7 @@ export class MultiverseMock implements IMultiverse {
     removeDatabase(name: string): Promise<void> {
         loadJsonFile();
         databases.delete(name);
-        saveJsonFile().then();
+        refresh();
 
         return Promise.resolve();
     }

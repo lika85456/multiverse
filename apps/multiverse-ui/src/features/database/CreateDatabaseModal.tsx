@@ -22,7 +22,7 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import useModal from "@/features/modals/use-modal";
+import useModal from "@/features/hooks/use-modal";
 import { trpc } from "@/lib/trpc/client";
 import z from "zod";
 import { useForm } from "react-hook-form";
@@ -68,9 +68,9 @@ export default function CreateDatabaseModal() {
     const mutation = trpc.database.post.useMutation({
         onSuccess: async() => {
             try {
-                toast("Database created");
-                await util.database.get.refetch();
                 form.reset();
+                toast("Database created");
+                await util.database.invalidate();
                 handleCloseModal();
             } catch (error) {
                 toast("Error creating database");

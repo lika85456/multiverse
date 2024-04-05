@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { useRouter } from "next/navigation";
-import useModal from "@/features/modals/use-modal";
+import useModal from "@/features/hooks/use-modal";
 
 export default function DeleteDatabaseModal() {
     const {
