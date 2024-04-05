@@ -29,7 +29,7 @@ export default function ConnectionTokensList() {
                     );
                 })}
             </ul>
-            <CreateConnectionTokenModal />
+            <CreateConnectionTokenModal codeName={databaseCodename} />
         </>
     );
 }

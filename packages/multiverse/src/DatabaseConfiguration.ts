@@ -5,7 +5,7 @@ export type Region = "eu-central-1";
 
 export type Token = {
     name: string;
-    secret: string;
+    // secret: string;
     validUntil: number; // unix timestamp
 };
 

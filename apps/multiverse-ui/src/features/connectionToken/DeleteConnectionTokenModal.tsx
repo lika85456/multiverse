@@ -14,14 +14,27 @@ import {
 import { TrashIcon } from "lucide-react";
 import { IoClose } from "react-icons/io5";
 import useModal from "@/features/hooks/use-modal";
+import type { SecretToken } from "@/lib/mongodb/collections/database";
+import { trpc } from "@/lib/trpc/client";
+import { useParams } from "next/navigation";
+import { toast } from "sonner";
 
-export default function DeleteConnectionTokenModal() {
+export default function DeleteConnectionTokenModal({ token }: {token: SecretToken}) {
     const {
         modalOpen, handleOpenModal, handleCloseModal
     } = useModal();
+    const codeName = useParams().codeName as string;
 
-    const handleDeleteToken = () => {
-        console.log("Deleting token");
+    const utils = trpc.useUtils();
+    const mutation = trpc.database.secretToken.delete.useMutation();
+
+    const handleDeleteToken = async() => {
+        await mutation.mutateAsync({
+            codeName: codeName,
+            tokenName: token.name,
+        });
+        await utils.database.invalidate();
+        toast("Token deleted");
         handleCloseModal();
     };
 

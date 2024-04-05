@@ -28,8 +28,9 @@ import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import useModal from "@/features/hooks/use-modal";
+import { trpc } from "@/lib/trpc/client";
 
-export default function CreateConnectionTokenModal() {
+export default function CreateConnectionTokenModal({ codeName }: {codeName: string}) {
     const {
         modalOpen, handleOpenModal, handleCloseModal
     } = useModal();
@@ -37,14 +38,19 @@ export default function CreateConnectionTokenModal() {
     const [tokenName, setTokenName] = useState("");
     const [focused, setFocused] = useState(false);
     const disabledSubmit = !(date && date > new Date() && tokenName.length > 0);
-
-    const onConfirmCreate = () => {
-        if (true) {
-            console.log(`Creating token ${tokenName} with validity ${date}`);
-            handleCloseModal();
-        } else {
-            toast("Token could not be created.");
-        }
+    const mutation = trpc.database.secretToken.post.useMutation();
+    const util = trpc.useUtils();
+    const onConfirmCreate = async() => {
+        await mutation.mutateAsync({
+            codeName: codeName,
+            secretToken: {
+                name: tokenName,
+                validUntil: date?.getTime() ?? 0,
+            }
+        });
+        await util.database.invalidate();
+        toast("Token created");
+        handleCloseModal();
     };
 
     return (

@@ -82,6 +82,18 @@ function saveJsonFile() {
     });
 }
 
+function generateSecret(length: number): string {
+    let result = "";
+    const hexCharacters = "0123456789abcdef";
+
+    for (let i = 0; i < length; i++) {
+        const randomIndex = Math.floor(Math.random() * hexCharacters.length);
+        result += hexCharacters.charAt(randomIndex);
+    }
+
+    return result;
+}
+
 function refresh() {
     saveJsonFile();
     loadJsonFile();
@@ -149,7 +161,12 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
     }
 
     addToken(token: Token): Promise<void> {
-        this.databaseConfiguration.secretTokens.push(token);
+
+        this.databaseConfiguration.secretTokens.push({
+            name: token.name,
+            secret: generateSecret(16),
+            validUntil: token.validUntil
+        });
         refresh();
 
         return Promise.resolve(undefined);
@@ -161,6 +178,11 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
         if (index !== -1) {
             this.databaseConfiguration.secretTokens.splice(index, 1);
         }
+        databases.set(this.databaseConfiguration.name, {
+            multiverseDatabase: this,
+            vectors: databases.get(this.databaseConfiguration.name)?.vectors || []
+        });
+
         refresh();
 
         return Promise.resolve();

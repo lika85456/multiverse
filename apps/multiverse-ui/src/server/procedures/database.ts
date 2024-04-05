@@ -4,6 +4,7 @@ import { MultiverseMock } from "@/server/multiverse-interface/MultiverseMock";
 import type { DatabaseConfiguration } from "@multiverse/multiverse/src/DatabaseConfiguration";
 import type { DatabaseGet } from "@/lib/mongodb/collections/database";
 import { vector } from "@/server/procedures/vector";
+import { secretToken } from "@/server/procedures/secretToken";
 
 export const database = router({
     list: publicProcedure.query(async(): Promise<DatabaseGet[]> => {
@@ -74,5 +75,6 @@ export const database = router({
             return false;
         }
     }),
-    vector
+    vector,
+    secretToken
 });

@@ -65,7 +65,7 @@ export default function ConnectionTokenItem({ token, }: ConnectionTokenItemProps
                 </div>
             </div>
             <div className="flex w-1/5 justify-end items-center">
-                <DeleteConnectionTokenModal />
+                <DeleteConnectionTokenModal token={token} />
             </div>
         </div>
     );
