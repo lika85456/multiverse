@@ -75,6 +75,14 @@ export const database = router({
             return false;
         }
     }),
+    delete: publicProcedure.input(z.string()).mutation(async(opts) => {
+        const multiverse = new MultiverseMock();
+        const multiverseDatabase = await multiverse.getDatabase(opts.input);
+        if (!multiverseDatabase) {
+            throw new Error("Database not found");
+        }
+        await multiverse.removeDatabase(opts.input);
+    }),
     vector,
     secretToken
 });

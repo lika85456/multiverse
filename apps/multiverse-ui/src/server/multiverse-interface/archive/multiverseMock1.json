@@ -1,0 +1,54 @@
+[
+  {
+    "name": "database_1",
+    "secretTokens": [
+      {
+        "name": "token1",
+        "secret": "secretsecret",
+        "validUntil": 12345678
+      }
+    ],
+    "dimensions": 1536,
+    "region": "eu-central-1",
+    "space": "l2"
+  },
+  {
+    "name": "database_2",
+    "secretTokens": [
+      {
+        "name": "token1",
+        "secret": "secretsecret",
+        "validUntil": 12345678
+      }
+    ],
+    "dimensions": 1536,
+    "region": "eu-central-1",
+    "space": "l2"
+  },
+  {
+    "name": "test",
+    "secretTokens": [
+      {
+        "name": "token1",
+        "secret": "secretsecret",
+        "validUntil": 12345678
+      }
+    ],
+    "dimensions": 1536,
+    "region": "eu-central-1",
+    "space": "l2"
+  },
+  {
+    "name": "test2",
+    "secretTokens": [
+      {
+        "name": "token1",
+        "secret": "secretsecret",
+        "validUntil": 12345678
+      }
+    ],
+    "dimensions": 1536,
+    "region": "eu-central-1",
+    "space": "l2"
+  }
+]
