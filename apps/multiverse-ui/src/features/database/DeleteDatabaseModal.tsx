@@ -18,7 +18,7 @@ import { useParams, useRouter } from "next/navigation";
 import useModal from "@/features/hooks/use-modal";
 import { trpc } from "@/lib/trpc/client";
 import { toast } from "sonner";
-import { ColorRing, TailSpin } from "react-loader-spinner";
+import { TailSpin } from "react-loader-spinner";
 
 export default function DeleteDatabaseModal() {
     const {
@@ -35,8 +35,8 @@ export default function DeleteDatabaseModal() {
         setIsProcessing(true);
         await mutation.mutateAsync(codeName);
         await utils.database.invalidate();
-        router.push("/databases");
         handleCloseModal();
+        router.push("/databases");
         setIsProcessing(false);
         toast.success("Database deleted successfully");
     };
