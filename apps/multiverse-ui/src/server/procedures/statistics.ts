@@ -17,10 +17,7 @@ export const statistics = router({
             from: z.optional(z.string().refine((v) => new Date(v) instanceof Date, { message: "Invalid date", })),
             to: z.optional(z.string().refine((v) => new Date(v) instanceof Date, { message: "Invalid date", })),
         })).query(async(opts) => {
-            console.log("general statistics for", opts.input.databaseCodeName);
             if (!opts.input.databaseCodeName) {
-                console.log("no database specified, returning data for all databases");
-
                 return generalStatistics;
             }
 

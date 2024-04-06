@@ -22,7 +22,7 @@ export default function VectorQuery() {
 
     const handleRunQuery = async(vector: VectorValues, k: number) => {
         const result = await query.mutateAsync({
-            database: "database_1",
+            database: codeName,
             vector: vector,
             k: k,
         });

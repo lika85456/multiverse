@@ -35,7 +35,7 @@ export default function DatabaseItem({ database }: DatabaseItemProps) {
                         <p className="text-tertiary">dimensions</p>
                     </div>
                 </div>
-                <p className="flex w-4/12 justify-start items-center text-xl text-tertiary">
+                <p className="flex w-2/12 justify-start items-center text-xl text-tertiary">
                     {database.space}
                 </p>
             </div>

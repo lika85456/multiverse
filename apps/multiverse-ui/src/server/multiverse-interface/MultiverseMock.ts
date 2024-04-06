@@ -40,7 +40,7 @@ type DatabaseWrapper = {
 const databases = new Map<string, DatabaseWrapper>();
 const file = "./src/server/multiverse-interface/multiverseMock.json";
 
-function loadJsonFile() {
+async function loadJsonFile() {
     try {
         if (!fs.existsSync(file)) {
             // If file doesn't exist, create it and write []
@@ -65,24 +65,24 @@ function loadJsonFile() {
     }
 }
 
-function saveJsonFile() {
-    Promise.all(Array.from(databases.values()).map(async(database) => {
+async function saveJsonFile() {
+    const data = await Promise.all(Array.from(databases.values()).map(async(database) => {
         const databaseConfig = await database.multiverseDatabase.getConfiguration();
 
         return {
             multiverseDatabase: { ...databaseConfig },
             vectors: database.vectors
         };
-    })).then((data) => {
-        try {
-            fs.writeFileSync(file, JSON.stringify(data, null, 2));
-        } catch (error) {
-            console.error("Error saving databases:", error);
-        }
-    });
+    }));
+
+    try {
+        fs.writeFileSync(file, JSON.stringify(data, null, 2));
+    } catch (error) {
+        console.error("Error saving databases:", error);
+    }
 }
 
-function generateSecret(length: number): string {
+export function generateHex(length: number): string {
     let result = "";
     const hexCharacters = "0123456789abcdef";
 
@@ -94,9 +94,9 @@ function generateSecret(length: number): string {
     return result;
 }
 
-function refresh() {
-    saveJsonFile();
-    loadJsonFile();
+async function refresh() {
+    await saveJsonFile();
+    await loadJsonFile();
 }
 
 class MultiverseDatabaseMock implements IMultiverseDatabase {
@@ -106,12 +106,12 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
         this.databaseConfiguration = config;
     }
 
-    getConfiguration(): Promise<DatabaseConfiguration> {
+    async getConfiguration(): Promise<DatabaseConfiguration> {
 
         return Promise.resolve(this.databaseConfiguration);
     }
 
-    add(vector: NewVector[]): Promise<void> {
+    async add(vector: NewVector[]): Promise<void> {
         const database = databases.get(this.databaseConfiguration.name);
         if (!database) {
             return Promise.resolve();
@@ -121,12 +121,12 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
             vectors: [...database.vectors, ...vector]
         };
         databases.set(this.databaseConfiguration.name, newValue);
-        refresh();
+        await refresh();
 
         return Promise.resolve(undefined);
     }
 
-    remove(label: string[]): Promise<void> {
+    async remove(label: string[]): Promise<void> {
         const database = databases.get(this.databaseConfiguration.name);
         if (!database) {
             return Promise.resolve();
@@ -137,12 +137,12 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
             multiverseDatabase: database.multiverseDatabase,
             vectors: vectors.filter((vector) => !label.includes(vector.label))
         });
-        refresh();
+        await refresh();
 
         return Promise.resolve();
     }
 
-    query(query: Query): Promise<QueryResult> {
+    async query(query: Query): Promise<QueryResult> {
         const queryMetrics = query.vector.reduce((acc, value) => acc + value, 0);
         const vectors = databases.get(this.databaseConfiguration.name)?.vectors;
         if (!vectors) {
@@ -160,20 +160,20 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
         return Promise.resolve({ result: results });
     }
 
-    addToken(token: Token): Promise<void> {
+    async addToken(token: Token): Promise<void> {
 
         this.databaseConfiguration.secretTokens.push({
             name: token.name,
-            secret: generateSecret(16),
+            secret: generateHex(16),
             validUntil: token.validUntil
         });
-        refresh();
+        await refresh();
 
         return Promise.resolve(undefined);
     }
 
-    removeToken(tokenName: string): Promise<void> {
-        loadJsonFile();
+    async removeToken(tokenName: string): Promise<void> {
+        await loadJsonFile();
         const index = this.databaseConfiguration.secretTokens.findIndex((token) => token.name === tokenName);
         if (index !== -1) {
             this.databaseConfiguration.secretTokens.splice(index, 1);
@@ -183,7 +183,7 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
             vectors: databases.get(this.databaseConfiguration.name)?.vectors || []
         });
 
-        refresh();
+        await refresh();
 
         return Promise.resolve();
     }
@@ -196,8 +196,8 @@ export class MultiverseMock implements IMultiverse {
         loadJsonFile();
     }
 
-    createDatabase(options: Omit<DatabaseConfiguration, "region">): Promise<void> {
-        loadJsonFile();
+    async createDatabase(options: Omit<DatabaseConfiguration, "region">): Promise<void> {
+        await loadJsonFile();
         databases.set(options.name, {
             multiverseDatabase: new MultiverseDatabaseMock({
                 ...options,
@@ -205,27 +205,31 @@ export class MultiverseMock implements IMultiverse {
             }),
             vectors: []
         });
-        refresh();
+        await refresh();
 
         return Promise.resolve();
     }
 
-    getDatabase(name: string): Promise<IMultiverseDatabase | undefined> {
-        loadJsonFile();
+    async getDatabase(name: string): Promise<IMultiverseDatabase | undefined> {
+        await loadJsonFile();
+        const database = databases.get(name);
+        if (!database) {
+            return Promise.resolve(undefined);
+        }
 
-        return Promise.resolve(databases.get(name)?.multiverseDatabase);
+        return Promise.resolve(database.multiverseDatabase);
     }
 
-    listDatabases(): Promise<IMultiverseDatabase[]> {
-        loadJsonFile();
+    async listDatabases(): Promise<IMultiverseDatabase[]> {
+        await loadJsonFile();
 
         return Promise.resolve(Array.from(databases.values()).map((database) => database.multiverseDatabase));
     }
 
-    removeDatabase(name: string): Promise<void> {
-        loadJsonFile();
+    async removeDatabase(name: string): Promise<void> {
+        await loadJsonFile();
         databases.delete(name);
-        refresh();
+        await refresh();
 
         return Promise.resolve();
     }

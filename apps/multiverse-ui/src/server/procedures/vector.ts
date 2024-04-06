@@ -32,7 +32,6 @@ export const vector = router({
             metadata: z.record(z.string()).optional(),
         })),
     })).mutation(async(opts): Promise<void> => {
-
         const multiverse = new MultiverseMock() as IMultiverse;
         const multiverseDatabase = await multiverse.getDatabase(opts.input.database);
 

@@ -3,7 +3,6 @@
 import GeneralStatistics from "@/features/statistics/GeneralStatistics";
 import { Separator } from "@/components/ui/separator";
 import DatabaseList from "@/app/(auth-required)/databases/components/DatabaseList";
-import format from "@/features/statistics/format";
 import { trpc } from "@/lib/trpc/client";
 import AddAWSTokenModal from "@/features/account/AddAWSTokenModal";
 

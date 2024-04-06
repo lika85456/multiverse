@@ -60,27 +60,27 @@ const DatabaseFormSchema = z.object({
     space: z.string().refine((value) => {
         return Spaces.some((space) => space.code === value);
     }, { message: "Invalid space" }),
-    dimensions: z.number().min(1),
+    dimensions: z.coerce.number().min(1),
 });
 
 export default function CreateDatabaseModal() {
+    const {
+        modalOpen, handleOpenModal, handleCloseModal
+    } = useModal();
+
     const util = trpc.useUtils();
     const mutation = trpc.database.post.useMutation({
         onSuccess: async() => {
             try {
-                form.reset();
                 toast("Database created");
-                await util.database.invalidate();
                 handleCloseModal();
+                await util.database.invalidate();
+                form.reset();
             } catch (error) {
                 toast("Error creating database");
             }
         }
     });
-
-    const {
-        modalOpen, handleOpenModal, handleCloseModal
-    } = useModal();
 
     const form = useForm<z.infer<typeof DatabaseFormSchema>>({
         resolver: zodResolver(DatabaseFormSchema),
