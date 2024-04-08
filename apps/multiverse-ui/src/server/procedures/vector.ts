@@ -5,13 +5,14 @@ import { MultiverseMock } from "@/server/multiverse-interface/MultiverseMock";
 import type { IMultiverse } from "@multiverse/multiverse/src";
 
 import type { NewVector } from "@multiverse/multiverse/src/core/Vector";
+import { MultiverseFactory } from "@/server/multiverse-interface/MultiverseFactory";
 export const vector = router({
     query: publicProcedure.input(z.object({
         database: z.string(),
         vector: z.array(z.number()),
         k: z.number(),
     })).mutation(async(opts): Promise<QueryResult> => {
-        const multiverse = new MultiverseMock() as IMultiverse;
+        const multiverse = await (new MultiverseFactory()).getMultiverse();
         const multiverseDatabase = await multiverse.getDatabase(opts.input.database);
 
         if (!multiverseDatabase) {
@@ -32,7 +33,7 @@ export const vector = router({
             metadata: z.record(z.string()).optional(),
         })),
     })).mutation(async(opts): Promise<void> => {
-        const multiverse = new MultiverseMock() as IMultiverse;
+        const multiverse = await (new MultiverseFactory()).getMultiverse();
         const multiverseDatabase = await multiverse.getDatabase(opts.input.database);
 
         if (!multiverseDatabase) {
@@ -45,7 +46,7 @@ export const vector = router({
         database: z.string(),
         label: z.string(),
     })).mutation(async(opts): Promise<void> => {
-        const multiverse = new MultiverseMock() as IMultiverse;
+        const multiverse = await (new MultiverseFactory()).getMultiverse();
         const multiverseDatabase = await multiverse.getDatabase(opts.input.database);
 
         if (!multiverseDatabase) {
