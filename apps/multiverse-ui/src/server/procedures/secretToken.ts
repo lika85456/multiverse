@@ -1,6 +1,6 @@
 import { publicProcedure, router } from "@/server/trpc";
 import z from "zod";
-import { MultiverseMock } from "@/server/multiverse-interface/MultiverseMock";
+import { MultiverseFactory } from "@/server/multiverse-interface/MultiverseFactory";
 
 export const secretToken = router({
     post: publicProcedure.input(z.object({
@@ -10,7 +10,7 @@ export const secretToken = router({
             validUntil: z.number(),
         }),
     })).mutation(async(opts): Promise<void> => {
-        const multiverse = new MultiverseMock();
+        const multiverse = await (new MultiverseFactory()).getMultiverse();
         const multiverseDatabase = await multiverse.getDatabase(opts.input.codeName);
         if (!multiverseDatabase) {
             throw new Error("Database not found");
@@ -25,7 +25,7 @@ export const secretToken = router({
         codeName: z.string(),
         tokenName: z.string(),
     })).mutation(async(opts): Promise<void> => {
-        const multiverse = new MultiverseMock();
+        const multiverse = await (new MultiverseFactory()).getMultiverse();
         const multiverseDatabase = await multiverse.getDatabase(opts.input.codeName);
         if (!multiverseDatabase) {
             throw new Error("Database not found");

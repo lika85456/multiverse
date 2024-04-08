@@ -1,0 +1,45 @@
+import { ENV } from "@/lib/env";
+import type { IMultiverse } from "@multiverse/multiverse/src";
+import Multiverse from "@multiverse/multiverse/src";
+import { MultiverseMock } from "@/server/multiverse-interface/MultiverseMock";
+import type { UserGet } from "@/lib/mongodb/collections/user";
+import { getSessionUser } from "@/lib/mongodb/collections/user";
+import { getAwsTokenByOwner } from "@/lib/mongodb/collections/aws-token";
+
+export class MultiverseFactory {
+    private readonly user: Promise<UserGet | undefined>;
+    private readonly multiverse: Promise<IMultiverse>;
+
+    public constructor() {
+        this.user = getSessionUser();
+        this.multiverse = this.constructMultiverse();
+    }
+
+    public async constructMultiverse(): Promise<IMultiverse> {
+        if (ENV.NODE_ENV === "development") {
+            return Promise.resolve(new MultiverseMock());
+        }
+
+        const user = await this.user;
+        if (!user?.awsToken) {
+            throw new Error("No AWS Token to create the multiverse");
+        }
+
+        const awsToken = await getAwsTokenByOwner(user._id);
+        if (!awsToken) {
+            throw new Error("No AWS Token to create the multiverse");
+        }
+
+        return Promise.resolve(new Multiverse({
+            awsToken: {
+                accessKeyId: awsToken.accessTokenId,
+                secretAccessKey: awsToken.secretAccessKey,
+            },
+            region: "eu-central-1",
+        }));
+    }
+
+    public async getMultiverse(): Promise<IMultiverse> {
+        return this.multiverse;
+    }
+}

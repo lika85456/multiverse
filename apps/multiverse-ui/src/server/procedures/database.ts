@@ -1,6 +1,6 @@
 import { publicProcedure, router } from "@/server/trpc";
 import z from "zod";
-import { generateHex, MultiverseMock } from "@/server/multiverse-interface/MultiverseMock";
+import { generateHex } from "@/server/multiverse-interface/MultiverseMock";
 import type { DatabaseConfiguration } from "@multiverse/multiverse/src/DatabaseConfiguration";
 import type { DatabaseGet } from "@/lib/mongodb/collections/database";
 import { deleteDatabase } from "@/lib/mongodb/collections/database";
@@ -9,7 +9,8 @@ import { getDatabase } from "@/lib/mongodb/collections/database";
 import { vector } from "@/server/procedures/vector";
 import { secretToken } from "@/server/procedures/secretToken";
 import { TRPCError } from "@trpc/server";
-import { getSessionUser, removeDatabaseFromUser } from "@/lib/mongodb/collections/user";
+import { getSessionUser } from "@/lib/mongodb/collections/user";
+import { MultiverseFactory } from "@/server/multiverse-interface/MultiverseFactory";
 
 const normalizeDatabaseName = (str: string): string => {
     return str.trim().replace(/[^0-9a-z ]/gi, "").slice(0, 64);
@@ -85,7 +86,7 @@ export const database = router({
      * @returns {DatabaseGet[]} - list of databases
      */
     list: publicProcedure.query(async(): Promise<DatabaseGet[]> => {
-        const multiverse = new MultiverseMock();
+        const multiverse = await (new MultiverseFactory()).getMultiverse();
         const listedDatabases = await multiverse.listDatabases();
 
         try {
@@ -113,7 +114,7 @@ export const database = router({
     get: publicProcedure
         .input(z.string())
         .query(async(opts): Promise<DatabaseGet> => {
-            const multiverse = new MultiverseMock();
+            const multiverse = await (new MultiverseFactory()).getMultiverse();
             const multiverseDatabase = await multiverse.getDatabase(opts.input);
             const configuration = await multiverseDatabase?.getConfiguration();
             if (!configuration) {
@@ -149,7 +150,7 @@ export const database = router({
                 message: "User not found",
             });
         }
-        const multiverse = new MultiverseMock();
+        const multiverse = await (new MultiverseFactory()).getMultiverse();
         const name = normalizeDatabaseName(opts.input.name);
         const codeName = generateCodeName(opts.input.name);
 
@@ -191,7 +192,7 @@ export const database = router({
     delete: publicProcedure.input(z.string()).mutation(async(opts) => {
         const codeName = opts.input;
 
-        const multiverse = new MultiverseMock();
+        const multiverse = await (new MultiverseFactory()).getMultiverse();
         const multiverseDatabase = await multiverse.getDatabase(codeName);
         if (!multiverseDatabase) {
             throw new TRPCError({

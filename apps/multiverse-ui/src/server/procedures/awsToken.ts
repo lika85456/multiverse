@@ -8,7 +8,7 @@ import {
 } from "@/lib/mongodb/collections/aws-token";
 import { deleteAllDatabases } from "@/lib/mongodb/collections/database";
 import { TRPCError } from "@trpc/server";
-import { MultiverseMock } from "@/server/multiverse-interface/MultiverseMock";
+import { MultiverseFactory } from "@/server/multiverse-interface/MultiverseFactory";
 
 export const awsToken = router({
     /**
@@ -76,7 +76,7 @@ export const awsToken = router({
 
         // delete all databases in the multiverse
         for (const database of sessionUser.databases) {
-            const multiverse = new MultiverseMock();
+            const multiverse = await (new MultiverseFactory()).getMultiverse();
             await multiverse.removeDatabase(database);
         }
 
