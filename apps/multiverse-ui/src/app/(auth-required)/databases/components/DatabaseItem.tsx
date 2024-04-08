@@ -20,22 +20,22 @@ export default function DatabaseItem({ database }: DatabaseItemProps) {
         >
             <div className="flex w-11/12 m-0 p-0">
                 <div className="flex flex-col w-6/12">
-                    <h3 className="text-2xl font-bold">{database.name}</h3>
-                    <p className="text-xl lowercase text-tertiary">{database.codeName}</p>
+                    <h3 className="text-2xl font-bold truncate">{database.name}</h3>
+                    <p className="text-xl lowercase text-secondary-foreground">{database.codeName}</p>
                 </div>
                 <div className="flex flex-col w-4/12 items-start text-xl">
                     <div className="flex flex-row h-full justify-start">
-                        <p className="font-bold mr-2 text-tertiary">{database.records}</p>
-                        <p className="text-tertiary">records</p>
+                        <p className="font-bold mr-2 text-secondary-foreground">{database.records}</p>
+                        <p className="text-secondary-foreground">records</p>
                     </div>
                     <div className="flex flex-row ">
-                        <p className="font-bold mr-2 text-tertiary">
+                        <p className="font-bold mr-2 text-secondary-foreground">
                             {database.dimensions}
                         </p>
-                        <p className="text-tertiary">dimensions</p>
+                        <p className="text-secondary-foreground">dimensions</p>
                     </div>
                 </div>
-                <p className="flex w-2/12 justify-start items-center text-xl text-tertiary">
+                <p className="flex w-2/12 justify-start items-center text-xl text-secondary-foreground">
                     {database.space}
                 </p>
             </div>

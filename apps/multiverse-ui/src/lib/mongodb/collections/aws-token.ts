@@ -1,6 +1,7 @@
 import clientPromise from "@/lib/mongodb/mongodb";
 import type { ObjectId } from "mongodb";
 import { getSessionUser, updateUser } from "@/lib/mongodb/collections/user";
+import { TRPCError } from "@trpc/server";
 
 export interface AwsTokenGet {
   _id: ObjectId;
@@ -101,11 +102,10 @@ export const removeAwsToken = async(): Promise<boolean> => {
         throw new Error("Not logged in");
     }
 
+    const client = await clientPromise;
+    const db = client.db();
+    const session = client.startSession();
     try {
-        const client = await clientPromise;
-        const db = client.db();
-
-        const session = client.startSession();
 
         return await session.withTransaction(async() => {
             const result = await db
@@ -120,8 +120,12 @@ export const removeAwsToken = async(): Promise<boolean> => {
             return result.deletedCount === 1 && userResult !== undefined;
         });
     } catch (error) {
-        console.error(error);
-
-        return false;
+        await session.abortTransaction();
+        throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Could not remove the token",
+        });
+    } finally {
+        await session.endSession();
     }
 };
