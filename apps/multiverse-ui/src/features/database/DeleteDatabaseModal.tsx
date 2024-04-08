@@ -34,10 +34,10 @@ export default function DeleteDatabaseModal() {
     const handleDeleteDatabase = async() => {
         setIsProcessing(true);
         await mutation.mutateAsync(codeName);
-        await utils.database.invalidate();
+        await utils.database.list.invalidate();
         handleCloseModal();
-        router.push("/databases");
         setIsProcessing(false);
+        router.push("/databases");
         toast.success("Database deleted successfully");
     };
 

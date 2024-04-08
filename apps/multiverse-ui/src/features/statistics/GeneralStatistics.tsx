@@ -33,7 +33,7 @@ export function GeneralStatisticsItem({
             className="flex w-full flex-col items-start bg-card justify-between p-4 rounded-xl space-y-4 hover:bg-middle cursor-pointer transition-all"
             onClick={handleCopy}
         >
-            <span className="text-contrast_secondary text-sm uppercase font-thin tracking-[0.3rem]">
+            <span className={"text-primary-foreground dark:text-contrast_secondary text-sm uppercase font-light tracking-[0.3rem]"}>
                 {label}
             </span>
             <span className="text-contrast_primary text-xl font-bold">{value}</span>
