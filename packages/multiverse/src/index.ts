@@ -67,6 +67,9 @@ export class MultiverseDatabase implements IMultiverseDatabase {
     }
 }
 
+// TODO!: add queue events types files
+// TODO!: library /src imports!
+
 /**
  * This is the entry for the whole Multiverse library.
  * From here you can manipulate databases. It needs to be initialized with the region and secret token.
