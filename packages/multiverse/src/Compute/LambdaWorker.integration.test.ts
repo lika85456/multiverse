@@ -6,11 +6,6 @@ import LambdaWorker from "./LambdaWorker";
  * Fully deploys a lambda worker and tests it
  */
 describe("<LambdaWorker>", () => {
-    // NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
-    // CHANGES_TABLE: z.string(),
-    // SNAPSHOT_BUCKET: z.string(),
-    // DATABASE_CONFIG: z.string().transform<DatabaseConfiguration>(value => JSON.parse(value)),
-    // PARTITION: z.string().transform<number>(value => parseInt(value)),
 
     let worker: LambdaWorker;
     let changesStorage: DynamoChangesStorage;

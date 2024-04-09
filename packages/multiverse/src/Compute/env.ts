@@ -3,7 +3,7 @@ import { prettifyIssues } from "@multiverse/env";
 import { config } from "dotenv";
 import path from "path";
 import log from "@multiverse/log";
-import type { DatabaseConfiguration } from "../DatabaseConfiguration";
+import type { DatabaseConfiguration } from "../core/DatabaseConfiguration";
 
 config({ path: path.join(__dirname, "..", "..", "..", process.env.NODE_ENV === "test" ? ".env.test" : ".env"), });
 

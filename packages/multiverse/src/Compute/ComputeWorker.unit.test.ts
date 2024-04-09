@@ -2,11 +2,11 @@ import MemoryChangesStorage from "../ChangesStorage/MemoryChangesStorage";
 import HNSWIndex from "../Index/HNSWIndex";
 import LocalSnapshotStorage from "../SnapshotStorage/LocalSnapshotStorage";
 import type { WorkerQuery } from "./Worker";
-import Worker from "./Worker";
 import { Vector } from "../core/Vector";
-import type { DatabaseConfiguration } from "../DatabaseConfiguration";
+import type { DatabaseConfiguration } from "../core/DatabaseConfiguration";
+import ComputeWorker from "./ComputeWorker";
 
-describe("<Worker>", () => {
+describe("<ComputeWorker>", () => {
 
     const config = {
         dimensions: 1536,
@@ -21,7 +21,7 @@ describe("<Worker>", () => {
 
     const index = new HNSWIndex(config);
 
-    const worker: Worker = new Worker({
+    const worker = new ComputeWorker({
         config,
         changesStorage,
         snapshotStorage,
@@ -99,7 +99,7 @@ describe("<Worker>", () => {
     });
 
     it("should load snapshot", async() => {
-        const anotherWorker: Worker = new Worker({
+        const anotherWorker = new ComputeWorker({
             config,
             changesStorage,
             snapshotStorage,

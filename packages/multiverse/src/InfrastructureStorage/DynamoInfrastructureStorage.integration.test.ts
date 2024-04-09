@@ -31,12 +31,7 @@ describe("<DynamoInfrastructureStorage>", () => {
                 name: "test",
                 region: "eu-central-1",
                 dimensions: 3,
-                space: "l2",
-                secretTokens: [{
-                    name: "test",
-                    secret: "test",
-                    validUntil: Date.now() + 1000
-                }]
+                space: "l2"
             },
             partitions: [{
                 lambda: [{

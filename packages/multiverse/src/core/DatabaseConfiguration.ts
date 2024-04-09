@@ -13,15 +13,9 @@ export const DatabaseConfiguration = z.object({
     // identifiers
     name: z.string(),
 
-    // auth
-    secretTokens: z.array(z.object({
-        name: z.string(),
-        secret: z.string(),
-        validUntil: z.number().positive(),
-    })),
-
     // infrastructure
     region: z.string() as unknown as z.ZodType<Region>,
+    statisticsQueueName: z.string().optional(),
 
     // index
     dimensions: z.number().positive().max(10000),
@@ -29,3 +23,15 @@ export const DatabaseConfiguration = z.object({
 });
 
 export type DatabaseConfiguration = z.infer<typeof DatabaseConfiguration>;
+
+export const StoredDatabaseConfiguration = z.object({
+    // auth
+    secretTokens: z.array(z.object({
+        name: z.string(),
+        secret: z.string(),
+        validUntil: z.number().positive(),
+    })),
+
+}).merge(DatabaseConfiguration);
+
+export type StoredDatabaseConfiguration = z.infer<typeof StoredDatabaseConfiguration>;

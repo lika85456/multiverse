@@ -2,10 +2,11 @@ import type { Environment } from "@aws-sdk/client-lambda";
 import { Lambda, waitUntilFunctionActiveV2 } from "@aws-sdk/client-lambda";
 import log from "@multiverse/log";
 import type {
-    Worker, WorkerQuery, WorkerQueryResult
+    Worker, WorkerQuery, WorkerQueryResult,
+    WorkerState
 } from "./Worker";
 import type { DatabaseEnvironment } from "./env";
-import type { DatabaseConfiguration } from "../DatabaseConfiguration";
+import type { DatabaseConfiguration } from "../core/DatabaseConfiguration";
 import { IAM } from "@aws-sdk/client-iam";
 import type { NewVector } from "../core/Vector";
 
@@ -19,33 +20,20 @@ export default class LambdaWorker implements Worker {
         this.lambda = new Lambda({ region: configuration.region });
     }
 
-    private async invoke(payload: any): Promise<any> {
-
-        log.debug("Invoking lambda", {
-            lambdaName: this.lambdaName,
-            payload
+    public async state(): Promise<WorkerState> {
+        const result = await this.invoke({
+            event: "state",
+            payload: []
         });
 
-        const result = await this.lambda.invoke({
-            FunctionName: this.lambdaName,
-            Payload: JSON.stringify({ body: JSON.stringify(payload) })
-        });
-
-        const uintPayload = new Uint8Array(result.Payload as ArrayBuffer);
-        const payloadString = Buffer.from(uintPayload).toString("utf-8");
-        const parsedPayload = JSON.parse(payloadString);
-
-        log.debug("Lambda invoked", {
-            lambdaName: this.lambdaName,
-            result: parsedPayload
-        });
-
-        if (result.FunctionError) {
-            log.error(JSON.stringify(parsedPayload, null, 4));
-            throw new Error(parsedPayload);
-        }
-
-        return parsedPayload.body && JSON.parse(parsedPayload.body);
+        return {
+            instanceId: result.instanceId,
+            lastUpdate: result.lastUpdate,
+            memoryUsed: result.memoryUsed,
+            memoryLimit: result.memoryLimit,
+            ephemeralUsed: result.ephemeralUsed,
+            ephemeralLimit: result.ephemeralLimit
+        };
     }
 
     public async query(query: WorkerQuery): Promise<WorkerQueryResult> {
@@ -208,5 +196,34 @@ export default class LambdaWorker implements Worker {
         await lambda.deleteFunction({ FunctionName: this.lambdaName });
 
         logger.debug("Deleted database lambda", { lambdaName: this.lambdaName });
+    }
+
+    private async invoke(payload: any): Promise<any> {
+
+        log.debug("Invoking lambda", {
+            lambdaName: this.lambdaName,
+            payload
+        });
+
+        const result = await this.lambda.invoke({
+            FunctionName: this.lambdaName,
+            Payload: JSON.stringify({ body: JSON.stringify(payload) })
+        });
+
+        const uintPayload = new Uint8Array(result.Payload as ArrayBuffer);
+        const payloadString = Buffer.from(uintPayload).toString("utf-8");
+        const parsedPayload = JSON.parse(payloadString);
+
+        log.debug("Lambda invoked", {
+            lambdaName: this.lambdaName,
+            result: parsedPayload
+        });
+
+        if (result.FunctionError) {
+            log.error(JSON.stringify(parsedPayload, null, 4));
+            throw new Error(parsedPayload);
+        }
+
+        return parsedPayload.body && JSON.parse(parsedPayload.body);
     }
 }

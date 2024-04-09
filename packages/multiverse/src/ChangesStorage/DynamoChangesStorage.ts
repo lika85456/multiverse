@@ -8,7 +8,7 @@ import {
 } from "@aws-sdk/lib-dynamodb";
 import type { StoredVectorChange } from ".";
 import { Vector } from "../core/Vector";
-import type { DatabaseConfiguration } from "../DatabaseConfiguration";
+import type { DatabaseConfiguration } from "../core/DatabaseConfiguration";
 
 const logger = log.getSubLogger({ name: "DynamoChangesStorageDeployer" });
 
