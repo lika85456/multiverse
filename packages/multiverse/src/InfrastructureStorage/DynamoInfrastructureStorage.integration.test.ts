@@ -31,7 +31,10 @@ describe("<DynamoInfrastructureStorage>", () => {
                 name: "test",
                 region: "eu-central-1",
                 dimensions: 3,
-                space: "l2"
+                space: "l2",
+                regionalInstances: 0,
+                secondaryInstances: 1,
+                warmPrimaryInstances: 1,
             },
             partitions: [{
                 lambda: [{
@@ -41,7 +44,7 @@ describe("<DynamoInfrastructureStorage>", () => {
                     type: "primary",
                     wakeUpInstances: 69
                 }],
-                partition: 0
+                partitionIndex: 0
             }],
         };
 

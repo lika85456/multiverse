@@ -1,29 +1,26 @@
 import type { DatabaseConfiguration } from "../core/DatabaseConfiguration";
 
+export type PartitionInfrastructureState = {
+    partitionIndex: number;
+    lambda: {
+        name: string;
+        region: string;
+        type: "primary" | "fallback";
+        wakeUpInstances: number;
+        instances: {
+            id: string;
+            lastUpdated: number;
+        }[]
+    }[]
+};
+
 export type Infrastructure = {
     configuration: DatabaseConfiguration;
 
     /**
      * each partition has multiple compute instances
      */
-    partitions: {
-        lambda: {
-            // physical lambda name so it can be called
-            name: string;
-            region: string;
-
-            type: "primary" | "fallback";
-
-            wakeUpInstances: number;
-
-            // cache
-            instances: {
-                id: string;
-                lastUpdated: number;
-            }[]
-        }[]
-        partition: number;
-    }[];
+    partitions: PartitionInfrastructureState[];
 };
 
 export default interface InfrastructureStorage {

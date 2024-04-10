@@ -1,4 +1,5 @@
 import DynamoChangesStorage from "../ChangesStorage/DynamoChangesStorage";
+import type { DatabaseConfiguration } from "../core/DatabaseConfiguration";
 import S3SnapshotStorage from "../SnapshotStorage/S3SnapshotStorage";
 import LambdaWorker from "./LambdaWorker";
 
@@ -21,9 +22,12 @@ describe("<LambdaWorker>", () => {
             name: "dbname",
             region: "eu-central-1" as const,
             space: "l2" as const,
-        };
+        } as DatabaseConfiguration;
 
-        worker = new LambdaWorker("multiverse-lambda-worker-test", config);
+        worker = new LambdaWorker({
+            lambdaName: "multiverse-lambda-worker-test",
+            region: "eu-central-1"
+        });
 
         changesStorage = new DynamoChangesStorage({
             ...config,
@@ -44,7 +48,8 @@ describe("<LambdaWorker>", () => {
             changesTable: changesTableName,
             env: "development",
             partition: 0,
-            snapshotBucket: snapshotBucketName
+            snapshotBucket: snapshotBucketName,
+            configuration: config
         });
     });
 
@@ -57,8 +62,8 @@ describe("<LambdaWorker>", () => {
     });
 
     it("should count", async() => {
-        const count = await worker.count();
-        expect(count).toEqual({
+        const { result } = await worker.count();
+        expect(result).toEqual({
             vectors: 0,
             vectorDimensions: 3
         });
@@ -77,15 +82,7 @@ describe("<LambdaWorker>", () => {
         expect(result.result.result.length).toBe(0);
     });
 
-    it("should add vectors", async() => {
-        await worker.add([{
-            label: "test",
-            vector: [1, 2, 3],
-            metadata: { name: "test" }
-        }]);
-    });
-
-    it("should query a vector", async() => {
+    it("should query a vector in given update", async() => {
         const result = await worker.query({
             query: {
                 k: 10,
@@ -93,6 +90,17 @@ describe("<LambdaWorker>", () => {
                 metadataExpression: "",
                 sendVector: true
             },
+            updates: [
+                {
+                    action: "add",
+                    timestamp: Date.now(),
+                    vector: {
+                        label: "test",
+                        metadata: { name: "test" },
+                        vector: [1, 2, 3]
+                    }
+                }
+            ]
         });
 
         expect(result.result.result.length).toBe(1);
@@ -107,9 +115,6 @@ describe("<LambdaWorker>", () => {
     });
 
     it("should load a snapshot", async() => {
-        // first remove the added vector
-        await worker.remove(["test"]);
-
         // should be empty
         const result = await worker.query({
             query: {
@@ -118,6 +123,17 @@ describe("<LambdaWorker>", () => {
                 metadataExpression: "",
                 sendVector: true
             },
+            updates: [
+                {
+                    action: "add",
+                    timestamp: Date.now(),
+                    vector: {
+                        label: "test",
+                        metadata: { name: "test" },
+                        vector: [1, 2, 3]
+                    }
+                }
+            ]
         });
         expect(result.result.result.length).toBe(0);
 
@@ -135,5 +151,52 @@ describe("<LambdaWorker>", () => {
         });
 
         expect(result2.result.result.length).toBe(1);
+    });
+
+    it("should wait before responding, thus creating new instances", async() => {
+        worker = new LambdaWorker({
+            lambdaName: "multiverse-lambda-worker-test",
+            region: "eu-central-1",
+            waitTime: 1000
+        });
+
+        const results = await Promise.all([
+            worker.query({
+                query: {
+                    k: 10,
+                    vector: [1, 2, 3],
+                    metadataExpression: "",
+                    sendVector: true
+                },
+            }),
+            worker.query({
+                query: {
+                    k: 10,
+                    vector: [1, 2, 3],
+                    metadataExpression: "",
+                    sendVector: true
+                },
+            }),
+            worker.query({
+                query: {
+                    k: 10,
+                    vector: [1, 2, 3],
+                    metadataExpression: "",
+                    sendVector: true
+                },
+            }),
+            worker.query({
+                query: {
+                    k: 10,
+                    vector: [1, 2, 3],
+                    metadataExpression: "",
+                    sendVector: true
+                },
+            }),
+        ]);
+
+        // assert each of the results has different instanceId
+        const instanceIds = results.map(r => r.state.instanceId);
+        expect(new Set(instanceIds).size).toBe(results.length);
     });
 });

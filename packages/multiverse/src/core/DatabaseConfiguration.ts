@@ -17,6 +17,12 @@ export const DatabaseConfiguration = z.object({
     region: z.string() as unknown as z.ZodType<Region>,
     statisticsQueueName: z.string().optional(),
 
+    // scaling
+    warmPrimaryInstances: z.number().positive().max(10000), // primary
+
+    secondaryInstances: z.number().positive().max(10000), // fallback in the same region
+    regionalInstances: z.number().positive().max(10000), // fallback in other regions
+
     // index
     dimensions: z.number().positive().max(10000),
     space: z.instanceof(String) as unknown as z.ZodType<IndexSpace>,

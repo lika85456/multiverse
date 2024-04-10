@@ -39,6 +39,9 @@ if (process.env.NODE_ENV === "development") {
             dimensions: 1536,
             space: "cosine",
             name: "multiverse-index-dev",
+            regionalInstances: 0,
+            secondaryInstances: 1,
+            warmPrimaryInstances: 1,
         },
         PARTITION: 0,
     };

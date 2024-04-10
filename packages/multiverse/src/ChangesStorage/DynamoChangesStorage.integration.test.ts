@@ -19,6 +19,9 @@ describe("<DynamoChangesStorage>", () => {
         name: "dbname",
         region: "eu-central-1",
         space: "l2",
+        regionalInstances: 0,
+        secondaryInstances: 1,
+        warmPrimaryInstances: 1,
     });
 
     beforeAll(async() => {

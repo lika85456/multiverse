@@ -1,8 +1,8 @@
 import { z } from "zod";
 import type { QueryResult } from "../core/Query";
 import { querySchema } from "../core/Query";
+import type { StoredVectorChange } from "../ChangesStorage";
 import { storedVectorChangeSchema } from "../ChangesStorage";
-import type { NewVector } from "../core/Vector";
 
 export const workerQuerySchema = z.object({
     query: querySchema,
@@ -11,10 +11,7 @@ export const workerQuerySchema = z.object({
 
 export type WorkerQuery = z.infer<typeof workerQuerySchema>;
 
-export type WorkerQueryResult = {
-    result: QueryResult;
-    state: WorkerState;
-};
+export type WorkerQueryResult = QueryResult;
 
 export type WorkerState = {
     instanceId: string;
@@ -25,16 +22,19 @@ export type WorkerState = {
     ephemeralLimit: number;
 };
 
+export type StatefulResponse<T> = {
+    result: T;
+    state: WorkerState;
+};
+
 export interface Worker {
-    query(query: WorkerQuery): Promise<WorkerQueryResult>;
-    add(vectors: NewVector[]): Promise<void>;
-    remove(labels: string[]): Promise<void>;
-    wake(wait: number): Promise<void>;
-    saveSnapshot(): Promise<void>;
-    loadLatestSnapshot(): Promise<void>;
-    count(): Promise<{
+    query(query: WorkerQuery): Promise<StatefulResponse<WorkerQueryResult>>;
+    update(updates: StoredVectorChange[]): Promise<StatefulResponse<void>>;
+    saveSnapshot(): Promise<StatefulResponse<void>>;
+    loadLatestSnapshot(): Promise<StatefulResponse<void>>;
+    count(): Promise<StatefulResponse<{
         vectors: number,
         vectorDimensions: number
-    }>;
-    state(): Promise<WorkerState>;
+    }>>;
+    state(): Promise<StatefulResponse<void>>;
 }

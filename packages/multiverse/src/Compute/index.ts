@@ -21,6 +21,9 @@ const changesStorage = new DynamoChangesStorage({
     dimensions: env.DATABASE_CONFIG.dimensions,
     space: env.DATABASE_CONFIG.space,
     name: env.DATABASE_CONFIG.name,
+    regionalInstances: env.DATABASE_CONFIG.regionalInstances,
+    secondaryInstances: env.DATABASE_CONFIG.secondaryInstances,
+    warmPrimaryInstances: env.DATABASE_CONFIG.warmPrimaryInstances,
 });
 
 const index = new HNSWIndex({
@@ -28,6 +31,9 @@ const index = new HNSWIndex({
     region: env.DATABASE_CONFIG.region,
     space: env.DATABASE_CONFIG.space,
     name: env.DATABASE_CONFIG.name,
+    regionalInstances: env.DATABASE_CONFIG.regionalInstances,
+    secondaryInstances: env.DATABASE_CONFIG.secondaryInstances,
+    warmPrimaryInstances: env.DATABASE_CONFIG.warmPrimaryInstances,
 });
 
 const snapshotStorage = new S3SnapshotStorage({
@@ -47,8 +53,9 @@ const databaseWorker = new ComputeWorker({
 });
 
 export type DatabaseEvent = {
-    event: keyof Worker,
-    payload: Parameters<Worker[keyof Worker]>
+    event: keyof Worker;
+    payload: Parameters<Worker[keyof Worker]>;
+    waitTime?: number;
 };
 
 export async function handler(
@@ -72,6 +79,10 @@ export async function handler(
 
     // @ts-ignore
     const result = await databaseWorker[e.event](...e.payload);
+
+    if (e.waitTime) {
+        await new Promise(resolve => setTimeout(resolve, e.waitTime));
+    }
 
     return {
         statusCode: 200,

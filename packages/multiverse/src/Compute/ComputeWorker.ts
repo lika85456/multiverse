@@ -5,10 +5,11 @@ import type SnapshotStorage from "../SnapshotStorage";
 import os from "node-os-utils";
 import fs from "fs/promises";
 import log from "@multiverse/log";
-import type { NewVector } from "../core/Vector";
 import type {
-    Worker, WorkerState, WorkerQuery, WorkerQueryResult
+    StatefulResponse,
+    Worker, WorkerQuery, WorkerQueryResult
 } from "./Worker";
+import type { StoredVectorChange } from "../ChangesStorage";
 
 export default class ComputeWorker implements Worker {
 
@@ -25,55 +26,59 @@ export default class ComputeWorker implements Worker {
     }) {
     }
 
-    public async state(): Promise<WorkerState> {
+    public async state(): Promise<StatefulResponse<void>> {
         return {
-            instanceId: this.instanceId,
-            lastUpdate: this.lastUpdate,
-            memoryUsed: (await os.mem.used()).usedMemMb,
-            memoryLimit: this.options.memoryLimit,
-            ephemeralUsed: -1, // TODO implement
-            ephemeralLimit: this.options.ephemeralLimit
+            result: undefined,
+            state: {
+                instanceId: this.instanceId,
+                lastUpdate: this.lastUpdate,
+                memoryUsed: (await os.mem.used()).usedMemMb,
+                memoryLimit: this.options.memoryLimit,
+                ephemeralUsed: -1, // TODO implement
+                ephemeralLimit: this.options.ephemeralLimit
+            }
         };
     }
 
-    public async query(query: WorkerQuery): Promise<WorkerQueryResult> {
-        if (query.updates) {
-            for (const update of query.updates) {
-                if (update.timestamp < this.lastUpdate) {
-                    continue;
-                }
-
-                if (update.action === "add") {
-                    await this.options.index.add([update.vector]);
-                }
-
-                if (update.action === "remove") {
-                    await this.options.index.remove([update.label]);
-                }
+    public async update(updates: StoredVectorChange[]): Promise<StatefulResponse<void>> {
+        for (const update of updates) {
+            if (update.timestamp <= this.lastUpdate) {
+                continue;
             }
+
+            if (update.action === "add") {
+                await this.options.index.add([update.vector]);
+            }
+
+            if (update.action === "remove") {
+                await this.options.index.remove([update.label]);
+            }
+        }
+
+        // find the latest timestamp
+        this.lastUpdate = updates.reduce((max, update) => Math.max(max, update.timestamp), this.lastUpdate);
+
+        return await this.state();
+    }
+
+    public async query(query: WorkerQuery): Promise<StatefulResponse<WorkerQueryResult>> {
+        if (query.updates) {
+            await this.update(query.updates);
         }
 
         const result = await this.options.index.knn(query.query);
 
         return {
-            result: { result },
-            state: await this.state()
+            ...(await this.state()),
+            result: { result }
         };
-    }
-
-    public async add(vectors: NewVector[]): Promise<void> {
-        await this.options.index.add(vectors);
-    }
-
-    public async remove(labels: string[]): Promise<void> {
-        await this.options.index.remove(labels);
     }
 
     public async wake(wait: number): Promise<void> {
         await new Promise((resolve) => setTimeout(resolve, wait));
     }
 
-    public async saveSnapshot(): Promise<void> {
+    public async saveSnapshot(): Promise<StatefulResponse<void>> {
         const randomId = Math.random().toString(36).slice(2);
         const path = `/tmp/${randomId}`;
         await this.options.index.save(path);
@@ -81,27 +86,36 @@ export default class ComputeWorker implements Worker {
         const snapshot = await this.options.snapshotStorage.create(path);
 
         log.debug(`Saved snapshot ${snapshot.filePath}`, { snapshot });
+
+        return await this.state();
     }
 
-    public async loadLatestSnapshot(): Promise<void> {
+    public async loadLatestSnapshot(): Promise<StatefulResponse<void>> {
         const snapshot = await this.options.snapshotStorage.loadLatest();
 
         if (!snapshot) {
-            return;
+            log.debug("No snapshot to load");
+
+            return await this.state();
         }
 
         await this.options.index.load(snapshot.filePath);
 
         log.debug(`Loaded snapshot ${snapshot.filePath}`, { snapshot });
+
+        return await this.state();
     }
 
-    public async count(): Promise<{
+    public async count(): Promise<StatefulResponse<{
         vectors: number,
         vectorDimensions: number
-    }> {
+    }>> {
         return { // TODO: implement properly
-            vectors: await this.options.index.size(),
-            vectorDimensions: await this.options.index.dimensions()
+            ...(await this.state()),
+            result: {
+                vectors: await this.options.index.size(),
+                vectorDimensions: await this.options.index.dimensions(),
+            }
         };
     }
 
