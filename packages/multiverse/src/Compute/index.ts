@@ -6,11 +6,12 @@ import log from "@multiverse/log";
 import type {
     APIGatewayProxyEvent, APIGatewayProxyResult, Context
 } from "aws-lambda";
-import Worker from "./Worker";
 import DynamoChangesStorage from "../ChangesStorage/DynamoChangesStorage";
 import { databaseEnvSchema } from "./env";
 import HNSWIndex from "../Index/HNSWIndex";
 import S3SnapshotStorage from "../SnapshotStorage/S3SnapshotStorage";
+import type { Worker } from "./Worker";
+import ComputeWorker from "./ComputeWorker";
 
 const env = databaseEnvSchema.parse(process.env);
 
@@ -36,7 +37,7 @@ const snapshotStorage = new S3SnapshotStorage({
     downloadPath: "/tmp"
 });
 
-const databaseWorker = new Worker({
+const databaseWorker = new ComputeWorker({
     changesStorage,
     config: env.DATABASE_CONFIG,
     ephemeralLimit: 1024,

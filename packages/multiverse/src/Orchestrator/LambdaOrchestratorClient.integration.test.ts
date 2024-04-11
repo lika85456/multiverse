@@ -5,7 +5,7 @@ import { DynamoChangesStorageDeployer } from "../ChangesStorage/DynamoChangesSto
 import { S3SnapshotStorageDeployer } from "../SnapshotStorage/S3SnapshotStorage";
 import InfrastructureManager from "./InfrastructureManager";
 import InfrastructureStorage, { InfrastructureStorageDeployer } from "../InfrastructureStorage/DynamoInfrastructureStorage";
-import type { DatabaseConfiguration } from "../DatabaseConfiguration";
+import type { StoredDatabaseConfiguration } from "../core/DatabaseConfiguration";
 
 describe.skip("<LambdaOrchestratorClient>", () => {
     // const changesTableName = "multiverse-changes-test-" + Math.random().toString(36).substring(7);

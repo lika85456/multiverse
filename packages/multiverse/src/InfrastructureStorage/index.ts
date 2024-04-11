@@ -1,4 +1,4 @@
-import type { DatabaseConfiguration } from "../DatabaseConfiguration";
+import type { DatabaseConfiguration } from "../core/DatabaseConfiguration";
 
 export type Infrastructure = {
     configuration: DatabaseConfiguration;

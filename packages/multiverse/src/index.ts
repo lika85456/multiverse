@@ -1,6 +1,7 @@
 import type {
-    DatabaseConfiguration, Region, Token
-} from "./DatabaseConfiguration";
+    DatabaseConfiguration,
+    Region, Token
+} from "./core/DatabaseConfiguration";
 import type { Query, QueryResult } from "./core/Query";
 import type { NewVector } from "./core/Vector";
 import OrchestratorDeployer from "./Orchestrator/OrchestratorDeployer";
@@ -38,7 +39,11 @@ export interface IMultiverse {
 }
 
 export class MultiverseDatabase implements IMultiverseDatabase {
-    constructor(private configuration: DatabaseConfiguration) {
+    constructor(private options: {
+        name: string,
+        region: Region,
+        secretToken: string,
+    }) {
     }
 
     public async query(query: Query): Promise<QueryResult> {
@@ -66,6 +71,8 @@ export class MultiverseDatabase implements IMultiverseDatabase {
 
     }
 }
+
+// TODO!: library /src imports!
 
 /**
  * This is the entry for the whole Multiverse library.
