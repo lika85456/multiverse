@@ -125,13 +125,9 @@ describe("<LambdaWorker>", () => {
             },
             updates: [
                 {
-                    action: "add",
+                    action: "remove",
                     timestamp: Date.now(),
-                    vector: {
-                        label: "test",
-                        metadata: { name: "test" },
-                        vector: [1, 2, 3]
-                    }
+                    label: "test"
                 }
             ]
         });

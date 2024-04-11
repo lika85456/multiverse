@@ -42,7 +42,9 @@ export default class ComputeWorker implements Worker {
 
     public async update(updates: StoredVectorChange[]): Promise<StatefulResponse<void>> {
         for (const update of updates) {
-            if (update.timestamp <= this.lastUpdate) {
+            // some of the updates might have been proccessed already (if lastUpdate===update.timestamp),
+            // but if in the right order, it should lead to the same results
+            if (update.timestamp < this.lastUpdate) {
                 continue;
             }
 

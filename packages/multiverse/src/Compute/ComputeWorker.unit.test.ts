@@ -5,6 +5,7 @@ import type { WorkerQuery } from "./Worker";
 import { Vector } from "../core/Vector";
 import type { DatabaseConfiguration } from "../core/DatabaseConfiguration";
 import ComputeWorker from "./ComputeWorker";
+import type { StoredVectorChange } from "../ChangesStorage";
 
 describe("<ComputeWorker>", () => {
 
@@ -15,166 +16,232 @@ describe("<ComputeWorker>", () => {
         space: "cosine"
     } as DatabaseConfiguration;
 
-    const changesStorage = new MemoryChangesStorage();
+    describe("Stateless", () => {
 
-    const snapshotStorage = new LocalSnapshotStorage(Math.random().toString(36).substring(7));
+        let changesStorage: MemoryChangesStorage;
+        let snapshotStorage: LocalSnapshotStorage;
+        let index: HNSWIndex;
+        let worker: ComputeWorker;
 
-    const index = new HNSWIndex(config);
-
-    const worker = new ComputeWorker({
-        config,
-        changesStorage,
-        snapshotStorage,
-        index,
-        ephemeralLimit: 5000,
-        memoryLimit: 5000
-    });
-
-    it("should have instanceId and report state", async() => {
-        const { state } = await worker.state();
-
-        expect(state.instanceId).toBeDefined();
-        expect(state.lastUpdate).toBe(0);
-        expect(state.memoryUsed).toBeGreaterThan(0);
-    });
-
-    it("query should be empty for empty worker", async() => {
-        const result = await worker.query({
-            query: {
-                k: 10,
-                vector: Vector.random(config.dimensions),
-                metadataExpression: "",
-                sendVector: true
-            },
-            updates: []
+        beforeEach(async() => {
+            changesStorage = new MemoryChangesStorage();
+            snapshotStorage = new LocalSnapshotStorage(Math.random().toString(36).substring(7));
+            index = new HNSWIndex(config);
+            worker = new ComputeWorker({
+                config,
+                changesStorage,
+                snapshotStorage,
+                index,
+                ephemeralLimit: 5000,
+                memoryLimit: 5000
+            });
         });
 
-        expect(result.result.result.length).toBe(0);
-    });
+        it("should have instanceId and report state", async() => {
+            const { state } = await worker.state();
 
-    it("should wait on wake", async() => {
-        const start = Date.now();
+            expect(state.instanceId).toBeDefined();
+            expect(state.lastUpdate).toBe(0);
+            expect(state.memoryUsed).toBeGreaterThan(0);
+        });
 
-        await worker.wake(500);
+        it("query should be empty", async() => {
+            const result = await worker.query({
+                query: {
+                    k: 10,
+                    vector: Vector.random(config.dimensions),
+                    metadataExpression: "",
+                    sendVector: true
+                },
+                updates: []
+            });
 
-        const end = Date.now();
+            expect(result.result.result.length).toBe(0);
+        });
 
-        expect(end - start).toBeGreaterThanOrEqual(500);
-    });
+        it("should wait on wake", async() => {
+            const start = Date.now();
 
-    it("should process updates", async() => {
-        const query: WorkerQuery = {
-            query: {
-                k: 10,
-                vector: Vector.random(config.dimensions),
-                metadataExpression: "",
-                sendVector: true
-            },
-            updates: [
+            await worker.wake(500);
+
+            const end = Date.now();
+
+            expect(end - start).toBeGreaterThanOrEqual(500);
+        });
+
+        it("should process updates and incorporate them into the response", async() => {
+            const query: WorkerQuery = {
+                query: {
+                    k: 10,
+                    vector: Vector.random(config.dimensions),
+                    metadataExpression: "",
+                    sendVector: true
+                },
+                updates: [
+                    {
+                        action: "add",
+                        timestamp: 5,
+                        vector: {
+                            label: "test",
+                            vector: Vector.random(config.dimensions),
+                            metadata: { test: "test" }
+                        },
+                    }
+                ]
+            };
+
+            const result = await worker.query(query);
+
+            expect(result.result.result.length).toBe(1);
+            expect(result.result.result[0].label).toBe("test");
+            expect(result.result.result[0].metadata).toEqual({ test: "test" });
+        });
+
+        it("should not mess up when updates have the same timestamp", async() => {
+            const now = Date.now();
+            const firstVector = Vector.random(config.dimensions);
+
+            const updates: StoredVectorChange[] = [
                 {
                     action: "add",
-                    timestamp: 5,
+                    timestamp: now,
+                    vector: {
+                        label: "test",
+                        vector: firstVector,
+                        metadata: { test: "test" }
+                    },
+                },
+                {
+                    action: "remove",
+                    timestamp: now,
+                    label: "test"
+                },
+                {
+                    action: "add",
+                    timestamp: now,
                     vector: {
                         label: "test",
                         vector: Vector.random(config.dimensions),
                         metadata: { test: "test" }
                     },
                 }
-            ]
-        };
+            ];
 
-        const result = await worker.query(query);
+            const result = await worker.query({
+                query: {
+                    k: 10,
+                    vector: Vector.random(config.dimensions),
+                    metadataExpression: "",
+                    sendVector: true
+                },
+                updates
+            });
 
-        expect(result.result.result.length).toBe(1);
-        expect(result.result.result[0].label).toBe("test");
-        expect(result.result.result[0].metadata).toEqual({ test: "test" });
+            const result2 = await worker.query({
+                query: {
+                    k: 10,
+                    vector: firstVector,
+                    metadataExpression: "",
+                    sendVector: true
+                },
+                updates
+            });
+
+            expect(result.result.result.length).toBe(1);
+            expect(result2.result.result.length).toBe(1);
+
+            expect(result2.result.result[0].vector).not.toEqual(firstVector);
+        });
     });
 
-    it("should save snapshot", async() => {
-        expect(await snapshotStorage.loadLatest()).toBeUndefined();
+    describe("Snapshot", () => {
 
-        await worker.saveSnapshot();
+        let changesStorage: MemoryChangesStorage;
+        let snapshotStorage: LocalSnapshotStorage;
+        let index: HNSWIndex;
+        let worker: ComputeWorker;
 
-        expect(await snapshotStorage.loadLatest()).toBeDefined();
+        beforeAll(async() => {
+            changesStorage = new MemoryChangesStorage();
+            snapshotStorage = new LocalSnapshotStorage(Math.random().toString(36).substring(7));
+            index = new HNSWIndex(config);
+            worker = new ComputeWorker({
+                config,
+                changesStorage,
+                snapshotStorage,
+                index,
+                ephemeralLimit: 5000,
+                memoryLimit: 5000
+            });
+        });
+
+        const vectorSaved = Vector.random(config.dimensions);
+
+        it("should not have any snapshot saved", async() => {
+            const snapshot = await snapshotStorage.loadLatest();
+            expect(snapshot).toBeUndefined();
+        });
+
+        it("should save snapshot with some vectors", async() => {
+            await worker.update([
+                {
+                    action: "add",
+                    timestamp: Date.now(),
+                    vector: {
+                        label: "test",
+                        vector: vectorSaved,
+                        metadata: { test: "test" }
+                    },
+                }
+            ]);
+
+            await worker.saveSnapshot();
+
+            expect(await snapshotStorage.loadLatest()).toBeDefined();
+        });
+
+        it("should load the snapshot in another worker", async() => {
+            expect(await snapshotStorage.loadLatest()).toBeDefined();
+
+            const anotherWorker = new ComputeWorker({
+                config,
+                changesStorage,
+                snapshotStorage,
+                index: new HNSWIndex(config),
+                ephemeralLimit: 5000,
+                memoryLimit: 5000
+            });
+
+            // should be empty
+            const result = await anotherWorker.query({
+                query: {
+                    k: 10,
+                    vector: Vector.random(config.dimensions),
+                    metadataExpression: "",
+                    sendVector: true
+                },
+                updates: []
+            });
+
+            expect(result.result.result.length).toBe(0);
+
+            // load snapshot
+            await anotherWorker.loadLatestSnapshot();
+
+            // should have one item
+            const result2 = await anotherWorker.query({
+                query: {
+                    k: 10,
+                    vector: vectorSaved,
+                    metadataExpression: "",
+                    sendVector: true
+                },
+                updates: []
+            });
+
+            expect(result2.result.result.length).toBe(1);
+            expect(result2.result.result[0].label).toBe("test");
+            expect(result2.result.result[0].vector). toEqual(vectorSaved);
+        });
     });
-
-    it("should load snapshot", async() => {
-        const anotherWorker = new ComputeWorker({
-            config,
-            changesStorage,
-            snapshotStorage,
-            index: new HNSWIndex(config),
-            ephemeralLimit: 5000,
-            memoryLimit: 5000
-        });
-
-        // should be empty
-        const result = await anotherWorker.query({
-            query: {
-                k: 10,
-                vector: Vector.random(config.dimensions),
-                metadataExpression: "",
-                sendVector: true
-            },
-            updates: []
-        });
-
-        expect(result.result.result.length).toBe(0);
-
-        // load snapshot
-        await anotherWorker.loadLatestSnapshot();
-
-        // should have one item
-        const result2 = await anotherWorker.query({
-            query: {
-                k: 10,
-                vector: Vector.random(config.dimensions),
-                metadataExpression: "",
-                sendVector: true
-            },
-            updates: []
-        });
-
-        expect(result2.result.result.length).toBe(1);
-    });
-
-    // it("should add vectors", async() => {
-    //     const vector = {
-    //         label: "test",
-    //         vector: Vector.random(config.dimensions),
-    //         metadata: { name: "test" }
-    //     };
-
-    //     await worker.add([vector]);
-
-    //     const result = await worker.query({
-    //         query: {
-    //             k: 10,
-    //             vector: vector.vector,
-    //             metadataExpression: "",
-    //             sendVector: true
-    //         },
-    //         updates: []
-    //     });
-
-    //     expect(result.result.result.length).toBe(1);
-
-    //     expect(result.result.result[0].label).toBe("test");
-    // });
-
-    // it("should remove vectors", async() => {
-    //     await worker.remove(["test"]);
-
-    //     const result = await worker.query({
-    //         query: {
-    //             k: 10,
-    //             vector: Vector.random(config.dimensions),
-    //             metadataExpression: "",
-    //             sendVector: true
-    //         },
-    //         updates: []
-    //     });
-
-    //     expect(result.result.result.length).toBe(0);
-    // });
 });

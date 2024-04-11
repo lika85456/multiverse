@@ -67,6 +67,11 @@ export default class HNSWIndex implements Index {
         const index = this.index;
         vectors.forEach(vector => {
 
+            // if exists continue
+            if (this.idMap[this.hashLabel(vector.label)]) {
+                return;
+            }
+
             const id = this.hashLabel(vector.label);
 
             this.idMap[id] = vector.label;
