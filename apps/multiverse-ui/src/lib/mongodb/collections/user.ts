@@ -9,6 +9,7 @@ export interface UserGet {
   email: string;
   image: string;
   awsToken?: ObjectId;
+  sqsQueue?: string;
   databases: string[];
 }
 
@@ -17,6 +18,7 @@ export interface UserInsert {
   email: string;
   image: string;
   awsToken?: ObjectId;
+  sqsQueue?: string;
   databases: string[];
 }
 
@@ -35,6 +37,7 @@ export const getUserByEmail = async(email: string,): Promise<UserGet | undefined
             image: result.image,
             awsToken: result.awsToken,
             databases: result.databases,
+            sqsQueue: result.sqsQueue,
         };
     } catch (error) {
         return undefined;
@@ -132,6 +135,78 @@ export const removeAllDatabaseFromUser = async(user: ObjectId): Promise<{ acknow
         return { acknowledged: updatedUserResult.acknowledged };
     } catch (error) {
         return { acknowledged: false };
+    }
+};
+
+export const addQueueToUser = async(queue: string): Promise<{ acknowledged: boolean }> => {
+    const sessionUser = await getSessionUser();
+    if (!sessionUser) {
+        throw new Error("Not logged in");
+    }
+
+    try {
+        const db = (await clientPromise).db();
+        const result = await db.collection("users").findOne({ _id: sessionUser._id });
+        if (!result) {
+            return { acknowledged: false };
+        }
+        const updatedUserResult = await db
+            .collection("users")
+            .updateOne(
+                { _id: sessionUser._id },
+                { $set: { sqsQueue: queue } }
+            );
+
+        return { acknowledged: updatedUserResult.acknowledged };
+    } catch (error) {
+        return { acknowledged: false };
+    }
+};
+
+export const removeQueueFromUser = async(): Promise<{ acknowledged: boolean }> => {
+    const sessionUser = await getSessionUser();
+    if (!sessionUser) {
+        throw new Error("Not logged in");
+    }
+
+    try {
+        const db = (await clientPromise).db();
+        const result = await db.collection("users").findOne({ _id: sessionUser._id });
+        if (!result) {
+            return { acknowledged: false };
+        }
+        const updatedUserResult = await db
+            .collection("users")
+            .updateOne(
+                { _id: sessionUser._id },
+                { $unset: { sqsQueue: undefined } }
+            );
+
+        return { acknowledged: updatedUserResult.acknowledged };
+    } catch (error) {
+        return { acknowledged: false };
+    }
+};
+
+export const getAllQueuesWithCredentials = async(): Promise<{sqs: string, accessKeyId: string, secretAccessKey: string}[]> => {
+    try {
+        const db = (await clientPromise).db();
+        const result = await db.collection("users").find({ sqsQueue: { $exists: true } }).toArray();
+
+        // Filter out users without valid queue or AWS credentials
+        const usersFiltered = result.filter((user) => {
+            return user.sqsQueue && user.awsToken && user.awsToken.accessTokenId && user.awsToken.secretAccessKey;
+        });
+
+        return usersFiltered.map((user) => {
+            return {
+                sqs: user.sqsQueue as string,
+                accessKeyId: user.awsToken?.accessTokenId as string,
+                secretAccessKey: user.awsToken?.secretAccessKey as string,
+            };
+        });
+    } catch (error) {
+        return [];
     }
 };
 

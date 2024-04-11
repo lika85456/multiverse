@@ -1,6 +1,8 @@
 import { publicProcedure, router } from "@/server/trpc";
 import z from "zod";
-import { getSessionUser } from "@/lib/mongodb/collections/user";
+import {
+    addQueueToUser, getSessionUser, removeQueueFromUser
+} from "@/lib/mongodb/collections/user";
 import {
     addAwsToken, getAwsTokenByAccessTokenId,
     getAwsTokenByOwner,
@@ -9,6 +11,8 @@ import {
 import { deleteAllDatabases } from "@/lib/mongodb/collections/database";
 import { TRPCError } from "@trpc/server";
 import { MultiverseFactory } from "@/server/multiverse-interface/MultiverseFactory";
+import { StatisticsProcessor } from "@/features/statistics/statistics-processor/StatisticsProcessor";
+import { GetCallerIdentityCommand, STSClient } from "@aws-sdk/client-sts";
 
 export const awsToken = router({
     /**
@@ -43,13 +47,55 @@ export const awsToken = router({
         .mutation(async(opts) => {
             const existingToken = await getAwsTokenByAccessTokenId(opts.input.accessTokenId);
             if (existingToken) {
-                throw new Error("Token already exists");
+                throw new TRPCError({
+                    code: "CONFLICT",
+                    message: "Token already exists"
+                });
             }
 
-            return await addAwsToken({
+            // check AWS Credentials
+            const client = new STSClient({
+                region: "eu-central-1",
+                credentials: {
+                    accessKeyId: opts.input.accessTokenId,
+                    secretAccessKey: opts.input.secretAccessKey
+                }
+            });
+            const command = new GetCallerIdentityCommand();
+            try {
+                const result = await client.send(command);
+                if (!result.Account || !result.UserId) {
+                    throw new Error();
+                }
+            } catch (error) {
+                console.log("Error connecting to AWS account: ", error);
+                throw new TRPCError({
+                    code: "BAD_REQUEST",
+                    message: "Invalid AWS Token, could not connect to AWS account"
+                });
+            }
+
+            // store token in mongodb
+            const awsToken = await addAwsToken({
                 accessTokenId: opts.input.accessTokenId,
                 secretAccessKey: opts.input.secretAccessKey,
             });
+
+            // create a queue for the user
+            const statisticsProcessor = new StatisticsProcessor();
+            const queueName = await statisticsProcessor.createQueue();
+
+            // store queue in mongodb
+            const result = await addQueueToUser(queueName);
+            if (!result) {
+                throw new TRPCError({
+                    code: "INTERNAL_SERVER_ERROR",
+                    message: "Error adding queue to user"
+                });
+            }
+            console.log("Queue name: ", queueName);
+
+            return awsToken;
         }),
     /**
      * Remove the aws token from the user.
@@ -62,6 +108,19 @@ export const awsToken = router({
             throw new TRPCError({
                 code: "UNAUTHORIZED",
                 message: "User not found",
+            });
+        }
+
+        // delete queue from AWS and mongodb
+        try {
+            const statisticsProcessor = new StatisticsProcessor();
+            await statisticsProcessor.deleteQueue();
+            await removeQueueFromUser();
+        } catch (error) {
+            console.error("Error deleting queue: ", error);
+            throw new TRPCError({
+                code: "INTERNAL_SERVER_ERROR",
+                message: "Error deleting queue"
             });
         }
 

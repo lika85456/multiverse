@@ -54,6 +54,28 @@ export const addAwsToken = async(tokenData: AwsTokenInsert,): Promise<AwsTokenGe
         await session.endSession();
     }
 };
+
+export const getAwsTokenByTokenId = async(tokenId: ObjectId): Promise<AwsTokenGet | undefined> => {
+    try {
+        const db = (await clientPromise).db();
+        const result = await db.collection("aws_tokens").findOne({ _id: tokenId });
+
+        if (!result) {
+            return undefined;
+        }
+        const awsToken: AwsTokenGet = {
+            _id: result._id,
+            accessTokenId: result.accessTokenId,
+            secretAccessKey: result.secretAccessKey,
+            ownerId: result.ownerId,
+        };
+
+        return Promise.resolve(awsToken);
+    } catch (error) {
+        return undefined;
+    }
+};
+
 export const getAwsTokenByAccessTokenId = async(accessTokenId: string,): Promise<AwsTokenGet | undefined> => {
     try {
         const db = (await clientPromise).db();
