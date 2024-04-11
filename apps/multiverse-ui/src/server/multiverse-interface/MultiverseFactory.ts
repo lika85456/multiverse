@@ -16,9 +16,6 @@ export class MultiverseFactory {
     }
 
     public async constructMultiverse(): Promise<IMultiverse> {
-        if (ENV.NODE_ENV === "development") {
-            return Promise.resolve(new MultiverseMock());
-        }
 
         const user = await this.user;
         if (!user?.awsToken) {
@@ -28,6 +25,16 @@ export class MultiverseFactory {
         const awsToken = await getAwsTokenByOwner(user._id);
         if (!awsToken) {
             throw new Error("No AWS Token to create the multiverse");
+        }
+
+        if (ENV.NODE_ENV === "development") {
+            return Promise.resolve(new MultiverseMock({
+                awsToken: {
+                    accessKeyId: awsToken.accessTokenId,
+                    secretAccessKey: awsToken.secretAccessKey,
+                },
+                region: "eu-central-1",
+            }));
         }
 
         return Promise.resolve(new Multiverse({

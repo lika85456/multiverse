@@ -1,6 +1,6 @@
 import type {
     DatabaseConfiguration,
-    Region, Token
+    Region, StoredDatabaseConfiguration, Token
 } from "./core/DatabaseConfiguration";
 import type { Query, QueryResult } from "./core/Query";
 import type { NewVector } from "./core/Vector";
@@ -21,7 +21,7 @@ export interface IMultiverseDatabase {
 
     remove(label: string[]): Promise<void>;
 
-    getConfiguration(): Promise<DatabaseConfiguration>;
+    getConfiguration(): Promise<StoredDatabaseConfiguration>;
 
     addToken(token: Token): Promise<void>;
 
@@ -29,7 +29,7 @@ export interface IMultiverseDatabase {
 }
 
 export interface IMultiverse {
-    createDatabase(options: Omit<DatabaseConfiguration, "region">): Promise<void>;
+    createDatabase(options: Omit<StoredDatabaseConfiguration, "region">): Promise<void>;
 
     removeDatabase(name: string): Promise<void>;
 

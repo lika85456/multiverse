@@ -1,6 +1,6 @@
 import type { IMultiverse, IMultiverseDatabase } from "@multiverse/multiverse/src";
 
-import type { DatabaseConfiguration, Token } from "@multiverse/multiverse/src/DatabaseConfiguration";
+import type { StoredDatabaseConfiguration, Token } from "@multiverse/multiverse/src/core/DatabaseConfiguration";
 import type {
     Query, QueryResult, SearchResultVector
 } from "@multiverse/multiverse/src/core/Query";
@@ -33,7 +33,7 @@ import * as fs from "fs";
 // ];
 
 type DatabaseWrapper = {
-    multiverseDatabase: IMultiverseDatabase;
+    multiverseDatabase: MultiverseDatabaseMock;
     vectors: NewVector[];
 };
 
@@ -56,7 +56,10 @@ async function loadJsonFile() {
         const parsedData = JSON.parse(jsonData);
         for (const database of parsedData) {
             databases.set(database.multiverseDatabase.name, {
-                multiverseDatabase: new MultiverseDatabaseMock(database.multiverseDatabase),
+                multiverseDatabase: new MultiverseDatabaseMock({
+                    config: database.multiverseDatabase,
+                    awsToken: database.awsToken,
+                }),
                 vectors: database.vectors
             });
         }
@@ -68,10 +71,12 @@ async function loadJsonFile() {
 async function saveJsonFile() {
     const data = await Promise.all(Array.from(databases.values()).map(async(database) => {
         const databaseConfig = await database.multiverseDatabase.getConfiguration();
+        const awsToken = database.multiverseDatabase.getAwsToken();
 
         return {
             multiverseDatabase: { ...databaseConfig },
-            vectors: database.vectors
+            vectors: database.vectors,
+            awsToken: awsToken.awsToken,
         };
     }));
 
@@ -100,13 +105,33 @@ async function refresh() {
 }
 
 class MultiverseDatabaseMock implements IMultiverseDatabase {
-    private readonly databaseConfiguration: DatabaseConfiguration;
+    private readonly databaseConfiguration: StoredDatabaseConfiguration;
+    private readonly awsToken: {
+        accessKeyId: string;
+        secretAccessKey: string;
+    };
 
-    constructor(config: DatabaseConfiguration) {
-        this.databaseConfiguration = config;
+    constructor(options: {
+        config: StoredDatabaseConfiguration,
+        awsToken: {
+            accessKeyId: string;
+            secretAccessKey: string;
+        }
+    }) {
+        this.databaseConfiguration = options.config;
+        this.awsToken = options.awsToken;
     }
 
-    async getConfiguration(): Promise<DatabaseConfiguration> {
+    public getAwsToken(): {awsToken: { accessKeyId: string; secretAccessKey: string; }} {
+        return {
+            awsToken: {
+                accessKeyId: this.awsToken.accessKeyId,
+                secretAccessKey: this.awsToken.secretAccessKey,
+            }
+        };
+    }
+
+    async getConfiguration(): Promise<StoredDatabaseConfiguration> {
 
         return Promise.resolve(this.databaseConfiguration);
     }
@@ -191,17 +216,31 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
 
 export class MultiverseMock implements IMultiverse {
     private readonly region: string;
-    constructor() {
-        this.region = "eu-central-1";
+    private readonly awsToken: {
+        accessKeyId: string;
+        secretAccessKey: string;
+    };
+
+    constructor(options: {awsToken: {
+            accessKeyId: string;
+            secretAccessKey: string;
+        },
+        region: string
+    }) {
+        this.awsToken = options.awsToken;
+        this.region = options.region;
         loadJsonFile();
     }
 
-    async createDatabase(options: Omit<DatabaseConfiguration, "region">): Promise<void> {
+    async createDatabase(options: Omit<StoredDatabaseConfiguration, "region">,): Promise<void> {
         await loadJsonFile();
         databases.set(options.name, {
             multiverseDatabase: new MultiverseDatabaseMock({
-                ...options,
-                region: this.region as "eu-central-1"
+                config: {
+                    ...options,
+                    region: this.region as "eu-central-1"
+                },
+                awsToken: this.awsToken,
             }),
             vectors: []
         });
