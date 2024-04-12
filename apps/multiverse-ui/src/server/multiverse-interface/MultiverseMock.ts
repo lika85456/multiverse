@@ -13,31 +13,6 @@ import {
     GetQueueUrlCommand, SendMessageCommand, SQSClient
 } from "@aws-sdk/client-sqs";
 
-// example backup
-//     [
-//     {
-//         "multiverseDatabase": {
-//             "name": "database_1",
-//             "secretTokens": [{
-//                 "name": "token1",
-//                 "secret": "secretsecret",
-//                 "validUntil": 12345678
-//             }],
-//             "dimensions": 4,
-//             "region": "eu-central-1",
-//             "space": "l2"
-//         },
-//         "vectors": [
-//             {
-//                 "label": "label",
-//                 "metadata": {},
-//                 "vector": [0, 0, 0, 0],
-//                 "distance": 1
-//             }
-//         ]
-//     }
-// ];
-
 type DatabaseWrapper = {
     multiverseDatabase: MultiverseDatabaseMock;
     vectors: NewVector[];
@@ -128,7 +103,7 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
         this.awsToken = options.awsToken;
     }
 
-    public getAwsToken(): {awsToken: { accessKeyId: string; secretAccessKey: string; }} {
+    getAwsToken(): {awsToken: { accessKeyId: string; secretAccessKey: string; }} {
         return {
             awsToken: {
                 accessKeyId: this.awsToken.accessKeyId,
@@ -138,6 +113,9 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
     }
 
     private async sendStatistics(event: Event): Promise<void> {
+        if (!this.databaseConfiguration.statisticsQueueName) {
+            return Promise.resolve(undefined);
+        }
         const sqsClient = new SQSClient({
             region: "eu-central-1",
             credentials: {
@@ -157,7 +135,7 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
             }
 
             const sendMessageCommand = new SendMessageCommand({
-                MessageBody: JSON.stringify(event),
+                MessageBody: JSON.stringify([event]),
                 QueueUrl: queueUrl
             });
             await sqsClient.send(sendMessageCommand);

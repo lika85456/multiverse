@@ -93,6 +93,7 @@ export const database = router({
             return await Promise.all(listedDatabases.map(async(database): Promise<DatabaseGet> => {
                 const configuration = await database.getConfiguration();
 
+                // TODO - check if multiverseDB has queue, if not, set it
                 // guaranteed that the database is stored in the mongodb
                 return storeDatabase(configuration);
             }));
@@ -124,6 +125,7 @@ export const database = router({
                 });
             }
 
+            // TODO - check if multiverseDB has queue, if not, set it
             return await storeDatabase(configuration);
         }),
 

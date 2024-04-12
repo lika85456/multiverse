@@ -28,9 +28,9 @@ export default function DatabaseStatistics() {
                         setDate={handleDateIntervalChange}
                     />
                     <StatisticsGraph title="Requests" data={statistics.requests.data} />
+                    <StatisticsGraph title="Write Count" data={statistics.writeCount.data} />
                     <StatisticsGraph title="Costs" data={statistics.costs.data} />
                     <StatisticsGraph title="Response Time" data={statistics.responseTime.data} />
-                    <StatisticsGraph title="Write Count" data={statistics.writeCount.data} />
                 </>)
             }
         </div>

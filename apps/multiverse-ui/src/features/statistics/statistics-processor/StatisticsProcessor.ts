@@ -27,7 +27,7 @@ export interface IStatisticsProcessor {
 
 export class StatisticsProcessor implements IStatisticsProcessor {
 
-    async processQueueMessages(): Promise<Event[]> {
+    async processQueueMessages(queueName: string, awsToken: AwsTokenGet): Promise<Event[]> {
         console.log("Processing users queue");
 
         return [];
