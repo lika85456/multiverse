@@ -5,7 +5,7 @@ export interface GeneralDatabaseStatisticsGet{
     // unique, identifies general statistics for a database
     databaseName: string;
     // statistics data
-    timestamp: Date; // for data freshness comparison
+    updated: Date; // for data freshness comparison
     dataSize: number;
     totalRecords: number;
     ownerId: ObjectId;
@@ -16,7 +16,7 @@ export interface GeneralDatabaseStatisticsInsert{
     // unique, identifies general statistics for a database
     databaseName: string;
     // statistics data
-    timestamp: Date; // for data freshness comparison
+    updated: Date; // for data freshness comparison
     dataSize?: number;
     totalRecords?: number;
     ownerId: ObjectId;
@@ -26,7 +26,7 @@ export const getGeneralDatabaseStatistics = async(databaseName: string): Promise
     return {
         _id: new ObjectId(),
         databaseName: "",
-        timestamp: new Date(),
+        updated: new Date(),
         dataSize: 0,
         totalRecords: 0,
         ownerId: new ObjectId()
@@ -37,7 +37,7 @@ export const addGeneralDatabaseStatistics = async(statistics: GeneralDatabaseSta
     return {
         _id: new ObjectId(),
         databaseName: "",
-        timestamp: new Date(),
+        updated: new Date(),
         dataSize: 0,
         totalRecords: 0,
         ownerId: new ObjectId()

@@ -3,6 +3,7 @@ import type { ObjectId } from "mongodb";
 import {
     addDatabaseToUser, removeAllDatabaseFromUser, removeDatabaseFromUser
 } from "@/lib/mongodb/collections/user";
+import { removeAllStatisticsForDatabase } from "@/lib/mongodb/collections/daily-statistics";
 
 export interface SecretToken {
     name: string;
@@ -119,11 +120,10 @@ export const deleteDatabase = async(codeName: string): Promise<boolean> => {
             if (!result.acknowledged) {
                 throw new Error("Database not deleted");
             }
-            console.log("removed existing database");
-            console.log(database?.ownerId, database?.codeName);
             //remove database from user's list of databases
             await removeDatabaseFromUser(database?.ownerId, database.codeName);
-            console.log("removed database from user's list of databases");
+            //remove all statistics for the database
+            await removeAllStatisticsForDatabase(database.codeName);
 
             return result.acknowledged;
         });
@@ -143,6 +143,13 @@ export const deleteAllDatabases = async(ownerId: ObjectId) => {
 
     try {
         return await session.withTransaction(async() => {
+            const ownerResult = await db.collection("databases").findOne({ ownerId });
+            if (!ownerResult) {
+                throw new Error("Owner not found");
+            }
+            const databases: string[] = ownerResult.databases;
+            await Promise.all(databases.map(async(database) => { await removeAllStatisticsForDatabase(database); }));
+
             const result = await db.collection("databases").deleteMany({ ownerId });
             if (!result.acknowledged) {
                 throw new Error("Databases not deleted");
