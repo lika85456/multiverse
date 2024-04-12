@@ -2,6 +2,7 @@ import type { ObjectId } from "mongodb";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import clientPromise from "@/lib/mongodb/mongodb";
+import { getAwsTokenByTokenId } from "@/lib/mongodb/collections/aws-token";
 
 export interface UserGet {
   _id: ObjectId;
@@ -191,20 +192,25 @@ export const removeQueueFromUser = async(): Promise<{ acknowledged: boolean }> =
 export const getAllQueuesWithCredentials = async(): Promise<{sqs: string, accessKeyId: string, secretAccessKey: string}[]> => {
     try {
         const db = (await clientPromise).db();
-        const result = await db.collection("users").find({ sqsQueue: { $exists: true } }).toArray();
+        const result = await db.collection("users").find().toArray();
 
         // Filter out users without valid queue or AWS credentials
         const usersFiltered = result.filter((user) => {
-            return user.sqsQueue && user.awsToken && user.awsToken.accessTokenId && user.awsToken.secretAccessKey;
+            return user.sqsQueue && user.awsToken;
         });
 
-        return usersFiltered.map((user) => {
+        return Promise.all(usersFiltered.map(async(user) => {
+            const awsToken = await getAwsTokenByTokenId(user.awsToken);
+            if (!awsToken) {
+                throw new Error("AWS Token not found");
+            }
+
             return {
-                sqs: user.sqsQueue as string,
-                accessKeyId: user.awsToken?.accessTokenId as string,
-                secretAccessKey: user.awsToken?.secretAccessKey as string,
+                sqs: user.sqsQueue,
+                accessKeyId: awsToken.accessTokenId,
+                secretAccessKey: awsToken.secretAccessKey,
             };
-        });
+        }));
     } catch (error) {
         return [];
     }
