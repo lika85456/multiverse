@@ -11,7 +11,7 @@ import {
 import { deleteAllDatabases } from "@/lib/mongodb/collections/database";
 import { TRPCError } from "@trpc/server";
 import { MultiverseFactory } from "@/server/multiverse-interface/MultiverseFactory";
-import { StatisticsProcessor } from "@/features/statistics/statistics-processor/StatisticsProcessor";
+import { SQSHandler } from "@/features/statistics/statistics-processor/SQSHandler";
 import { GetCallerIdentityCommand, STSClient } from "@aws-sdk/client-sts";
 
 export const awsToken = router({
@@ -82,7 +82,7 @@ export const awsToken = router({
             });
 
             // create a queue for the user
-            const statisticsProcessor = new StatisticsProcessor();
+            const statisticsProcessor = new SQSHandler();
             const queueName = await statisticsProcessor.createQueue();
 
             // store queue in mongodb
@@ -113,7 +113,7 @@ export const awsToken = router({
 
         // delete queue from AWS and mongodb
         try {
-            const statisticsProcessor = new StatisticsProcessor();
+            const statisticsProcessor = new SQSHandler();
             await statisticsProcessor.deleteQueue();
             await removeQueueFromUser();
         } catch (error) {

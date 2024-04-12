@@ -1,19 +1,21 @@
-import { StatisticsProcessor } from "@/features/statistics/statistics-processor/StatisticsProcessor";
+import { SQSHandler } from "@/features/statistics/statistics-processor/SQSHandler";
 import { getAllQueuesWithCredentials } from "@/lib/mongodb/collections/user";
 
 export async function POST() {
     const queuesWithCredentials = await getAllQueuesWithCredentials();
 
-    const queueName = queuesWithCredentials[0].sqs;
-    const awsToken = {
-        accessTokenId: queuesWithCredentials[0].accessKeyId,
-        secretAccessKey: queuesWithCredentials[0].secretAccessKey
-    };
-    if (!queueName || !awsToken) {
-        return new Response("Queue not found");
-    }
-    const statisticsProcessor = new StatisticsProcessor();
-    const messages = await statisticsProcessor.processQueueMessages(queueName, awsToken);
+    const messages = await Promise.all(queuesWithCredentials.map(async(queue) => {
+        const queueName = queue.sqs;
+        const awsToken = {
+            accessTokenId: queue.accessKeyId,
+            secretAccessKey: queue.secretAccessKey
+        };
+        const sqsHandler = new SQSHandler();
+        const messages = await sqsHandler.receiveMessages(queueName, awsToken);
 
-    return new Response(JSON.stringify(messages, null, 2));
+        //TODO process messages
+        return messages.length;
+    }));
+
+    return new Response(`total received: ${messages.reduce((acc, val) => acc + val, 0)}`);
 }

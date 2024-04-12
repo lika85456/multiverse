@@ -9,12 +9,12 @@ import {
 import { getAwsTokenByTokenId } from "@/lib/mongodb/collections/aws-token";
 import type { Event } from "@/features/statistics/statistics-processor/event";
 
-export interface IStatisticsProcessor {
+export interface ISQSHandler {
 
     /**
      * Processes queue messages from SQS queue for all users.
      */
-    processQueueMessages(queueName: string, awsToken: {
+    receiveMessages(queueName: string, awsToken: {
         accessTokenId: string;
         secretAccessKey: string;
     }): Promise<Event[]>;
@@ -30,7 +30,7 @@ export interface IStatisticsProcessor {
     deleteQueue(): Promise<void>;
 }
 
-export class StatisticsProcessor implements IStatisticsProcessor {
+export class SQSHandler implements ISQSHandler {
 
     private deleteMessagesWithHandles(queueUrl: string, receiptHandles: string[], sqsClient: SQSClient): void {
         receiptHandles.forEach(async(receiptHandle) => {
@@ -46,7 +46,7 @@ export class StatisticsProcessor implements IStatisticsProcessor {
         });
     }
 
-    async processQueueMessages(queueName: string, awsToken: {
+    async receiveMessages(queueName: string, awsToken: {
         accessTokenId: string;
         secretAccessKey: string;
     }, maxNumberOfMessages = 10): Promise<Event[]> {
