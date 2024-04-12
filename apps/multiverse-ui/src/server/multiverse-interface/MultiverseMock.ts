@@ -6,6 +6,12 @@ import type {
 } from "@multiverse/multiverse/src/core/Query";
 import type { NewVector } from "@multiverse/multiverse/src/core/Vector";
 import * as fs from "fs";
+import type {
+    AddEvent, Event, QueryEvent, RemoveEvent
+} from "@/features/statistics/statistics-processor/event";
+import {
+    GetQueueUrlCommand, SendMessageCommand, SQSClient
+} from "@aws-sdk/client-sqs";
 
 // example backup
 //     [
@@ -131,6 +137,37 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
         };
     }
 
+    private async sendStatistics(event: Event): Promise<void> {
+        const sqsClient = new SQSClient({
+            region: "eu-central-1",
+            credentials: {
+                accessKeyId: this.awsToken.accessKeyId,
+                secretAccessKey: this.awsToken.secretAccessKey
+            }
+        });
+        try {
+            const inputGetQueueUrl = { // GetQueueUrlRequest
+                QueueName: this.databaseConfiguration.statisticsQueueName, // required
+            };
+            const getQueueUrlCommand = new GetQueueUrlCommand(inputGetQueueUrl);
+            const getQueueUrlCommandOutput = await sqsClient.send(getQueueUrlCommand);
+            const queueUrl = getQueueUrlCommandOutput.QueueUrl;
+            if (!queueUrl) {
+                throw new Error("Queue not found");
+            }
+
+            const sendMessageCommand = new SendMessageCommand({
+                MessageBody: JSON.stringify(event),
+                QueueUrl: queueUrl
+            });
+            await sqsClient.send(sendMessageCommand);
+        } catch (error) {
+            console.log("Error sending statistics: ", error);
+        }
+
+        return Promise.resolve(undefined);
+    };
+
     async getConfiguration(): Promise<StoredDatabaseConfiguration> {
 
         return Promise.resolve(this.databaseConfiguration);
@@ -148,6 +185,15 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
         databases.set(this.databaseConfiguration.name, newValue);
         await refresh();
 
+        const event: AddEvent = {
+            timestamp: Date.now(),
+            dbName: this.databaseConfiguration.name,
+            type: "add",
+            totalVectors: newValue.vectors.length,
+        };
+
+        await this.sendStatistics(event);
+
         return Promise.resolve(undefined);
     }
 
@@ -164,10 +210,20 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
         });
         await refresh();
 
+        const event: RemoveEvent = {
+            timestamp: Date.now(),
+            dbName: this.databaseConfiguration.name,
+            type: "remove",
+            totalVectors: databases.get(this.databaseConfiguration.name)?.vectors.length || 0,
+        };
+
+        await this.sendStatistics(event);
+
         return Promise.resolve();
     }
 
     async query(query: Query): Promise<QueryResult> {
+        const startTime = performance.now();
         const queryMetrics = query.vector.reduce((acc, value) => acc + value, 0);
         const vectors = databases.get(this.databaseConfiguration.name)?.vectors;
         if (!vectors) {
@@ -181,6 +237,19 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
                 distance: Math.abs(queryMetrics - vector.vector.reduce((acc, value) => acc + value, 0))
             };
         }).sort((a, b) => a.distance - b.distance).slice(0, query.k);
+
+        const endTime = performance.now();
+        const duration = endTime - startTime;
+
+        const event: QueryEvent = {
+            timestamp: Date.now(),
+            dbName: this.databaseConfiguration.name,
+            type: "query",
+            query: JSON.stringify(query),
+            duration: duration,
+        };
+
+        await this.sendStatistics(event);
 
         return Promise.resolve({ result: results });
     }
