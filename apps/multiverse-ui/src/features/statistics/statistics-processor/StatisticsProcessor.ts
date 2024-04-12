@@ -1,6 +1,7 @@
 import { getSessionUser } from "@/lib/mongodb/collections/user";
 import { generateHex } from "@/server/multiverse-interface/MultiverseMock";
 import type { ReceiveMessageCommandInput } from "@aws-sdk/client-sqs";
+import { DeleteMessageCommand } from "@aws-sdk/client-sqs";
 import { ReceiveMessageCommand } from "@aws-sdk/client-sqs";
 import {
     CreateQueueCommand, DeleteQueueCommand, GetQueueUrlCommand, SQSClient
@@ -30,6 +31,21 @@ export interface IStatisticsProcessor {
 }
 
 export class StatisticsProcessor implements IStatisticsProcessor {
+
+    private deleteMessagesWithHandles(queueUrl: string, receiptHandles: string[], sqsClient: SQSClient): void {
+        receiptHandles.forEach(async(receiptHandle) => {
+            const inputDeleteMessage = {
+                QueueUrl: queueUrl,
+                ReceiptHandle: receiptHandle,
+            };
+            try {
+                await sqsClient.send(new DeleteMessageCommand(inputDeleteMessage));
+            } catch (error) {
+                console.error("Error deleting message: ", error);
+            }
+        });
+    }
+
     async processQueueMessages(queueName: string, awsToken: {
         accessTokenId: string;
         secretAccessKey: string;
@@ -52,8 +68,8 @@ export class StatisticsProcessor implements IStatisticsProcessor {
             if (!queueUrl) {
                 throw new Error("Queue not found");
             }
-            const messageIds: string[] = [];
-            const parsedEvents: Event[] = [];
+            const parsedEvents = new Map<string, Event[]>;
+            const receiptHandles: string[] = [];
             let wasEmpty = false;
             do {
                 const input: ReceiveMessageCommandInput = {
@@ -66,24 +82,30 @@ export class StatisticsProcessor implements IStatisticsProcessor {
                 const sendMessageCommand = new ReceiveMessageCommand(input);
                 const receiveMessageCommandOutput = await sqsClient.send(sendMessageCommand);
                 const messages = receiveMessageCommandOutput.Messages;
+
                 if (messages) {
-                    const newEvents: Event[] = messages.map((message) => {
+                    messages.forEach((message) => {
                         // Messages are Event[] arrays
-                        return JSON.parse(message.Body as string) as Event[];
-                    }).flat(); // Flatten the array of Event arrays
-                    messageIds.push(...messages.map((message) => {
-                        return message.MessageId as string;
-                    })); // Add message IDs to the list
-                    parsedEvents.push(...newEvents);
+                        try {
+                            const messageEvents = JSON.parse(message.Body as string) as Event[];
+                            parsedEvents.set(message.MessageId as string, messageEvents);
+                            receiptHandles.push(message.ReceiptHandle as string);
+                        } catch (error) {
+                            console.error("Error parsing message: ", error);
+
+                            return;
+                        }
+
+                    }); // Flatten the array of Event arrays
                     wasEmpty = messages.length === 0;
                 } else {
                     wasEmpty = true;
                 }
 
-            } while (!wasEmpty && parsedEvents.length < maxNumberOfMessages);
-            console.log(messageIds);
+            } while (!wasEmpty && parsedEvents.size < maxNumberOfMessages);
+            this.deleteMessagesWithHandles(queueUrl, receiptHandles, sqsClient);
 
-            return parsedEvents;
+            return Array.from(parsedEvents.values()).flat();
         } catch (error) {
             console.log("Error sending statistics: ", error);
         }

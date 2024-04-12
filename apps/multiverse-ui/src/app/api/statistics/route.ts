@@ -15,5 +15,5 @@ export async function POST() {
     const statisticsProcessor = new StatisticsProcessor();
     const messages = await statisticsProcessor.processQueueMessages(queueName, awsToken);
 
-    return new Response("Processing users queue, messages: " + JSON.stringify(messages));
+    return new Response(JSON.stringify(messages, null, 2));
 }
