@@ -66,12 +66,8 @@ const storeDatabase = async(configuration: StoredDatabaseConfiguration): Promise
     }
 
     return {
-        codeName: configuration.name,
-        name: mongodbDatabase.name,
-        region: configuration.region,
-        dimensions: configuration.dimensions,
-        space: configuration.space,
-        secretTokens: configuration.secretTokens
+        ...mongodbDatabase,
+        ...configuration,
     };
 };
 

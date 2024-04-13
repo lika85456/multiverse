@@ -19,10 +19,7 @@ export default function DatabaseList() {
                     {databases.map((database) => {
                         return (
                             <li key={database.codeName}>
-                                <DatabaseItem database={{
-                                    ...database,
-                                    records: 0,
-                                }} />
+                                <DatabaseItem database={{ ...database, }} />
                             </li>
                         );
                     })}

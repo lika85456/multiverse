@@ -74,7 +74,6 @@ const getGeneralStatistics = async(databaseName: string, from: Date, to: Date): 
         reads: reads,
         writes: writes,
     };
-    console.log(statistics);
 
     return statistics;
 };

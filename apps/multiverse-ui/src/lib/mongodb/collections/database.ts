@@ -5,7 +5,7 @@ import {
 } from "@/lib/mongodb/collections/user";
 import { removeAllDailyStatisticsForDatabase } from "@/lib/mongodb/collections/daily-statistics";
 import {
-    addGeneralDatabaseStatistics,
+    addGeneralDatabaseStatistics, getGeneralDatabaseStatistics,
     removeGeneralDatabaseStatistics
 } from "@/lib/mongodb/collections/general-database-statistics";
 
@@ -19,6 +19,7 @@ export interface DatabaseGet {
   codeName: string;
   name: string;
   region: string;
+  records: number;
   dimensions: number;
   space: "l2" | "cosine" | "ip";
   secretTokens: SecretToken[];
@@ -66,11 +67,13 @@ export const getDatabase = async(codeName: string): Promise<DatabaseFindMongoDb 
             return undefined;
         }
 
+        const resultGeneralStatistics = await getGeneralDatabaseStatistics(result.codeName);
+
         return {
             _id: result._id,
             name: result.name,
             codeName: result.codeName,
-            records: result.records,
+            records: resultGeneralStatistics?.totalVectors ?? 0,
             ownerId: result.ownerId,
         };
     } catch (error) {
