@@ -53,6 +53,40 @@ export const getDailyStatistics = async(date: string[], databaseName: string): P
     }
 };
 
+export const getDailyStatisticsInterval = async(
+    databaseName: string,
+    dateStart: string,
+    dateEnd: string,
+): Promise<DailyStatisticsGet[]> => {
+    const client = await clientPromise;
+    const db = client.db();
+
+    try {
+        const result = await db.collection(collectionName).find({
+            date: {
+                $gte: dateStart,
+                $lte: dateEnd
+            },
+            databaseName
+        }).toArray();
+
+        return result.map((stat) => {
+            return {
+                _id: stat._id,
+                date: stat.date,
+                databaseName: stat.databaseName,
+                writeCount: stat.writeCount,
+                readCount: stat.readCount,
+                totalResponseTime: stat.totalResponseTime,
+                totalCost: stat.totalCost
+            };
+        });
+    } catch (error) {
+        throw new Error("Error getting daily statistics");
+    }
+
+};
+
 export const addDailyStatistics = async(statistics: DailyStatisticsAdd): Promise<void> => {
     const client = await clientPromise;
     const db = client.db();

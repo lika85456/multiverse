@@ -1,49 +1,134 @@
 import { publicProcedure, router } from "@/server/trpc";
 import {
     costsStatistics,
-    generalDatabaseStatistics,
-    generalStatistics,
     requestsStatistics,
     responseTimeStatistics,
     writeCountStatistics
 } from "@/server/dummy-data";
 import z from "zod";
-import format from "@/features/statistics/format";
+import { getGeneralDatabaseStatistics, } from "@/lib/mongodb/collections/general-database-statistics";
+import type { DailyStatisticsGet } from "@/lib/mongodb/collections/daily-statistics";
+import { getDailyStatisticsInterval } from "@/lib/mongodb/collections/daily-statistics";
+import { TRPCError } from "@trpc/server";
+import { getSessionUser } from "@/lib/mongodb/collections/user";
+
+export interface GeneralStatisticsData {
+    costs: {
+        value: number;
+        currency: "$";
+    };
+    totalVectors: {
+        count: number;
+        bytes: number;
+    };
+    reads: number;
+    writes: number;
+}
+
+const getPrice = (databaseName: string, from: Date, to: Date): number => {
+    //TODO - get price for database and queue for the given period
+    return 0;
+};
+
+const extractReadsWrites = (dailyStatistics: DailyStatisticsGet[]): { reads: number, writes: number } => {
+    return dailyStatistics.reduce((acc, curr) => {
+        return {
+            reads: acc.reads + curr.readCount,
+            writes: acc.writes + curr.writeCount
+        };
+    }, {
+        reads: 0,
+        writes: 0
+    });
+};
+
+const getGeneralStatistics = async(databaseName: string, from: Date, to: Date): Promise<GeneralStatisticsData> => {
+    // get general statistics for a specific database
+    const generalDatabaseStatistics = await getGeneralDatabaseStatistics(databaseName);
+    if (!generalDatabaseStatistics) {
+        return {
+            costs: {
+                value: 0,
+                currency: "$",
+            },
+            totalVectors: {
+                count: 0,
+                bytes: 0,
+            },
+            reads: 0,
+            writes: 0,
+        };
+    }
+    const dailyStatistics = await getDailyStatisticsInterval(databaseName, from.toDateString(), to.toDateString());
+    const { reads, writes } = extractReadsWrites(dailyStatistics);
+
+    const statistics = {
+        costs: {
+            value: getPrice(databaseName, new Date(from), new Date(to),),
+            currency: "$" as const,
+        },
+        totalVectors: {
+            count: generalDatabaseStatistics.totalVectors,
+            bytes: generalDatabaseStatistics.dataSize,
+        },
+        reads: reads,
+        writes: writes,
+    };
+    console.log(statistics);
+
+    return statistics;
+};
 
 export const statistics = router({
     general: router({
         get: publicProcedure.input(z.object({
-            databaseCodeName: z.optional(z.string().min(3)),
-            from: z.optional(z.string().refine((v) => new Date(v) instanceof Date, { message: "Invalid date", })),
-            to: z.optional(z.string().refine((v) => new Date(v) instanceof Date, { message: "Invalid date", })),
-        })).query(async(opts) => {
-            if (!opts.input.databaseCodeName) {
-                return generalStatistics;
+            database: z.optional(z.string().min(3)),
+            from: z.string().refine((v) => new Date(v) instanceof Date, { message: "Invalid date", }),
+            to: z.string().refine((v) => new Date(v) instanceof Date, { message: "Invalid date", }),
+        })).query(async(opts): Promise<GeneralStatisticsData> => {
+            const sessionUser = await getSessionUser();
+            if (!sessionUser) {
+                throw new TRPCError({
+                    code: "UNAUTHORIZED",
+                    message: "User not found",
+                });
             }
 
-            return generalDatabaseStatistics;
-        }),
-    }),
-    generalPricing: router({
-        get: publicProcedure.query(async() => {
-            return [
-                {
-                    label: "Total Cost",
-                    value: `$ ${format(27.13, "delim")}`,
+            if (opts.input.database) {
+                if (!sessionUser.databases.includes(opts.input.database)) {
+                    throw new TRPCError({
+                        code: "FORBIDDEN",
+                        message: "User does not have access to the database",
+                    });
+                }
+
+                return await getGeneralStatistics(opts.input.database, new Date(opts.input.from), new Date(opts.input.to));
+            }
+            // get general statistics for all databases
+            const generalStatistics = await Promise.all(sessionUser.databases.map(async(database) => {
+                return await getGeneralStatistics(database, new Date(opts.input.from), new Date(opts.input.to));
+            }));
+
+            return generalStatistics.reduce((acc, curr) => {
+                acc.costs.value += curr.costs.value;
+                acc.totalVectors.count += curr.totalVectors.count;
+                acc.totalVectors.bytes += curr.totalVectors.bytes;
+                acc.reads += curr.reads;
+                acc.writes += curr.writes;
+
+                return acc;
+            }, {
+                costs: {
+                    value: 0,
+                    currency: "$",
                 },
-                {
-                    label: "Total Records",
-                    value: `${format(7800000, "compact")} (${format(150000000000, "bytes")})`,
+                totalVectors: {
+                    count: 0,
+                    bytes: 0,
                 },
-                {
-                    label: "Queries",
-                    value: `${format(1200000, "compact")}`,
-                },
-                {
-                    label: "Writes",
-                    value: `${format(400000, "compact")}`,
-                },
-            ];
+                reads: 0,
+                writes: 0,
+            });
         }),
     }),
     graphStatistics: router({

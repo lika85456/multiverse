@@ -12,7 +12,6 @@ export interface GeneralDatabaseStatisticsGet{
     updated: Date; // for data freshness comparison
     dataSize: number;
     totalVectors: number;
-    ownerId: ObjectId;
 }
 
 export interface GeneralDatabaseStatisticsInsert{
@@ -41,8 +40,7 @@ export const getGeneralDatabaseStatistics = async(databaseName: string): Promise
             databaseName: result.databaseName,
             updated: result.updated,
             dataSize: result.dataSize,
-            totalVectors: result.totalRecords,
-            ownerId: result.ownerId
+            totalVectors: result.totalVectors,
         };
 
     } catch (error) {

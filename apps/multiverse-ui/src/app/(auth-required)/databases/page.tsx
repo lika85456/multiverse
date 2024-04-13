@@ -1,6 +1,6 @@
 "use client";
 
-import GeneralStatistics from "@/features/statistics/GeneralStatistics";
+import GeneralStatistics, { createProps } from "@/features/statistics/GeneralStatistics";
 import { Separator } from "@/components/ui/separator";
 import DatabaseList from "@/app/(auth-required)/databases/components/DatabaseList";
 import { trpc } from "@/lib/trpc/client";
@@ -8,10 +8,17 @@ import AddAWSTokenModal from "@/features/account/AddAWSTokenModal";
 
 export default function Databases() {
     const {
-        data: awsToken, isLoading, isSuccess, isError
+        data: awsToken, isLoading, isSuccess: awsTokenIsSuccess, isError
     } = trpc.awsToken.get.useQuery();
 
-    const { data: items } = trpc.statistics.general.get.useQuery({});
+    const today = new Date();
+    const { data: generalStatistics, isSuccess: genStatsIsSuccess } = trpc.statistics.general.get.useQuery({
+        database: undefined,
+        from: new Date(today.getFullYear(), today.getMonth(), 1).toDateString(),
+        to: today.toDateString(),
+    });
+
+    const isSuccess = awsTokenIsSuccess && genStatsIsSuccess;
 
     return (
         <>
@@ -23,9 +30,9 @@ export default function Databases() {
                     <AddAWSTokenModal />
                 </div>
             )}
-            {isSuccess && awsToken && (
+            {isSuccess && awsToken && generalStatistics && (
                 <>
-                    <GeneralStatistics items={items} />
+                    <GeneralStatistics items={createProps(generalStatistics)} />
                     <Separator className="bg-border m-4" />
                     <DatabaseList />
                 </>

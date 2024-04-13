@@ -4,6 +4,7 @@ import {
     addDatabaseToUser, removeAllDatabaseFromUser, removeDatabaseFromUser
 } from "@/lib/mongodb/collections/user";
 import { removeAllStatisticsForDatabase } from "@/lib/mongodb/collections/daily-statistics";
+import { addGeneralDatabaseStatistics } from "@/lib/mongodb/collections/general-database-statistics";
 
 export interface SecretToken {
     name: string;
@@ -93,6 +94,12 @@ export const createDatabase = async(databaseData: DatabaseInsertMongoDb): Promis
             if (!resultUser.acknowledged) {
                 throw new Error("Database not added to user");
             }
+            await addGeneralDatabaseStatistics({
+                databaseName: database.codeName,
+                updated: new Date(),
+                dataSize: 0,
+                totalVectors: 0,
+            });
 
             return resultDatabase.insertedId;
         });
