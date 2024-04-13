@@ -78,3 +78,15 @@ export const addGeneralDatabaseStatistics = async(statistics: GeneralDatabaseSta
         throw new Error("Error adding general database statistics");
     }
 };
+
+export const removeGeneralDatabaseStatistics = async(databaseName: string): Promise<void> => {
+    try {
+        const client = await clientPromise;
+        const db = client.db();
+
+        await db.collection(collectionName).deleteOne({ databaseName });
+
+    } catch (error) {
+        throw new Error("Error removing general database statistics");
+    }
+};

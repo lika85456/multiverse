@@ -130,7 +130,7 @@ export const addDailyStatistics = async(statistics: DailyStatisticsAdd): Promise
     }
 };
 
-export const removeAllStatisticsForDatabase = async(databaseName: string): Promise<void> => {
+export const removeAllDailyStatisticsForDatabase = async(databaseName: string): Promise<void> => {
     const client = await clientPromise;
     const db = client.db();
 

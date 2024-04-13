@@ -3,8 +3,11 @@ import type { ObjectId } from "mongodb";
 import {
     addDatabaseToUser, removeAllDatabaseFromUser, removeDatabaseFromUser
 } from "@/lib/mongodb/collections/user";
-import { removeAllStatisticsForDatabase } from "@/lib/mongodb/collections/daily-statistics";
-import { addGeneralDatabaseStatistics } from "@/lib/mongodb/collections/general-database-statistics";
+import { removeAllDailyStatisticsForDatabase } from "@/lib/mongodb/collections/daily-statistics";
+import {
+    addGeneralDatabaseStatistics,
+    removeGeneralDatabaseStatistics
+} from "@/lib/mongodb/collections/general-database-statistics";
 
 export interface SecretToken {
     name: string;
@@ -130,7 +133,8 @@ export const deleteDatabase = async(codeName: string): Promise<boolean> => {
             //remove database from user's list of databases
             await removeDatabaseFromUser(database?.ownerId, database.codeName);
             //remove all statistics for the database
-            await removeAllStatisticsForDatabase(database.codeName);
+            await removeAllDailyStatisticsForDatabase(database.codeName);
+            await removeGeneralDatabaseStatistics(database.codeName);
 
             return result.acknowledged;
         });
@@ -155,7 +159,10 @@ export const deleteAllDatabases = async(ownerId: ObjectId) => {
                 throw new Error("Owner not found");
             }
             const databases: string[] = ownerResult.databases;
-            await Promise.all(databases.map(async(database) => { await removeAllStatisticsForDatabase(database); }));
+            await Promise.all(databases.map(async(database) => {
+                await removeAllDailyStatisticsForDatabase(database);
+                await removeGeneralDatabaseStatistics(database);
+            }));
 
             const result = await db.collection("databases").deleteMany({ ownerId });
             if (!result.acknowledged) {
