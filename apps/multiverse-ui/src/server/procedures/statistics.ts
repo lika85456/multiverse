@@ -1,9 +1,6 @@
 import { publicProcedure, router } from "@/server/trpc";
 import {
-    costsStatistics,
-    requestsStatistics,
-    responseTimeStatistics,
-    writeCountStatistics
+    costsStatistics, requestsStatistics, responseTimeStatistics, writeCountStatistics
 } from "@/server/dummy-data";
 import z from "zod";
 import { getGeneralDatabaseStatistics, } from "@/lib/mongodb/collections/general-database-statistics";
@@ -25,6 +22,19 @@ export interface GeneralStatisticsData {
     writes: number;
 }
 
+const emptyGeneralStatistics = {
+    costs: {
+        value: 0,
+        currency: "$" as const,
+    },
+    totalVectors: {
+        count: 0,
+        bytes: 0,
+    },
+    reads: 0,
+    writes: 0,
+};
+
 const getPrice = (databaseName: string, from: Date, to: Date): number => {
     //TODO - get price for database and queue for the given period
     return 0;
@@ -42,27 +52,20 @@ const extractReadsWrites = (dailyStatistics: DailyStatisticsGet[]): { reads: num
     });
 };
 
-const getGeneralStatistics = async(databaseName: string, from: Date, to: Date): Promise<GeneralStatisticsData> => {
+const calculateGeneralStatistics = async(databaseName: string, from: Date, to: Date): Promise<GeneralStatisticsData> => {
     // get general statistics for a specific database
     const generalDatabaseStatistics = await getGeneralDatabaseStatistics(databaseName);
     if (!generalDatabaseStatistics) {
-        return {
-            costs: {
-                value: 0,
-                currency: "$",
-            },
-            totalVectors: {
-                count: 0,
-                bytes: 0,
-            },
-            reads: 0,
-            writes: 0,
-        };
+        // general database statistics do not exist, return empty general statistics
+        return emptyGeneralStatistics;
     }
+
+    // extract reads and writes from daily statistics
     const dailyStatistics = await getDailyStatisticsInterval(databaseName, from.toDateString(), to.toDateString());
     const { reads, writes } = extractReadsWrites(dailyStatistics);
 
-    const statistics = {
+    // return existing general database statistics
+    return {
         costs: {
             value: getPrice(databaseName, new Date(from), new Date(to),),
             currency: "$" as const,
@@ -74,8 +77,6 @@ const getGeneralStatistics = async(databaseName: string, from: Date, to: Date): 
         reads: reads,
         writes: writes,
     };
-
-    return statistics;
 };
 
 export const statistics = router({
@@ -94,6 +95,7 @@ export const statistics = router({
             }
 
             if (opts.input.database) {
+                // calculate general statistics for a specific database
                 if (!sessionUser.databases.includes(opts.input.database)) {
                     throw new TRPCError({
                         code: "FORBIDDEN",
@@ -101,13 +103,15 @@ export const statistics = router({
                     });
                 }
 
-                return await getGeneralStatistics(opts.input.database, new Date(opts.input.from), new Date(opts.input.to));
+                return await calculateGeneralStatistics(opts.input.database, new Date(opts.input.from), new Date(opts.input.to));
             }
-            // get general statistics for all databases
+
+            // calculate general statistics for all databases
             const generalStatistics = await Promise.all(sessionUser.databases.map(async(database) => {
-                return await getGeneralStatistics(database, new Date(opts.input.from), new Date(opts.input.to));
+                return await calculateGeneralStatistics(database, new Date(opts.input.from), new Date(opts.input.to));
             }));
 
+            // sum general statistics for all databases
             return generalStatistics.reduce((acc, curr) => {
                 acc.costs.value += curr.costs.value;
                 acc.totalVectors.count += curr.totalVectors.count;
@@ -116,18 +120,7 @@ export const statistics = router({
                 acc.writes += curr.writes;
 
                 return acc;
-            }, {
-                costs: {
-                    value: 0,
-                    currency: "$",
-                },
-                totalVectors: {
-                    count: 0,
-                    bytes: 0,
-                },
-                reads: 0,
-                writes: 0,
-            });
+            }, emptyGeneralStatistics);
         }),
     }),
     graphStatistics: router({

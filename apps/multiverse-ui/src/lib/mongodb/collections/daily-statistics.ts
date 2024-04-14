@@ -98,20 +98,11 @@ export const addDailyStatistics = async(statistics: DailyStatisticsAdd): Promise
         });
 
         const statisticsData: DailyStatisticsAdd = result ? {
-            date: statistics.date,
-            databaseName: statistics.databaseName,
+            ...statistics,
             writeCount: statistics.writeCount + result.writeCount,
             readCount: statistics.readCount + result.readCount,
             totalResponseTime: statistics.totalResponseTime + result.totalResponseTime,
-            totalCost: statistics.totalCost
-        } : {
-            date: statistics.date,
-            databaseName: statistics.databaseName,
-            writeCount: 0,
-            readCount: 0,
-            totalResponseTime: 0,
-            totalCost: 0
-        };
+        } : { ...statistics, };
 
         await db.collection(collectionName).updateOne({
             date: statistics.date,
