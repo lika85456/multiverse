@@ -67,8 +67,6 @@ export default function StatisticsGraph({
             <ResponsiveContainer width={"100%"} height={250}>
                 <LineChart
                     className="w-full"
-                    width={600}
-                    height={250}
                     data={data.map((value) => {
                         return {
                             ...value,
@@ -78,7 +76,7 @@ export default function StatisticsGraph({
                     margin={{
                         top: 5,
                         right: 30,
-                        left: 20,
+                        left: 0,
                         bottom: 5,
                     }}
                 >
@@ -88,7 +86,7 @@ export default function StatisticsGraph({
                     <Tooltip content={<CustomTooltip />} />
                     <Legend />
                     <Line
-                        type="monotone"
+                        type={"monotone"}
                         dataKey={"Data"}
                         name={`${title}${unit ? ` (${unit})` : ""}`}
                         stroke={theme === "dark" ? "#FFEBC5" : "#C3A15E"}

@@ -66,8 +66,8 @@ const storeDatabase = async(configuration: StoredDatabaseConfiguration): Promise
     }
 
     return {
-        ...mongodbDatabase,
         ...configuration,
+        ...mongodbDatabase,
     };
 };
 
