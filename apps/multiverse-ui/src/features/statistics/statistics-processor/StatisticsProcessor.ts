@@ -1,5 +1,6 @@
 import type { Event } from "@/features/statistics/statistics-processor/event";
 import type { DailyStatisticsAdd } from "@/lib/mongodb/collections/daily-statistics";
+import { convertToISODate } from "@/lib/mongodb/collections/daily-statistics";
 import { addDailyStatistics } from "@/lib/mongodb/collections/daily-statistics";
 import { getDailyStatistics } from "@/lib/mongodb/collections/daily-statistics";
 import {
@@ -22,7 +23,7 @@ export class StatisticsProcessor {
 
     private groupByDate(events: Event[]): Map<string, Event[]> {
         return events.reduce((acc, event) => {
-            const date = new Date(event.timestamp).toDateString();
+            const date = convertToISODate(new Date(event.timestamp));
             if (!acc.has(date)) {
                 acc.set(date, []);
             }
@@ -33,7 +34,8 @@ export class StatisticsProcessor {
     }
 
     private calculateCost(databaseName: string, date: string): number {
-        console.log(`Calculating cost for database ${databaseName} and date ${date}`);
+        const dateISO = convertToISODate(date);
+        console.log(`Calculating cost for database ${databaseName} and date ${dateISO}`);
 
         //TODO - calculate cost
         return 0;
@@ -133,7 +135,7 @@ export class StatisticsProcessor {
     private async processEventsForDatabase(databaseName: string, events: Event[]): Promise<boolean> {
         console.log(`Processing statistics for database ${databaseName}`);
         const eventsByDate = this.groupByDate(events);
-        const allStatistics = await getDailyStatistics(Array.from(eventsByDate.keys()), databaseName);
+        const allStatistics = await getDailyStatistics(Array.from(eventsByDate.keys()).map((e) => convertToISODate(e)), databaseName);
 
         // process events for each date
         eventsByDate.forEach((events, date) => {
@@ -142,7 +144,7 @@ export class StatisticsProcessor {
             if (filteredStatistics.length === 0) {
                 // if there are no statistics for the date, create new statistics
                 const innit: DailyStatisticsAdd = {
-                    date: date,
+                    date: convertToISODate(date),
                     databaseName: databaseName,
                     writeCount: 0,
                     readCount: 0,
@@ -161,7 +163,7 @@ export class StatisticsProcessor {
                 // if there are statistics for the date, update existing statistics
                 const statistics = filteredStatistics[0];
                 const innit: DailyStatisticsAdd = {
-                    date: date,
+                    date: convertToISODate(date),
                     databaseName: databaseName,
                     writeCount: statistics.writeCount,
                     readCount: statistics.readCount,

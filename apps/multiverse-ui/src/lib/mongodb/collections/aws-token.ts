@@ -15,6 +15,8 @@ export interface AwsTokenInsert {
   secretAccessKey: string;
 }
 
+// TODO add awsToken encryption when storing and retrieving from mongodb
+
 export const addAwsToken = async(tokenData: AwsTokenInsert,): Promise<AwsTokenGet | undefined> => {
     const sessionUser = await getSessionUser();
     if (!sessionUser) {
@@ -47,7 +49,9 @@ export const addAwsToken = async(tokenData: AwsTokenInsert,): Promise<AwsTokenGe
             }
         });
     } catch (error) {
-        await session.abortTransaction();
+        if (session.inTransaction()) {
+            await session.abortTransaction();
+        }
 
         return undefined;
     } finally {
@@ -142,11 +146,10 @@ export const removeAwsToken = async(): Promise<boolean> => {
             return result.deletedCount === 1 && userResult !== undefined;
         });
     } catch (error) {
-        await session.abortTransaction();
-        throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: "Could not remove the token",
-        });
+        if (session.inTransaction()) {
+            await session.abortTransaction();
+        }
+        throw new Error("Could not remove the token");
     } finally {
         await session.endSession();
     }

@@ -12,8 +12,8 @@ export default function GeneralDatabaseStatistics() {
     const today = new Date();
     const { data: generalStatistics, isSuccess } = trpc.statistics.general.get.useQuery({
         database: databaseCodeName,
-        from: new Date(today.getFullYear(), today.getMonth(), 1).toDateString(),
-        to: today.toDateString(),
+        from: new Date(today.getFullYear(), today.getMonth(), 1).toISOString(),
+        to: today.toISOString(),
     },);
 
     return (

@@ -5,20 +5,25 @@ import { Separator } from "@/components/ui/separator";
 import DatabaseList from "@/app/(auth-required)/databases/components/DatabaseList";
 import { trpc } from "@/lib/trpc/client";
 import AddAWSTokenModal from "@/features/account/AddAWSTokenModal";
+import { useMemo } from "react";
 
 export default function Databases() {
     const {
-        data: awsToken, isLoading, isSuccess: awsTokenIsSuccess, isError
+        data: awsToken, isLoading: awsIsLoading, isSuccess: awsTokenIsSuccess, isError: awsIsError
     } = trpc.awsToken.get.useQuery();
 
-    const today = new Date();
-    const { data: generalStatistics, isSuccess: genStatsIsSuccess } = trpc.statistics.general.get.useQuery({
-        database: undefined,
-        from: new Date(today.getFullYear(), today.getMonth(), 1).toDateString(),
-        to: today.toDateString(),
+    const today = useMemo(() => new Date(), []); // memoized to prevent re-creation on every render, therefore infinite rerendering
+    const {
+        data: generalStatistics, isLoading: isStatsLoading, isSuccess: genStatsIsSuccess, isError: genStatsIsError
+    } = trpc.statistics.general.get.useQuery({
+        from: new Date(today.getFullYear(), today.getMonth(), 1).toISOString(),
+        to: today.toISOString(),
     });
+    console.log("generalStatistics");
 
     const isSuccess = awsTokenIsSuccess && genStatsIsSuccess;
+    const isLoading = awsIsLoading || isStatsLoading;
+    const isError = awsIsError || genStatsIsError;
 
     return (
         <>

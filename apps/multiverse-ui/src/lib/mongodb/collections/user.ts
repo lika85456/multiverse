@@ -41,6 +41,32 @@ export const getUserByEmail = async(email: string,): Promise<UserGet | undefined
             sqsQueue: result.sqsQueue,
         };
     } catch (error) {
+        console.log("Error getting user by email: ", error);
+
+        return undefined;
+    }
+};
+
+export const getUserById = async(userId: ObjectId): Promise<UserGet | undefined> => {
+    try {
+        const db = (await clientPromise).db();
+        const result = await db.collection("users").findOne({ _id: userId });
+        if (!result) {
+            return undefined;
+        }
+
+        return {
+            _id: result._id,
+            name: result.name,
+            email: result.email,
+            image: result.image,
+            awsToken: result.awsToken,
+            databases: result.databases,
+            sqsQueue: result.sqsQueue,
+        };
+    } catch (error) {
+        console.log("Error getting user by id: ", error);
+
         return undefined;
     }
 };
@@ -66,6 +92,8 @@ export const updateUser = async(
 
         return { acknowledged: updatedUserResult.acknowledged };
     } catch (error) {
+        console.log("Error updating user: ", error);
+
         return { acknowledged: false };
     }
 };
@@ -88,6 +116,8 @@ export const addDatabaseToUser = async(user: ObjectId, database: string): Promis
 
         return { acknowledged: updatedUserResult.acknowledged };
     } catch (error) {
+        console.log("Error adding database to user: ", error);
+
         return { acknowledged: false };
     }
 };
@@ -113,6 +143,7 @@ export const removeDatabaseFromUser = async(userId: ObjectId, codeName: string):
 
         return { acknowledged: updatedUserResult.acknowledged };
     } catch (error) {
+        console.log("Error removing database from user: ", error);
 
         return { acknowledged: false };
     }
@@ -135,6 +166,8 @@ export const removeAllDatabaseFromUser = async(user: ObjectId): Promise<{ acknow
 
         return { acknowledged: updatedUserResult.acknowledged };
     } catch (error) {
+        console.log("Error removing all databases from user: ", error);
+
         return { acknowledged: false };
     }
 };
@@ -160,6 +193,8 @@ export const addQueueToUser = async(queue: string): Promise<{ acknowledged: bool
 
         return { acknowledged: updatedUserResult.acknowledged };
     } catch (error) {
+        console.log("Error adding queue to user: ", error);
+
         return { acknowledged: false };
     }
 };
@@ -185,6 +220,8 @@ export const removeQueueFromUser = async(): Promise<{ acknowledged: boolean }> =
 
         return { acknowledged: updatedUserResult.acknowledged };
     } catch (error) {
+        console.log("Error removing queue from user: ", error);
+
         return { acknowledged: false };
     }
 };
@@ -212,6 +249,8 @@ export const getAllQueuesWithCredentials = async(): Promise<{sqs: string, access
             };
         }));
     } catch (error) {
+        console.log("Error getting all queues with credentials: ", error);
+
         return [];
     }
 };
@@ -220,7 +259,7 @@ export const getSessionUser = async(): Promise<UserGet | undefined> => {
     const session = await getServerSession(authOptions);
     const sessionUser = session?.user;
     if (!sessionUser || !sessionUser.email) {
-        throw new Error("Session not found");
+        return undefined;
     }
     const email = sessionUser.email;
 

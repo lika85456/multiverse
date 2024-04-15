@@ -93,11 +93,11 @@ function calculateCost({
     reads * poolLambdaDiskPerMs * COMPUTE_TIME;
     // writes do not need to be calculated, because they are included in reads
 
-    console.log({
-        dynamoCost,
-        s3Cost,
-        lambdaCost,
-    });
+    // console.log({
+    //     dynamoCost,
+    //     s3Cost,
+    //     lambdaCost,
+    // });
 
     return {
         dynamoCost,

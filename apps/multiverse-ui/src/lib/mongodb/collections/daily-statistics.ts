@@ -27,20 +27,28 @@ export interface DailyStatisticsAdd {
     totalCost: number;
 }
 
-export const getDailyStatistics = async(date: string[], databaseName: string): Promise<DailyStatisticsGet[]> => {
+export const convertToISODate = (date: Date | string): string => {
+    if (typeof date === "string") {
+        return new Date(date).toISOString().split("T")[0];
+    }
+
+    return date.toISOString().split("T")[0];
+};
+
+export const getDailyStatistics = async(dates: string[], databaseName: string): Promise<DailyStatisticsGet[]> => {
     const client = await clientPromise;
     const db = client.db();
 
     try {
         const result = await db.collection(collectionName).find({
-            date,
+            date: dates.map((date) => convertToISODate(date)),
             databaseName
         }).toArray();
 
         return result.map((stat) => {
             return {
                 _id: stat._id,
-                date: stat.date,
+                date: convertToISODate(stat.date),
                 databaseName: stat.databaseName,
                 writeCount: stat.writeCount,
                 readCount: stat.readCount,
@@ -55,8 +63,8 @@ export const getDailyStatistics = async(date: string[], databaseName: string): P
 
 export const getDailyStatisticsInterval = async(
     databaseName: string,
-    dateStart: string,
-    dateEnd: string,
+    dateFrom: string,
+    dateTo: string,
 ): Promise<DailyStatisticsGet[]> => {
     const client = await clientPromise;
     const db = client.db();
@@ -64,8 +72,8 @@ export const getDailyStatisticsInterval = async(
     try {
         const result = await db.collection(collectionName).find({
             date: {
-                $gte: dateStart,
-                $lte: dateEnd
+                $gte: convertToISODate(dateFrom),
+                $lte: convertToISODate(dateTo)
             },
             databaseName
         }).toArray();
@@ -73,7 +81,7 @@ export const getDailyStatisticsInterval = async(
         return result.map((stat) => {
             return {
                 _id: stat._id,
-                date: stat.date,
+                date: convertToISODate(stat.date),
                 databaseName: stat.databaseName,
                 writeCount: stat.writeCount,
                 readCount: stat.readCount,
@@ -93,19 +101,23 @@ export const addDailyStatistics = async(statistics: DailyStatisticsAdd): Promise
 
     try {
         const result = await db.collection(collectionName).findOne({
-            date: statistics.date,
+            date: convertToISODate(statistics.date),
             databaseName: statistics.databaseName
         });
 
         const statisticsData: DailyStatisticsAdd = result ? {
             ...statistics,
+            date: convertToISODate(statistics.date),
             writeCount: statistics.writeCount + result.writeCount,
             readCount: statistics.readCount + result.readCount,
             totalResponseTime: statistics.totalResponseTime + result.totalResponseTime,
-        } : { ...statistics, };
+        } : {
+            ...statistics,
+            date: convertToISODate(statistics.date)
+        };
 
         await db.collection(collectionName).updateOne({
-            date: statistics.date,
+            date: convertToISODate(statistics.date),
             databaseName: statistics.databaseName
         }, {
             $set: {

@@ -24,14 +24,14 @@ export default function PricingStatistics() {
         data: generalStatistics, isLoading: genStatsIsLoading, isSuccess: genStatsIsSuccess, isError: genStatsIsError
     } = trpc.statistics.general.get.useQuery({
         database: undefined,
-        from: date.from.toDateString(),
-        to: date.to.toDateString()
+        from: date.from.toISOString(),
+        to: date.to.toISOString()
     });
     const {
-        data: costs, isLoading: costsIsLoading, isSuccess: costsIsSuccess, isError: costsIsError
-    } = trpc.statistics.costs.get.useQuery({
-        from: date.from.toDateString(),
-        to: date.to.toDateString()
+        data: dailyStatistics, isLoading: costsIsLoading, isSuccess: costsIsSuccess, isError: costsIsError
+    } = trpc.statistics.daily.get.useQuery({
+        from: date.from.toISOString(),
+        to: date.to.toISOString()
     });
     const isLoading = awsTokenIsLoading || genStatsIsLoading || costsIsLoading;
     const isError = awsTokenIsError || genStatsIsError || costsIsError;
@@ -47,7 +47,7 @@ export default function PricingStatistics() {
                     <AddAWSTokenModal />
                 </div>
             )}
-            {isSuccess && awsToken && costs && generalStatistics && (<div className="flex flex-col w-full">
+            {isSuccess && awsToken && dailyStatistics && generalStatistics && (<div className="flex flex-col w-full">
                 <div className="flex flex-col">
                     <div className="flex flex-row justify-between items-center pb-8">
                         <SectionTitle title={"My plan"} className="flex h-fit" />
@@ -57,7 +57,7 @@ export default function PricingStatistics() {
                         />
                     </div>
                     <GeneralStatistics items={createProps(generalStatistics)} className="pb-8" />
-                    <StatisticsGraph title={costs.title} data={costs.data} />
+                    <StatisticsGraph title="Costs" data={dailyStatistics.costs.data} unit={dailyStatistics.costs.unit} />
                     <Separator className="my-4" />
                 </div>
             </div>)}

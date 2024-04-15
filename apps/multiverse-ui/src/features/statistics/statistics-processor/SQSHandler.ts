@@ -59,10 +59,9 @@ export class SQSHandler implements ISQSHandler {
         });
 
         try {
-            const inputGetQueueUrl = { // GetQueueUrlRequest
+            const getQueueUrlCommand = new GetQueueUrlCommand({ // GetQueueUrlRequest
                 QueueName: queueName, // required
-            };
-            const getQueueUrlCommand = new GetQueueUrlCommand(inputGetQueueUrl);
+            });
             const getQueueUrlCommandOutput = await sqsClient.send(getQueueUrlCommand);
             const queueUrl = getQueueUrlCommandOutput.QueueUrl;
             if (!queueUrl) {
@@ -178,7 +177,15 @@ export class SQSHandler implements ISQSHandler {
             }
         });
 
-        const deleteQueueCommand = new DeleteQueueCommand({ QueueUrl: sessionUser.sqsQueue });
+        const getQueueUrlCommand = new GetQueueUrlCommand({ // GetQueueUrlRequest
+            QueueName: sessionUser.sqsQueue, // required
+        });
+        const getQueueUrlCommandOutput = await sqsClient.send(getQueueUrlCommand);
+        const queueUrl = getQueueUrlCommandOutput.QueueUrl;
+        if (!queueUrl) {
+            throw new Error("Queue not found");
+        }
+        const deleteQueueCommand = new DeleteQueueCommand({ QueueUrl: queueUrl });
         try {
             await sqsClient.send(deleteQueueCommand);
         } catch (error) {
