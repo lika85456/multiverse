@@ -1,8 +1,6 @@
 import { publicProcedure, router } from "@/server/trpc";
 import type { QueryResult } from "@multiverse/multiverse/src/core/Query";
 import z from "zod";
-import { MultiverseMock } from "@/server/multiverse-interface/MultiverseMock";
-import type { IMultiverse } from "@multiverse/multiverse/src";
 
 import type { NewVector } from "@multiverse/multiverse/src/core/Vector";
 import { MultiverseFactory } from "@/server/multiverse-interface/MultiverseFactory";

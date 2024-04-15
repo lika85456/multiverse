@@ -93,12 +93,6 @@ function calculateCost({
     reads * poolLambdaDiskPerMs * COMPUTE_TIME;
     // writes do not need to be calculated, because they are included in reads
 
-    // console.log({
-    //     dynamoCost,
-    //     s3Cost,
-    //     lambdaCost,
-    // });
-
     return {
         dynamoCost,
         s3Cost,
@@ -124,7 +118,6 @@ function CalculatorSlider({
   logarithmic?: boolean;
   onChange: (value: number) => void;
 }) {
-    //TODO make value on the side an input field
     return (
         <div className="flex flex-col w-full items-start my-8">
             <Label className="text-lg mb-4">{label}</Label>
@@ -238,3 +231,6 @@ export default function PriceCalculator() {
         </div>
     );
 }
+// TODO - collapsible details of the calculation
+// TODO - price disclaimer
+// TODO - dimensions and metadata size as inputs

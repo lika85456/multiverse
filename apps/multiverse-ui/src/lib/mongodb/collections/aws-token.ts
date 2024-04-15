@@ -15,8 +15,6 @@ export interface AwsTokenInsert {
   secretAccessKey: string;
 }
 
-// TODO add awsToken encryption when storing and retrieving from mongodb
-
 export const addAwsToken = async(tokenData: AwsTokenInsert,): Promise<AwsTokenGet | undefined> => {
     const sessionUser = await getSessionUser();
     if (!sessionUser) {

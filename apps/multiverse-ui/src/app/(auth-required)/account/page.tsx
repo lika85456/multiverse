@@ -5,7 +5,9 @@ import { getSessionUser } from "@/lib/mongodb/collections/user";
 
 export default async function Account() {
     const sessionUser = await getSessionUser();
-    if (!sessionUser) return null; //TODO - redirect to login page
+    if (!sessionUser) {
+        return null; //TODO - redirect to login page
+    }
 
     return (
         <>

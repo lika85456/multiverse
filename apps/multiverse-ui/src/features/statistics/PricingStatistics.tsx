@@ -9,9 +9,10 @@ import SectionTitle from "@/app/layout/components/SectionTitle";
 import { Separator } from "@/components/ui/separator";
 import { trpc } from "@/lib/trpc/client";
 import AddAWSTokenModal from "@/features/account/AddAWSTokenModal";
+import { useMemo } from "react";
 
 export default function PricingStatistics() {
-    const today = new Date();
+    const today = useMemo(() => new Date(), []);
     const { date, handleDateIntervalChange } = useDateInterval({
         from: new Date(today.getFullYear(), today.getMonth(), 1),
         to: today,

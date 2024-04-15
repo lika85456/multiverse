@@ -32,6 +32,7 @@ export default function DeleteDatabaseModal() {
     const utils = trpc.useUtils();
 
     const handleDeleteDatabase = async() => {
+        // TODO - takes too long, close and display deleting state
         setIsProcessing(true);
         await mutation.mutateAsync(codeName);
         await utils.database.list.invalidate();

@@ -50,8 +50,6 @@ export default function useDateInterval(defaultInterval: DefinedDateRange = {
 
             return;
         }
-        // TODO - Check if the interval is too short
-        // TODO - Check if the interval is too long
 
         // Set the new date interval without changes
         setDate({

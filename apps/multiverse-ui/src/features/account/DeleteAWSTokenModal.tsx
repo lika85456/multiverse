@@ -36,6 +36,7 @@ export function DeleteAWSTokenModal() {
         await mutation.mutateAsync();
     };
 
+    // TODO - Add a confirmation input into dialog for deleting the token
     return (
         <AlertDialog open={modalOpen}>
             <AlertDialogTrigger
@@ -60,7 +61,7 @@ export function DeleteAWSTokenModal() {
                     <AlertDialogDescription className="text-secondary-foreground">
             Do you really wish to delete this AWS Token? This action cannot be
             undone and Multiverse loses access to related AWS Account and
-            databases.
+            databases. All the data will be cleaned and lost.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>

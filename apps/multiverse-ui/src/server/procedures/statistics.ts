@@ -171,15 +171,9 @@ const constructInterval = (from: string, to: string): Map<string, DailyStatistic
  */
 const calculateDailyStatistics = async(databaseName: string, from: string, to: string): Promise<DailyStatisticsData[]> => {
     const { fromISO, toISO } = dateIntervalISO(from, to);
+
     console.log("Calculating daily statistics for the database", databaseName, "from", fromISO, "to", toISO);
-
     const dailyStatistics = await getDailyStatisticsInterval(databaseName, fromISO, toISO);
-    console.log("Daily statistics", JSON.stringify(dailyStatistics, null, 2));
-    if (dailyStatistics.length === 0) {
-        console.log("No daily statistics found for the database", databaseName, "in the given period");
-
-        return [];
-    }
 
     // construct interval containing every day in the given period (from - to)
     const interval = constructInterval(fromISO, toISO);
@@ -263,7 +257,7 @@ export const statistics = router({
             }));
 
             // sum general statistics for all databases
-            const x = generalStatistics.reduce((acc, curr) => {
+            return generalStatistics.reduce((acc, curr) => {
                 acc.costs.value += curr.costs.value;
                 acc.totalVectors.count += curr.totalVectors.count;
                 acc.totalVectors.bytes += curr.totalVectors.bytes;
@@ -272,10 +266,6 @@ export const statistics = router({
 
                 return acc;
             }, emptyGeneralStatistics);
-
-            console.log(JSON.stringify(x, null, 2));
-
-            return x;
         }),
     }),
     daily: router({
@@ -286,7 +276,6 @@ export const statistics = router({
         })).query(async(opts): Promise<GraphData> => {
             const { fromISO, toISO } = dateIntervalISO(opts.input.from, opts.input.to);
 
-            console.log("1");
             const sessionUser = await getSessionUser();
             if (!sessionUser) {
                 throw new TRPCError({
@@ -294,7 +283,6 @@ export const statistics = router({
                     message: "User not found",
                 });
             }
-            console.log("2");
             if (fromISO > toISO) {
                 throw new TRPCError({
                     code: "BAD_REQUEST",
@@ -302,43 +290,30 @@ export const statistics = router({
                 });
             }
 
-            console.log("3");
             if (opts.input.database) {
-                console.log("4");
                 if (!sessionUser.databases.includes(opts.input.database)) {
                     throw new TRPCError({
                         code: "FORBIDDEN",
                         message: "User does not have access to the database",
                     });
                 }
-                console.log("5");
-                const x = extractStatistics(await calculateDailyStatistics(opts.input.database, fromISO, toISO));
-                console.log(JSON.stringify(x, null, 2));
 
                 // calculate daily statistics for a specific database
-                return x;
+                return extractStatistics(await calculateDailyStatistics(opts.input.database, fromISO, toISO));
             }
-            console.log("6");
             // calculate daily statistics for all databases sessionUser owns
             const dailyDatabaseStatistics = await Promise.all(sessionUser.databases.map(async(database) => {
                 return await calculateDailyStatistics(database, fromISO, toISO);
             }));
-            console.log("7");
 
             if (dailyDatabaseStatistics.length === 0) {
                 console.log("No daily statistics found");
 
-                const x = extractStatistics([]);
-                console.log(JSON.stringify(x, null, 2));
-
-                return x;
+                return extractStatistics(Array.from(constructInterval(fromISO, toISO).values()));
             }
 
             if (dailyDatabaseStatistics.length === 1) {
-                const x = extractStatistics(dailyDatabaseStatistics[0]);
-                console.log(JSON.stringify(x, null, 2));
-
-                return x;
+                return extractStatistics(dailyDatabaseStatistics[0]);
             }
 
             // merge daily statistics from all databases to get the final statistics
@@ -348,11 +323,8 @@ export const statistics = router({
                     finalStatistics[index] = mergeDailyStatisticsData(stat, dailyDatabaseStatistics[i][index]);
                 });
             }
-            const x = extractStatistics(finalStatistics);
-            console.log(JSON.stringify(x, null, 2));
 
-            return x;
-
+            return extractStatistics(finalStatistics);
         }),
     }),
 });

@@ -19,7 +19,6 @@ export default function Databases() {
         from: new Date(today.getFullYear(), today.getMonth(), 1).toISOString(),
         to: today.toISOString(),
     });
-    console.log("generalStatistics");
 
     const isSuccess = awsTokenIsSuccess && genStatsIsSuccess;
     const isLoading = awsIsLoading || isStatsLoading;
