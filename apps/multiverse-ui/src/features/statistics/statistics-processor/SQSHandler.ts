@@ -15,7 +15,7 @@ export interface ISQSHandler {
      * Processes queue messages from SQS queue for all users.
      */
     receiveMessages(queueName: string, awsToken: {
-        accessTokenId: string;
+        accessKeyId: string;
         secretAccessKey: string;
     }): Promise<Event[]>;
 
@@ -47,13 +47,13 @@ export class SQSHandler implements ISQSHandler {
     }
 
     async receiveMessages(queueName: string, awsToken: {
-        accessTokenId: string;
+        accessKeyId: string;
         secretAccessKey: string;
     }, maxNumberOfMessages = 10): Promise<Event[]> {
         const sqsClient = new SQSClient({
             region: "eu-central-1",
             credentials: {
-                accessKeyId: awsToken.accessTokenId,
+                accessKeyId: awsToken.accessKeyId,
                 secretAccessKey: awsToken.secretAccessKey
             }
         });
@@ -129,12 +129,12 @@ export class SQSHandler implements ISQSHandler {
             throw new Error("AWS Token not found");
         }
 
-        const queueName = `multiverse-${awsToken._id}-${generateHex(8)}`;
+        const queueName = `multiverse_${awsToken._id}_${generateHex(8)}`;
 
         const sqsClient = new SQSClient({
             region: "eu-central-1",
             credentials: {
-                accessKeyId: awsToken.accessTokenId,
+                accessKeyId: awsToken.accessKeyId,
                 secretAccessKey: awsToken.secretAccessKey
             }
         });
@@ -172,7 +172,7 @@ export class SQSHandler implements ISQSHandler {
         const sqsClient = new SQSClient({
             region: "eu-central-1",
             credentials: {
-                accessKeyId: awsToken.accessTokenId,
+                accessKeyId: awsToken.accessKeyId,
                 secretAccessKey: awsToken.secretAccessKey
             }
         });

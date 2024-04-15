@@ -4,7 +4,7 @@ import {
     addQueueToUser, getSessionUser, removeQueueFromUser
 } from "@/lib/mongodb/collections/user";
 import {
-    addAwsToken, getAwsTokenByAccessTokenId,
+    addAwsToken, getAwsTokenByAccessKeyId,
     getAwsTokenByOwner,
     removeAwsToken,
 } from "@/lib/mongodb/collections/aws-token";
@@ -28,7 +28,7 @@ export const awsToken = router({
 
         if (awsToken) {
             return {
-                accessTokenId: awsToken.accessTokenId,
+                accessKeyId: awsToken.accessKeyId,
                 // secretAccessKey: awsToken.secretAccessKey, // do not return on frontend
                 ownerId: awsToken.ownerId,
             };
@@ -41,23 +41,22 @@ export const awsToken = router({
      */
     post: publicProcedure
         .input(z.object({
-            accessTokenId: z.string(),
+            accessKeyId: z.string(),
             secretAccessKey: z.string(),
         }),)
         .mutation(async(opts) => {
-            const existingToken = await getAwsTokenByAccessTokenId(opts.input.accessTokenId);
+            const existingToken = await getAwsTokenByAccessKeyId(opts.input.accessKeyId);
             if (existingToken) {
                 throw new TRPCError({
                     code: "CONFLICT",
                     message: "Token already exists"
                 });
             }
-
             // check AWS Credentials
             const client = new STSClient({
                 region: "eu-central-1",
                 credentials: {
-                    accessKeyId: opts.input.accessTokenId,
+                    accessKeyId: opts.input.accessKeyId,
                     secretAccessKey: opts.input.secretAccessKey
                 }
             });
@@ -77,9 +76,15 @@ export const awsToken = router({
 
             // store token in mongodb
             const awsToken = await addAwsToken({
-                accessTokenId: opts.input.accessTokenId,
+                accessKeyId: opts.input.accessKeyId,
                 secretAccessKey: opts.input.secretAccessKey,
             });
+            if (!awsToken) {
+                throw new TRPCError({
+                    code: "INTERNAL_SERVER_ERROR",
+                    message: "Error adding token to database"
+                });
+            }
 
             // create a queue for the user
             const statisticsProcessor = new SQSHandler();

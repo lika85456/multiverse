@@ -44,6 +44,7 @@ export const getGeneralDatabaseStatistics = async(databaseName: string): Promise
         };
 
     } catch (error) {
+        console.log("Error getting general database statistics: ", error);
         throw new Error("Error getting general database statistics");
     }
 };
@@ -75,6 +76,7 @@ export const addGeneralDatabaseStatistics = async(statistics: GeneralDatabaseSta
         // don't update otherwise
 
     } catch (error) {
+        console.log("Error adding general database statistics: ", error);
         throw new Error("Error adding general database statistics");
     }
 };
@@ -87,6 +89,7 @@ export const removeGeneralDatabaseStatistics = async(databaseName: string): Prom
         await db.collection(collectionName).deleteOne({ databaseName });
 
     } catch (error) {
+        console.log("Error removing general database statistics: ", error);
         throw new Error("Error removing general database statistics");
     }
 };

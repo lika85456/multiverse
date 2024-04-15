@@ -12,7 +12,7 @@ export async function POST() {
         const messages = await Promise.all(queuesWithCredentials.map(async(queue) => {
             const queueName = queue.sqs;
             const awsToken = {
-                accessTokenId: queue.accessKeyId,
+                accessKeyId: queue.accessKeyId,
                 secretAccessKey: queue.secretAccessKey
             };
             // receive messages from the queue

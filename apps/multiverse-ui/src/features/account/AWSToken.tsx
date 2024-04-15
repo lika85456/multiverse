@@ -29,7 +29,7 @@ export default function AWSToken() {
                         <div className="flex flex-col w-full">
                             <h3 className="text-tertiary-foreground">Access Token Id</h3>
                             <div className="text-primary-foreground py-2">
-                                {awsToken.accessTokenId}
+                                {awsToken.accessKeyId}
                             </div>
                         </div>
                         <DeleteAWSTokenModal />

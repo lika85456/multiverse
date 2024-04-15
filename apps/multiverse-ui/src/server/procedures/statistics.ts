@@ -181,10 +181,11 @@ const calculateDailyStatistics = async(databaseName: string, from: string, to: s
         return [];
     }
 
+    // construct interval containing every day in the given period (from - to)
     const interval = constructInterval(fromISO, toISO);
 
+    // replace empty daily statistics with actual daily statistics, others will be empty
     dailyStatistics.forEach((stat) => {
-        // replace empty daily statistics with actual daily statistics, others will be empty
         interval.set(stat.date, {
             date: stat.date,
             reads: stat.readCount,

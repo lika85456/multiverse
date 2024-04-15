@@ -57,6 +57,7 @@ export const getDailyStatistics = async(dates: string[], databaseName: string): 
             };
         });
     } catch (error) {
+        console.log("Error getting daily statistics: ", error);
         throw new Error("Error getting daily statistics");
     }
 };
@@ -144,6 +145,7 @@ export const removeAllDailyStatisticsForDatabase = async(databaseName: string): 
     try {
         await db.collection(collectionName).deleteMany({ databaseName });
     } catch (error) {
+        console.log("Error removing daily statistics: ", error);
         throw new Error("Error removing daily statistics");
     }
 };

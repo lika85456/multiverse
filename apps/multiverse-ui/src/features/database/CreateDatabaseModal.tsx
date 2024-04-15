@@ -93,6 +93,7 @@ export default function CreateDatabaseModal() {
     });
 
     async function onSubmit(values: z.infer<typeof DatabaseFormSchema>) {
+        // TODO - takes too long, close and display adding state
         await mutation.mutateAsync({
             name: values.name,
             region: values.region,

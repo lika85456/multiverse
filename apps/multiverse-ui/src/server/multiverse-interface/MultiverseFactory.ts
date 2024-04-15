@@ -30,7 +30,7 @@ export class MultiverseFactory {
         if (ENV.NODE_ENV === "development") {
             return Promise.resolve(new MultiverseMock({
                 awsToken: {
-                    accessKeyId: awsToken.accessTokenId,
+                    accessKeyId: awsToken.accessKeyId,
                     secretAccessKey: awsToken.secretAccessKey,
                 },
                 region: "eu-central-1",
@@ -39,7 +39,7 @@ export class MultiverseFactory {
 
         return Promise.resolve(new Multiverse({
             awsToken: {
-                accessKeyId: awsToken.accessTokenId,
+                accessKeyId: awsToken.accessKeyId,
                 secretAccessKey: awsToken.secretAccessKey,
             },
             region: "eu-central-1",

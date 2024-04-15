@@ -244,7 +244,7 @@ export const getAllQueuesWithCredentials = async(): Promise<{sqs: string, access
 
             return {
                 sqs: user.sqsQueue,
-                accessKeyId: awsToken.accessTokenId,
+                accessKeyId: awsToken.accessKeyId,
                 secretAccessKey: awsToken.secretAccessKey,
             };
         }));

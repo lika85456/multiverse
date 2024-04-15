@@ -57,6 +57,8 @@ export const getDatabase = async(codeName: string): Promise<DatabaseFindMongoDb 
             ownerId: result.ownerId,
         };
     } catch (error) {
+        console.log("Error getting database by code name: ", error);
+
         return undefined;
     }
 };
