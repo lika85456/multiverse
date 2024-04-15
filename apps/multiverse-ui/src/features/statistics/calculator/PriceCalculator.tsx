@@ -93,13 +93,18 @@ function calculateCost({
     reads * poolLambdaDiskPerMs * COMPUTE_TIME;
     // writes do not need to be calculated, because they are included in reads
 
-    console.log({
+    // console.log({
+    //     dynamoCost,
+    //     s3Cost,
+    //     lambdaCost,
+    // });
+
+    return {
         dynamoCost,
         s3Cost,
         lambdaCost,
-    });
-
-    return dynamoCost + s3Cost + lambdaCost;
+        totalCost: dynamoCost + s3Cost + lambdaCost
+    };
 }
 
 function CalculatorSlider({
@@ -143,7 +148,7 @@ export default function PriceCalculator() {
     const [reads, setReads] = useState(10_000);
     const [writes, setWrites] = useState(10_000);
 
-    const totalPrice = calculateCost({
+    const costs = calculateCost({
         dimensions,
         reads,
         writes,
@@ -157,7 +162,7 @@ export default function PriceCalculator() {
                 reads: reads,
                 writes: writes,
                 dimensions: dimensions,
-                totalPrice: totalPrice,
+                costs: costs,
             };
 
             await navigator.clipboard.writeText(`${JSON.stringify(data)}`);
@@ -227,7 +232,7 @@ export default function PriceCalculator() {
                     <div className="text-lg font-thin capitalize">
             Expected Total price:
                     </div>
-                    <div className="text-lg font-medium">{format(totalPrice)} $</div>
+                    <div className="text-lg font-medium">{format(costs.totalCost)} $</div>
                 </div>
             </div>
         </div>

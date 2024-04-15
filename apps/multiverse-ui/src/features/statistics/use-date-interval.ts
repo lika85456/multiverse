@@ -8,12 +8,10 @@ export interface DefinedDateRange {
     to: Date;
 }
 
-export default function useDateInterval() {
-    const defaultInterval: DefinedDateRange = {
-        from: addDays(new Date(), -7),
-        to: new Date(),
-    };
-
+export default function useDateInterval(defaultInterval: DefinedDateRange = {
+    from: addDays(new Date(), -7),
+    to: new Date(),
+}) {
     const [date, setDate] = React.useState<DefinedDateRange>(defaultInterval,);
     const handleDateIntervalChange = (newDate: DateRange | undefined) => {
         const currentDate = new Date();

@@ -13,16 +13,12 @@ import {
     YAxis,
 } from "recharts";
 import { useTheme } from "next-themes";
+import type { StatisticsData } from "@/server/procedures/statistics";
 
 interface StatisticsGraphProps {
   title: string;
-  data: {
-    unit?: string;
-    values: {
-      value: number;
-      timeString: string;
-    }[];
-  };
+  data: StatisticsData[];
+  unit?: string;
 }
 
 const CustomTooltip = ({
@@ -40,7 +36,9 @@ const CustomTooltip = ({
     return null;
 };
 
-export default function StatisticsGraph({ title, data }: StatisticsGraphProps) {
+export default function StatisticsGraph({
+    title, data, unit
+}: StatisticsGraphProps) {
     const { theme } = useTheme();
     const handleCopy = async() => {
         try {
@@ -69,9 +67,7 @@ export default function StatisticsGraph({ title, data }: StatisticsGraphProps) {
             <ResponsiveContainer width={"100%"} height={250}>
                 <LineChart
                     className="w-full"
-                    width={600}
-                    height={250}
-                    data={data.values.map((value) => {
+                    data={data.map((value) => {
                         return {
                             ...value,
                             Data: value.value,
@@ -80,19 +76,19 @@ export default function StatisticsGraph({ title, data }: StatisticsGraphProps) {
                     margin={{
                         top: 5,
                         right: 30,
-                        left: 20,
+                        left: 0,
                         bottom: 5,
                     }}
                 >
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey={"timeString"} />
-                    <YAxis />
+                    <XAxis dataKey={"date"} />
+                    <YAxis/>
                     <Tooltip content={<CustomTooltip />} />
                     <Legend />
                     <Line
-                        type="monotone"
+                        type={"monotone"}
                         dataKey={"Data"}
-                        name={`${title}${data.unit ? ` (${data.unit})` : ""}`}
+                        name={`${title}${unit ? ` (${unit})` : ""}`}
                         stroke={theme === "dark" ? "#FFEBC5" : "#C3A15E"}
                     />
                 </LineChart>

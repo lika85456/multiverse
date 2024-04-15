@@ -1,8 +1,13 @@
 import clientPromise from "@/lib/mongodb/mongodb";
 import type { ObjectId } from "mongodb";
 import {
-    addDatabaseToUser, removeAllDatabaseFromUser, removeDatabaseFromUser
+    addDatabaseToUser, getUserById, removeAllDatabaseFromUser, removeDatabaseFromUser
 } from "@/lib/mongodb/collections/user";
+import { removeAllDailyStatisticsForDatabase } from "@/lib/mongodb/collections/daily-statistics";
+import {
+    addGeneralDatabaseStatistics, getGeneralDatabaseStatistics,
+    removeGeneralDatabaseStatistics
+} from "@/lib/mongodb/collections/general-database-statistics";
 
 export interface SecretToken {
     name: string;
@@ -14,6 +19,7 @@ export interface DatabaseGet {
   codeName: string;
   name: string;
   region: string;
+  records: number;
   dimensions: number;
   space: "l2" | "cosine" | "ip";
   secretTokens: SecretToken[];
@@ -33,26 +39,6 @@ export interface DatabaseInsertMongoDb {
     ownerId: ObjectId;
 }
 
-// export const listDatabases = async(user: ObjectId): Promise<DatabaseFindMongoDb[]> => {
-//     try {
-//         const db = (await clientPromise).db();
-//         const result = await db.collection("databases").find({ ownerId: user }).toArray();
-//         if (!result) {
-//             return [];
-//         }
-//
-//         return result.map((database) => ({
-//             _id: database._id,
-//             name: database.name,
-//             codeName: database.codeName,
-//             records: database.records,
-//             ownerId: database.ownerId,
-//         }));
-//     } catch (error) {
-//         return [];
-//     }
-// };
-
 export const getDatabase = async(codeName: string): Promise<DatabaseFindMongoDb | undefined> => {
     try {
         const db = (await clientPromise).db();
@@ -61,11 +47,13 @@ export const getDatabase = async(codeName: string): Promise<DatabaseFindMongoDb 
             return undefined;
         }
 
+        const resultGeneralStatistics = await getGeneralDatabaseStatistics(result.codeName);
+
         return {
             _id: result._id,
             name: result.name,
             codeName: result.codeName,
-            records: result.records,
+            records: resultGeneralStatistics?.totalVectors ?? 0,
             ownerId: result.ownerId,
         };
     } catch (error) {
@@ -92,13 +80,22 @@ export const createDatabase = async(databaseData: DatabaseInsertMongoDb): Promis
             if (!resultUser.acknowledged) {
                 throw new Error("Database not added to user");
             }
+            await addGeneralDatabaseStatistics({
+                databaseName: database.codeName,
+                updated: new Date(),
+                dataSize: 0,
+                totalVectors: 0,
+            });
 
             return resultDatabase.insertedId;
         });
     } catch (error) {
-        await session.abortTransaction();
+        console.log("Error creating database:", error);
+        if (session.inTransaction()) {
+            await session.abortTransaction();
+        }
 
-        return undefined;
+        throw new Error("Error creating database");
     } finally {
         await session.endSession();
     }
@@ -119,18 +116,21 @@ export const deleteDatabase = async(codeName: string): Promise<boolean> => {
             if (!result.acknowledged) {
                 throw new Error("Database not deleted");
             }
-            console.log("removed existing database");
-            console.log(database?.ownerId, database?.codeName);
             //remove database from user's list of databases
             await removeDatabaseFromUser(database?.ownerId, database.codeName);
-            console.log("removed database from user's list of databases");
+            //remove all statistics for the database
+            await removeAllDailyStatisticsForDatabase(database.codeName);
+            await removeGeneralDatabaseStatistics(database.codeName);
 
             return result.acknowledged;
         });
     } catch (error) {
-        await session.abortTransaction();
+        console.log("Error deleting database:", error);
+        if (session.inTransaction()) {
+            await session.abortTransaction();
+        }
 
-        return false;
+        throw new Error("Error deleting database");
     } finally {
         await session.endSession();
     }
@@ -143,21 +143,36 @@ export const deleteAllDatabases = async(ownerId: ObjectId) => {
 
     try {
         return await session.withTransaction(async() => {
+            const ownerResult = await getUserById(ownerId);
+            if (!ownerResult) {
+                throw new Error("Owner not found");
+            }
+            const databases: string[] = ownerResult.databases;
+            await Promise.all(databases.map(async(database) => {
+                await removeAllDailyStatisticsForDatabase(database);
+                await removeGeneralDatabaseStatistics(database);
+            }));
+
             const result = await db.collection("databases").deleteMany({ ownerId });
             if (!result.acknowledged) {
+                console.log("Databases not deleted");
                 throw new Error("Databases not deleted");
             }
             const resultUser = removeAllDatabaseFromUser(ownerId);
             if (!resultUser) {
+                console.log("Databases not removed from user");
                 throw new Error("Databases not removed from user");
             }
 
             return true;
         });
     } catch (error) {
-        await session.abortTransaction();
+        console.log("Error deleting all databases:", error);
+        if (session.inTransaction()) {
+            await session.abortTransaction();
+        }
 
-        return false;
+        throw new Error("Error deleting all databases");
     } finally {
         await session.endSession();
     }

@@ -1,7 +1,7 @@
 "use client";
 
 import { DateIntervalPicker } from "@/features/statistics/DateIntervalPicker";
-import GeneralStatistics from "@/features/statistics/GeneralStatistics";
+import GeneralStatistics, { createProps } from "@/features/statistics/GeneralStatistics";
 import useDateInterval from "@/features/statistics/use-date-interval";
 import StatisticsGraph from "@/features/statistics/StatisticsGraph";
 import * as React from "react";
@@ -11,23 +11,31 @@ import { trpc } from "@/lib/trpc/client";
 import AddAWSTokenModal from "@/features/account/AddAWSTokenModal";
 
 export default function PricingStatistics() {
-    const { date, handleDateIntervalChange } = useDateInterval();
+    const today = new Date();
+    const { date, handleDateIntervalChange } = useDateInterval({
+        from: new Date(today.getFullYear(), today.getMonth(), 1),
+        to: today,
+    });
 
     const {
         data: awsToken, isLoading: awsTokenIsLoading, isSuccess: awsTokenIsSuccess, isError: awsTokenIsError
     } = trpc.awsToken.get.useQuery();
     const {
-        data: items, isLoading: itemsIsLoading, isSuccess: itemsIsSuccess, isError: itemsIsError
-    } = trpc.statistics.generalPricing.get.useQuery();
-    const {
-        data: costs, isLoading: costsIsLoading, isSuccess: costsIsSuccess, isError: costsIsError
-    } = trpc.statistics.costs.get.useQuery({
-        from: date.from.toDateString(),
-        to: date.to.toDateString()
+        data: generalStatistics, isLoading: genStatsIsLoading, isSuccess: genStatsIsSuccess, isError: genStatsIsError
+    } = trpc.statistics.general.get.useQuery({
+        database: undefined,
+        from: date.from.toISOString(),
+        to: date.to.toISOString()
     });
-    const isLoading = awsTokenIsLoading || itemsIsLoading || costsIsLoading;
-    const isError = awsTokenIsError || itemsIsError || costsIsError;
-    const isSuccess = awsTokenIsSuccess && itemsIsSuccess && costsIsSuccess;
+    const {
+        data: dailyStatistics, isLoading: costsIsLoading, isSuccess: costsIsSuccess, isError: costsIsError
+    } = trpc.statistics.daily.get.useQuery({
+        from: date.from.toISOString(),
+        to: date.to.toISOString()
+    });
+    const isLoading = awsTokenIsLoading || genStatsIsLoading || costsIsLoading;
+    const isError = awsTokenIsError || genStatsIsError || costsIsError;
+    const isSuccess = awsTokenIsSuccess && genStatsIsSuccess && costsIsSuccess;
 
     return (
         <>
@@ -39,7 +47,7 @@ export default function PricingStatistics() {
                     <AddAWSTokenModal />
                 </div>
             )}
-            {isSuccess && awsToken && costs && (<div className="flex flex-col w-full">
+            {isSuccess && awsToken && dailyStatistics && generalStatistics && (<div className="flex flex-col w-full">
                 <div className="flex flex-col">
                     <div className="flex flex-row justify-between items-center pb-8">
                         <SectionTitle title={"My plan"} className="flex h-fit" />
@@ -48,8 +56,8 @@ export default function PricingStatistics() {
                             setDate={handleDateIntervalChange}
                         />
                     </div>
-                    <GeneralStatistics items={items} className="pb-8" />
-                    <StatisticsGraph title={costs.title} data={costs.data} />
+                    <GeneralStatistics items={createProps(generalStatistics)} className="pb-8" />
+                    <StatisticsGraph title="Costs" data={dailyStatistics.costs} unit={"$"} />
                     <Separator className="my-4" />
                 </div>
             </div>)}

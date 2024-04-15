@@ -1,7 +1,7 @@
 import { publicProcedure, router } from "@/server/trpc";
 import z from "zod";
 import { generateHex } from "@/server/multiverse-interface/MultiverseMock";
-import type { DatabaseConfiguration } from "@multiverse/multiverse/src/DatabaseConfiguration";
+import type { StoredDatabaseConfiguration } from "@multiverse/multiverse/src/core/DatabaseConfiguration";
 import type { DatabaseGet } from "@/lib/mongodb/collections/database";
 import { deleteDatabase } from "@/lib/mongodb/collections/database";
 import { createDatabase } from "@/lib/mongodb/collections/database";
@@ -29,7 +29,7 @@ const generateCodeName = (name: string): string => {
     return `${slicedAlphanumericalName}_${generateHex(MAX_DB_NAME_LENGTH - slicedAlphanumericalName.length - 1)}`;
 };
 
-const storeDatabase = async(configuration: DatabaseConfiguration): Promise<DatabaseGet> => {
+const storeDatabase = async(configuration: StoredDatabaseConfiguration): Promise<DatabaseGet> => {
     const sessionUser = await getSessionUser();
     if (!sessionUser) {
         throw new TRPCError({
@@ -66,12 +66,8 @@ const storeDatabase = async(configuration: DatabaseConfiguration): Promise<Datab
     }
 
     return {
-        codeName: configuration.name,
-        name: mongodbDatabase.name,
-        region: configuration.region,
-        dimensions: configuration.dimensions,
-        space: configuration.space,
-        secretTokens: configuration.secretTokens
+        ...configuration,
+        ...mongodbDatabase,
     };
 };
 
@@ -93,6 +89,7 @@ export const database = router({
             return await Promise.all(listedDatabases.map(async(database): Promise<DatabaseGet> => {
                 const configuration = await database.getConfiguration();
 
+                // TODO - check if multiverseDB has queue, if not, set it
                 // guaranteed that the database is stored in the mongodb
                 return storeDatabase(configuration);
             }));
@@ -124,6 +121,7 @@ export const database = router({
                 });
             }
 
+            // TODO - check if multiverseDB has queue, if not, set it
             return await storeDatabase(configuration);
         }),
 
@@ -154,12 +152,13 @@ export const database = router({
         const name = normalizeDatabaseName(opts.input.name);
         const codeName = generateCodeName(opts.input.name);
 
-        const database: DatabaseConfiguration = {
+        const database: StoredDatabaseConfiguration = {
             name: codeName,
             secretTokens: opts.input.secretTokens,
             dimensions: opts.input.dimensions,
             region: opts.input.region as "eu-central-1",
-            space: opts.input.space as "l2" | "cosine" | "ip"
+            space: opts.input.space as "l2" | "cosine" | "ip",
+            statisticsQueueName: sessionUser.sqsQueue
         };
 
         try {

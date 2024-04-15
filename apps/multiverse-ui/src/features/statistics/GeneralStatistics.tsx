@@ -3,9 +3,11 @@
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/lib/trpc/client";
+import type { GeneralStatisticsData } from "@/server/procedures/statistics";
+import format from "@/features/statistics/format";
 
 export interface GeneralStatisticsItemProps {
-  label: string;
+  title: string;
   value: string;
 }
 
@@ -14,13 +16,36 @@ export interface GeneralStatisticsProps {
   className?: string;
 }
 
+export const createProps = (data: GeneralStatisticsData) => {
+
+    return [
+        {
+            title: "Total Cost",
+            value: `${data.costs.currency} ${data.costs.value}`
+        },
+        {
+            title: "Total Vectors",
+            value: `${format(data.totalVectors.count, "compact")} 
+                    (${format(data.totalVectors.bytes, "bytes")})`
+        },
+        {
+            title: "Queries",
+            value: `${format(data.reads, "compact")}`
+        },
+        {
+            title: "Writes",
+            value: `${format(data.writes, "compact")}`
+        },
+    ];
+};
+
 export function GeneralStatisticsItem({
-    label,
+    title,
     value,
 }: GeneralStatisticsItemProps) {
     const handleCopy = async() => {
         try {
-            await navigator.clipboard.writeText(`${label}: ${value}`);
+            await navigator.clipboard.writeText(`${title}: ${value}`);
             toast("Data have been copied into your clipboard.");
         } catch (error) {
             console.log("Data could not be copied.");
@@ -29,12 +54,12 @@ export function GeneralStatisticsItem({
 
     return (
         <li
-            key={label}
+            key={title}
             className="flex w-full flex-col items-start bg-card justify-between p-4 rounded-xl space-y-4 hover:bg-middle cursor-pointer transition-all"
             onClick={handleCopy}
         >
             <span className={"text-primary-foreground dark:text-contrast_secondary text-sm uppercase font-light tracking-[0.3rem]"}>
-                {label}
+                {title}
             </span>
             <span className="text-contrast_primary text-xl font-bold">{value}</span>
         </li>
@@ -45,11 +70,6 @@ export default function GeneralStatistics({
     items,
     className,
 }: GeneralStatisticsProps) {
-    const awsToken = trpc.awsToken.get.useQuery();
-    if (!awsToken.data) {
-        return null;
-    }
-
     return (
         <ul
             className={cn(
@@ -60,9 +80,9 @@ export default function GeneralStatistics({
             {items && items.slice(0, 6).map((item) => {
                 return (
                     <GeneralStatisticsItem
-                        key={item.label}
+                        key={item.title}
+                        title={item.title}
                         value={item.value}
-                        label={item.label}
                     />
                 );
             })}

@@ -1,110 +1,357 @@
 import { publicProcedure, router } from "@/server/trpc";
-import {
-    costsStatistics,
-    generalDatabaseStatistics,
-    generalStatistics,
-    requestsStatistics,
-    responseTimeStatistics,
-    writeCountStatistics
-} from "@/server/dummy-data";
 import z from "zod";
-import format from "@/features/statistics/format";
+import { getGeneralDatabaseStatistics, } from "@/lib/mongodb/collections/general-database-statistics";
+import type { DailyStatisticsGet } from "@/lib/mongodb/collections/daily-statistics";
+import { convertToISODate } from "@/lib/mongodb/collections/daily-statistics";
+import { getDailyStatisticsInterval } from "@/lib/mongodb/collections/daily-statistics";
+import { TRPCError } from "@trpc/server";
+import { getSessionUser } from "@/lib/mongodb/collections/user";
+import { addDays } from "date-fns";
+
+export interface GeneralStatisticsData {
+    costs: {
+        value: number;
+        currency: "$";
+    };
+    totalVectors: {
+        count: number;
+        bytes: number;
+    };
+    reads: number;
+    writes: number;
+}
+
+const emptyGeneralStatistics = {
+    costs: {
+        value: 0,
+        currency: "$" as const,
+    },
+    totalVectors: {
+        count: 0,
+        bytes: 0,
+    },
+    reads: 0,
+    writes: 0,
+};
+export interface StatisticsData {
+    date: string;
+    value: number;
+}
+
+export interface GraphData {
+    reads: StatisticsData[];
+    writes: StatisticsData[];
+    costs: StatisticsData[];
+    responseTime: StatisticsData[];
+}
+
+export interface DailyStatisticsData {
+    date: string;
+    reads: number;
+    writes: number;
+    costs: number;
+    totalResponseTime: number;
+    averageResponseTime: number;
+}
+
+const emptyDailyStatistics = {
+    date: "REPLACE_ME",
+    reads: 0,
+    writes: 0,
+    costs: 0,
+    totalResponseTime: 0,
+    averageResponseTime: 0,
+};
+
+const dateIntervalISO = (from: string | Date, to: string | Date): { fromISO: string, toISO: string } => {
+    return {
+        fromISO: convertToISODate(from),
+        toISO: convertToISODate(to),
+    };
+};
+
+const getPrice = (databaseName: string, from: string, to: string): number => {
+    const { fromISO, toISO } = dateIntervalISO(from, to);
+
+    //TODO - get price for database and queue for the given period
+    return 0;
+};
+
+const extractReadsWrites = (dailyStatistics: DailyStatisticsGet[]): { reads: number, writes: number } => {
+    return dailyStatistics.reduce((acc, curr) => {
+        return {
+            reads: acc.reads + curr.readCount,
+            writes: acc.writes + curr.writeCount
+        };
+    }, {
+        reads: 0,
+        writes: 0
+    });
+};
+
+const calculateGeneralStatistics = async(databaseName: string, from: string, to: string): Promise<GeneralStatisticsData> => {
+    const { fromISO, toISO } = dateIntervalISO(from, to);
+    // get general statistics for a specific database
+    const generalDatabaseStatistics = await getGeneralDatabaseStatistics(databaseName);
+    if (!generalDatabaseStatistics) {
+        // general database statistics do not exist, return empty general statistics
+        return emptyGeneralStatistics;
+    }
+
+    // extract reads and writes from daily statistics
+    const dailyStatistics = await getDailyStatisticsInterval(databaseName, fromISO, toISO);
+    const { reads, writes } = extractReadsWrites(dailyStatistics);
+
+    // return existing general database statistics
+    return {
+        costs: {
+            value: getPrice(databaseName, fromISO, toISO,),
+            currency: "$" as const,
+        },
+        totalVectors: {
+            count: generalDatabaseStatistics.totalVectors,
+            bytes: generalDatabaseStatistics.dataSize,
+        },
+        reads: reads,
+        writes: writes,
+    };
+};
+
+const mergeDailyStatisticsData = (data1: DailyStatisticsData, data2: DailyStatisticsData): DailyStatisticsData => {
+    if (data1.date !== data2.date) {
+        throw new Error("Dates must be the same");
+    }
+
+    const reads = data1.reads + data2.reads;
+    const writes = data1.writes + data2.writes;
+    const costs = data1.costs + data2.costs;
+    const totalResponseTime = data1.totalResponseTime + data2.totalResponseTime;
+
+    return {
+        date: data1.date,
+        reads,
+        writes,
+        costs,
+        totalResponseTime,
+        averageResponseTime: totalResponseTime / (reads)
+    };
+};
+
+/**
+ * Constructs an empty interval of daily statistics data.
+ * @param from
+ * @param to
+ */
+const constructInterval = (from: string, to: string): Map<string, DailyStatisticsData> => {
+    const { fromISO, toISO } = dateIntervalISO(from, to);
+    if (new Date(fromISO) > new Date(toISO)) {
+        throw new Error("Invalid date range");
+    }
+
+    const emptyInterval = new Map<string, DailyStatisticsData>();
+
+    // fill the interval with empty daily statistics
+    let tmpDate = new Date(fromISO);
+    while (tmpDate <= new Date(toISO)) {
+        emptyInterval.set(convertToISODate(tmpDate), {
+            ...emptyDailyStatistics,
+            date: convertToISODate(tmpDate),
+        });
+        tmpDate = addDays(tmpDate, 1);
+    }
+
+    return emptyInterval;
+};
+
+/**
+ * Calculate daily statistics for a specific database.
+ * @param databaseName
+ * @param from
+ * @param to
+ */
+const calculateDailyStatistics = async(databaseName: string, from: string, to: string): Promise<DailyStatisticsData[]> => {
+    const { fromISO, toISO } = dateIntervalISO(from, to);
+    console.log("Calculating daily statistics for the database", databaseName, "from", fromISO, "to", toISO);
+
+    const dailyStatistics = await getDailyStatisticsInterval(databaseName, fromISO, toISO);
+    console.log("Daily statistics", JSON.stringify(dailyStatistics, null, 2));
+    if (dailyStatistics.length === 0) {
+        console.log("No daily statistics found for the database", databaseName, "in the given period");
+
+        return [];
+    }
+
+    const interval = constructInterval(fromISO, toISO);
+
+    dailyStatistics.forEach((stat) => {
+        // replace empty daily statistics with actual daily statistics, others will be empty
+        interval.set(stat.date, {
+            date: stat.date,
+            reads: stat.readCount,
+            writes: stat.writeCount,
+            costs: stat.totalCost,
+            totalResponseTime: stat.totalResponseTime,
+            averageResponseTime: stat.totalResponseTime / (stat.readCount),
+        });
+    });
+
+    return Array.from(interval.values());
+};
+
+export const extractStatistics = (data: DailyStatisticsData[]): GraphData => {
+    return {
+        costs: data.map((stat) => {
+            return {
+                value: stat.costs,
+                date: stat.date
+            };
+        }),
+        reads: data.map((stat) => {
+            return {
+                value: stat.reads,
+                date: stat.date
+            };
+        }),
+        writes: data.map((stat) => {
+            return {
+                value: stat.writes,
+                date: stat.date
+            };
+        }),
+        responseTime: data.map((stat) => {
+            return {
+                value: stat.averageResponseTime,
+                date: stat.date
+            };
+        })
+    };
+};
 
 export const statistics = router({
     general: router({
         get: publicProcedure.input(z.object({
-            databaseCodeName: z.optional(z.string().min(3)),
-            from: z.optional(z.string().refine((v) => new Date(v) instanceof Date, { message: "Invalid date", })),
-            to: z.optional(z.string().refine((v) => new Date(v) instanceof Date, { message: "Invalid date", })),
-        })).query(async(opts) => {
-            if (!opts.input.databaseCodeName) {
-                return generalStatistics;
+            database: z.optional(z.string().min(3)),
+            from: z.string().refine((v) => new Date(v) instanceof Date, { message: "Invalid date", }),
+            to: z.string().refine((v) => new Date(v) instanceof Date, { message: "Invalid date", }),
+        })).query(async(opts): Promise<GeneralStatisticsData> => {
+            const { fromISO, toISO } = dateIntervalISO(opts.input.from, opts.input.to);
+
+            const sessionUser = await getSessionUser();
+            if (!sessionUser) {
+                throw new TRPCError({
+                    code: "UNAUTHORIZED",
+                    message: "User not found",
+                });
             }
 
-            return generalDatabaseStatistics;
+            if (opts.input.database) {
+                // calculate general statistics for a specific database
+                if (!sessionUser.databases.includes(opts.input.database)) {
+                    throw new TRPCError({
+                        code: "FORBIDDEN",
+                        message: "User does not have access to the database",
+                    });
+                }
+
+                return await calculateGeneralStatistics(opts.input.database, fromISO, toISO);
+            }
+
+            // calculate general statistics for all databases
+            const generalStatistics = await Promise.all(sessionUser.databases.map(async(database) => {
+                return await calculateGeneralStatistics(database, fromISO, toISO);
+            }));
+
+            // sum general statistics for all databases
+            const x = generalStatistics.reduce((acc, curr) => {
+                acc.costs.value += curr.costs.value;
+                acc.totalVectors.count += curr.totalVectors.count;
+                acc.totalVectors.bytes += curr.totalVectors.bytes;
+                acc.reads += curr.reads;
+                acc.writes += curr.writes;
+
+                return acc;
+            }, emptyGeneralStatistics);
+
+            console.log(JSON.stringify(x, null, 2));
+
+            return x;
         }),
     }),
-    generalPricing: router({
-        get: publicProcedure.query(async() => {
-            return [
-                {
-                    label: "Total Cost",
-                    value: `$ ${format(27.13, "delim")}`,
-                },
-                {
-                    label: "Total Records",
-                    value: `${format(7800000, "compact")} (${format(150000000000, "bytes")})`,
-                },
-                {
-                    label: "Queries",
-                    value: `${format(1200000, "compact")}`,
-                },
-                {
-                    label: "Writes",
-                    value: `${format(400000, "compact")}`,
-                },
-            ];
-        }),
-    }),
-    graphStatistics: router({
+    daily: router({
         get: publicProcedure.input(z.object({
-            from: z.string().refine((v) => new Date(v) instanceof Date, { message: "Invalid date", }), // { "from": "2021-08-01" }
-            to: z.string().refine((v) => new Date(v) instanceof Date, { message: "Invalid date", }), // { "from": "2021-08-01" },
-        })).query(async(opts) => {
-            console.log(opts.input.from);
-            console.log(opts.input.to);
+            database: z.optional(z.string().min(3)),
+            from: z.string().refine((v) => new Date(v) instanceof Date, { message: "Invalid date", }),
+            to: z.string().refine((v) => new Date(v) instanceof Date, { message: "Invalid date", }),
+        })).query(async(opts): Promise<GraphData> => {
+            const { fromISO, toISO } = dateIntervalISO(opts.input.from, opts.input.to);
 
-            return {
-                costs: costsStatistics,
-                requests: requestsStatistics,
-                responseTime: responseTimeStatistics,
-                writeCount: writeCountStatistics
-            };
-        }),
-    }),
+            console.log("1");
+            const sessionUser = await getSessionUser();
+            if (!sessionUser) {
+                throw new TRPCError({
+                    code: "UNAUTHORIZED",
+                    message: "User not found",
+                });
+            }
+            console.log("2");
+            if (fromISO > toISO) {
+                throw new TRPCError({
+                    code: "BAD_REQUEST",
+                    message: "Invalid date range",
+                });
+            }
 
-    costs: router({
-        get: publicProcedure.input(z.object({
-            from: z.string().refine((v) => new Date(v) instanceof Date, { message: "Invalid date", }), // { "from": "2021-08-01" }
-            to: z.string().refine((v) => new Date(v) instanceof Date, { message: "Invalid date", }), // { "from": "2021-08-01" },
-        })).query(async() => {
-            return costsStatistics;
-        }),
-    }),
-    requests: router({
-        get: publicProcedure.query(async() => {
-            return {};
-        }),
-    }),
-    responseTime: router({
-        get: publicProcedure.query(async() => {
-            return {};
-        }),
-    }),
-    writeCount: router({
-        get: publicProcedure.query(async() => {
-            return {};
-        }),
-    }),
+            console.log("3");
+            if (opts.input.database) {
+                console.log("4");
+                if (!sessionUser.databases.includes(opts.input.database)) {
+                    throw new TRPCError({
+                        code: "FORBIDDEN",
+                        message: "User does not have access to the database",
+                    });
+                }
+                console.log("5");
+                const x = extractStatistics(await calculateDailyStatistics(opts.input.database, fromISO, toISO));
+                console.log(JSON.stringify(x, null, 2));
 
-    get: router({
-        general: publicProcedure.query(async() => {
-            return {};
+                // calculate daily statistics for a specific database
+                return x;
+            }
+            console.log("6");
+            // calculate daily statistics for all databases sessionUser owns
+            const dailyDatabaseStatistics = await Promise.all(sessionUser.databases.map(async(database) => {
+                return await calculateDailyStatistics(database, fromISO, toISO);
+            }));
+            console.log("7");
+
+            if (dailyDatabaseStatistics.length === 0) {
+                console.log("No daily statistics found");
+
+                const x = extractStatistics([]);
+                console.log(JSON.stringify(x, null, 2));
+
+                return x;
+            }
+
+            if (dailyDatabaseStatistics.length === 1) {
+                const x = extractStatistics(dailyDatabaseStatistics[0]);
+                console.log(JSON.stringify(x, null, 2));
+
+                return x;
+            }
+
+            // merge daily statistics from all databases to get the final statistics
+            const finalStatistics: DailyStatisticsData[] = dailyDatabaseStatistics[1];
+            for (let i = 1; i < dailyDatabaseStatistics.length; i++) {
+                finalStatistics.forEach((stat, index) => {
+                    finalStatistics[index] = mergeDailyStatisticsData(stat, dailyDatabaseStatistics[i][index]);
+                });
+            }
+            const x = extractStatistics(finalStatistics);
+            console.log(JSON.stringify(x, null, 2));
+
+            return x;
+
         }),
-        generalPricing: publicProcedure.query(async() => {
-            return {};
-        }),
-        costs: publicProcedure.query(async() => {
-            return {};
-        }),
-        requests: publicProcedure.query(async() => {
-            return {};
-        }),
-        responseTime: publicProcedure.query(async() => {
-            return {};
-        }),
-        writeCount: publicProcedure.query(async() => {
-            return {};
-        }),
-    })
+    }),
 });

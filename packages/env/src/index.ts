@@ -8,5 +8,5 @@ export function prettifyIssues(issues: ZodIssue[]) {
         throw new Error("Invalid environment variables!");
     }
 
-    console.info("The environment variables are valid!");
+    // console.info("The environment variables are valid!");
 }
