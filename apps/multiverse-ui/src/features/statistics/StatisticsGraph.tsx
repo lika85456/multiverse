@@ -13,13 +13,11 @@ import {
     YAxis,
 } from "recharts";
 import { useTheme } from "next-themes";
+import type { StatisticsData } from "@/server/procedures/statistics";
 
 interface StatisticsGraphProps {
   title: string;
-  data: {
-      value: number;
-      date: string;
-  }[];
+  data: StatisticsData[];
   unit?: string;
 }
 
@@ -85,8 +83,8 @@ export default function StatisticsGraph({
                     }}
                 >
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey={"timeString"} />
-                    <YAxis />
+                    <XAxis dataKey={"date"} />
+                    <YAxis/>
                     <Tooltip content={<CustomTooltip />} />
                     <Legend />
                     <Line

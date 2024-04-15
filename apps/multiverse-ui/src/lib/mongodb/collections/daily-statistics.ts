@@ -66,10 +66,10 @@ export const getDailyStatisticsInterval = async(
     dateFrom: string,
     dateTo: string,
 ): Promise<DailyStatisticsGet[]> => {
-    const client = await clientPromise;
-    const db = client.db();
-
     try {
+        const client = await clientPromise;
+        const db = client.db();
+        console.log("a");
         const result = await db.collection(collectionName).find({
             date: {
                 $gte: convertToISODate(dateFrom),
@@ -77,8 +77,11 @@ export const getDailyStatisticsInterval = async(
             },
             databaseName
         }).toArray();
+        console.log("b");
 
         return result.map((stat) => {
+            console.log("c");
+
             return {
                 _id: stat._id,
                 date: convertToISODate(stat.date),
@@ -90,6 +93,7 @@ export const getDailyStatisticsInterval = async(
             };
         });
     } catch (error) {
+        console.log("Error getting daily statistics: ", error);
         throw new Error("Error getting daily statistics");
     }
 

@@ -57,7 +57,7 @@ export default function PricingStatistics() {
                         />
                     </div>
                     <GeneralStatistics items={createProps(generalStatistics)} className="pb-8" />
-                    <StatisticsGraph title="Costs" data={dailyStatistics.costs.data} unit={dailyStatistics.costs.unit} />
+                    <StatisticsGraph title="Costs" data={dailyStatistics.costs} unit={"$"} />
                     <Separator className="my-4" />
                 </div>
             </div>)}

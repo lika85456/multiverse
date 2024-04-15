@@ -32,7 +32,7 @@ export default function DatabaseStatistics() {
                     />
                     <StatisticsGraph title="Requests" data={dailyStatistics.reads} />
                     <StatisticsGraph title="Write Count" data={dailyStatistics.writes} />
-                    <StatisticsGraph title="Costs" data={dailyStatistics.costs.data} unit={dailyStatistics.costs.unit}/>
+                    <StatisticsGraph title="Costs" data={dailyStatistics.costs} unit={"$"}/>
                     <StatisticsGraph title="Response Time" data={dailyStatistics.responseTime} />
                 </>)
             }
