@@ -21,7 +21,10 @@ export const awsToken = router({
     get: publicProcedure.query(async() => {
         const user = await getSessionUser();
         if (!user) {
-            throw new Error("User not found");
+            throw new TRPCError({
+                code: "UNAUTHORIZED",
+                message: "User not found",
+            });
         }
 
         const awsToken = await getAwsTokenByOwner(user._id);
@@ -52,16 +55,17 @@ export const awsToken = router({
                     message: "Token already exists"
                 });
             }
+
             // check AWS Credentials
-            const client = new STSClient({
-                region: "eu-central-1",
-                credentials: {
-                    accessKeyId: opts.input.accessKeyId,
-                    secretAccessKey: opts.input.secretAccessKey
-                }
-            });
-            const command = new GetCallerIdentityCommand();
             try {
+                const client = new STSClient({
+                    region: "eu-central-1",
+                    credentials: {
+                        accessKeyId: opts.input.accessKeyId,
+                        secretAccessKey: opts.input.secretAccessKey
+                    }
+                });
+                const command = new GetCallerIdentityCommand();
                 const result = await client.send(command);
                 if (!result.Account || !result.UserId) {
                     throw new Error();
@@ -115,16 +119,12 @@ export const awsToken = router({
                 message: "User not found",
             });
         }
-        console.log("1");
 
         // delete queue from AWS and mongodb
         try {
             const statisticsProcessor = new SQSHandler();
-            console.log("2");
             await statisticsProcessor.deleteQueue();
-            console.log("3");
             await removeQueueFromUser();
-            console.log("4");
         } catch (error) {
             console.error("Error deleting queue: ", error);
             throw new TRPCError({
@@ -132,7 +132,7 @@ export const awsToken = router({
                 message: "Error deleting queue"
             });
         }
-        console.log("5");
+
         // delete all databases in the mongodb
         const deleteDatabasesResult = await deleteAllDatabases(sessionUser._id);
         if (!deleteDatabasesResult) {
@@ -141,17 +141,15 @@ export const awsToken = router({
                 message: "Error deleting databases"
             });
         }
-        console.log("6");
+
         // delete all databases in the multiverse
         for (const database of sessionUser.databases) {
             const multiverse = await (new MultiverseFactory()).getMultiverse();
             await multiverse.removeDatabase(database);
         }
-        console.log("7");
 
         // delete aws token from mongodb
         const tokenRemovalResult = await removeAwsToken();
-        console.log("8");
 
         return tokenRemovalResult && deleteDatabasesResult;
     }),

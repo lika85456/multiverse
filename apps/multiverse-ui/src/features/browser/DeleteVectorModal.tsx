@@ -22,6 +22,7 @@ export default function DeleteVectorModal({ label, codeName }: { label: string, 
     } = useModal();
     const mutation = trpc.database.vector.delete.useMutation();
 
+    //TODO - Invalidate the vector list after deletion
     const handleCopyRequest = async() => {
         try {
             await navigator.clipboard.writeText(`{"id": "${label}"}`);

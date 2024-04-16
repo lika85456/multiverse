@@ -3,6 +3,8 @@
 import DatabaseItem from "@/app/(auth-required)/databases/components/DatabaseItem";
 import CreateDatabaseModal from "@/features/database/CreateDatabaseModal";
 import { trpc } from "@/lib/trpc/client";
+import Loading from "@/features/fetching/Loading";
+import GeneralError from "@/features/fetching/GeneralError";
 
 export default function DatabaseList() {
     const {
@@ -12,8 +14,8 @@ export default function DatabaseList() {
     return (
         <>
             <CreateDatabaseModal />
-            {isError && <div> Error </div>}
-            {isLoading && <div> Loading... </div>}
+            {isLoading && <Loading/>}
+            {isError && <GeneralError/>}
             {databases && isSuccess && (
                 <ul className="flex flex-col w-full py-4 space-y-4">
                     {databases.map((database) => {

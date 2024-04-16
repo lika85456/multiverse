@@ -89,8 +89,8 @@ export default function VectorQuery() {
                     <ul className="space-y-4">
                         {results.map((result) => {
                             return (
-                                <li>
-                                    <QueryResult key={result.label} vector={result} codeName={codeName} />
+                                <li key={result.label}>
+                                    <QueryResult vector={result} codeName={codeName} />
                                 </li>
                             );
                         })}

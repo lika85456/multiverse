@@ -6,34 +6,57 @@ import StatisticsGraph from "@/features/statistics/StatisticsGraph";
 import useDateInterval from "@/features/statistics/use-date-interval";
 import { trpc } from "@/lib/trpc/client";
 import { useParams } from "next/navigation";
+import Loading from "@/features/fetching/Loading";
+import GeneralError from "@/features/fetching/GeneralError";
+import { useEffect } from "react";
+import type { GraphData } from "@/server/procedures/statistics";
 
 export default function DatabaseStatistics() {
     const codeName = useParams().codeName as string;
-    const { date, handleDateIntervalChange } = useDateInterval();
+    const { dateRange, handleDateIntervalChange } = useDateInterval();
 
+    //TODO - fix invalid date picked
+    const [data, setData] = React.useState<GraphData>({
+        reads: [],
+        writes: [],
+        costs: [],
+        responseTime: [],
+    });
+    console.log("date " + dateRange.from.toISOString() + " " + dateRange.to.toISOString());
     const {
-        data: dailyStatistics, isLoading, isError, isSuccess
+        data: dailyStatistics, isLoading, isError
     } = trpc.statistics.daily.get.useQuery({
         database: codeName,
-        from: date.from.toISOString(),
-        to: date.to.toISOString(),
+        from: dateRange.from.toISOString(),
+        to: dateRange.to.toISOString(),
     });
+
+    useEffect(() => {
+        if (!dailyStatistics) return;
+        setData({
+            reads: dailyStatistics.reads,
+            writes: dailyStatistics.writes,
+            costs: dailyStatistics.costs,
+            responseTime: dailyStatistics.responseTime,
+        });
+
+    }, [dailyStatistics]);
 
     return (
         <div className="flex flex-col">
-            {isLoading && <div> Loading... </div>}
-            {isError && <div> Error </div>}
-            {isSuccess && dailyStatistics && (
+            {!isError && (!data || data.reads.length === 0) && isLoading && <Loading/>}
+            {isError && <GeneralError/>}
+            {!isError && data && (
                 <>
                     <DateIntervalPicker
                         className="self-end"
-                        getDate={() => date}
+                        getDate={() => dateRange}
                         setDate={handleDateIntervalChange}
                     />
-                    <StatisticsGraph title="Requests" data={dailyStatistics.reads} />
-                    <StatisticsGraph title="Write Count" data={dailyStatistics.writes} />
-                    <StatisticsGraph title="Costs" data={dailyStatistics.costs} unit={"$"}/>
-                    <StatisticsGraph title="Response Time" data={dailyStatistics.responseTime} />
+                    <StatisticsGraph title="Requests" data={data.reads} />
+                    <StatisticsGraph title="Write Count" data={data.writes} />
+                    <StatisticsGraph title="Costs" data={data.costs} unit={"$"}/>
+                    <StatisticsGraph title="Response Time" data={data.responseTime} />
                 </>)
             }
         </div>

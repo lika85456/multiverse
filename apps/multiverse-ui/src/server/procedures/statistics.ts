@@ -6,7 +6,9 @@ import { convertToISODate } from "@/lib/mongodb/collections/daily-statistics";
 import { getDailyStatisticsInterval } from "@/lib/mongodb/collections/daily-statistics";
 import { TRPCError } from "@trpc/server";
 import { getSessionUser } from "@/lib/mongodb/collections/user";
-import { addDays } from "date-fns";
+import {
+    addDays, differenceInDays, eachDayOfInterval, isAfter, isEqual, isSameDay
+} from "date-fns";
 
 export interface GeneralStatisticsData {
     costs: {
@@ -119,6 +121,7 @@ const calculateGeneralStatistics = async(databaseName: string, from: string, to:
 
 const mergeDailyStatisticsData = (data1: DailyStatisticsData, data2: DailyStatisticsData): DailyStatisticsData => {
     if (data1.date !== data2.date) {
+        console.log("Dates must be the same", data1.date, data2.date);
         throw new Error("Dates must be the same");
     }
 
@@ -144,7 +147,13 @@ const mergeDailyStatisticsData = (data1: DailyStatisticsData, data2: DailyStatis
  */
 const constructInterval = (from: string, to: string): Map<string, DailyStatisticsData> => {
     const { fromISO, toISO } = dateIntervalISO(from, to);
-    if (new Date(fromISO) > new Date(toISO)) {
+    // const x = eachDayOfInterval({
+    //     start: fromISO,
+    //     end: toISO
+    // }, { step: 1 });
+    // console.log(JSON.stringify(x, null, 2));
+
+    if (isAfter(new Date(fromISO), new Date(toISO))) {
         throw new Error("Invalid date range");
     }
 
@@ -152,12 +161,12 @@ const constructInterval = (from: string, to: string): Map<string, DailyStatistic
 
     // fill the interval with empty daily statistics
     let tmpDate = new Date(fromISO);
-    while (tmpDate <= new Date(toISO)) {
+    while (differenceInDays(new Date(toISO), new Date(tmpDate)) >= 0) {
         emptyInterval.set(convertToISODate(tmpDate), {
             ...emptyDailyStatistics,
             date: convertToISODate(tmpDate),
         });
-        tmpDate = addDays(tmpDate, 1);
+        tmpDate = addDays(new Date(tmpDate), 1);
     }
 
     return emptyInterval;
@@ -233,6 +242,7 @@ export const statistics = router({
 
             const sessionUser = await getSessionUser();
             if (!sessionUser) {
+                console.log("User not found");
                 throw new TRPCError({
                     code: "UNAUTHORIZED",
                     message: "User not found",
@@ -242,19 +252,29 @@ export const statistics = router({
             if (opts.input.database) {
                 // calculate general statistics for a specific database
                 if (!sessionUser.databases.includes(opts.input.database)) {
+                    console.log("User does not have access to the database");
                     throw new TRPCError({
                         code: "FORBIDDEN",
                         message: "User does not have access to the database",
                     });
                 }
+                console.log("Returning general statistics for the database", opts.input.database, "from", fromISO, "to", toISO);
 
                 return await calculateGeneralStatistics(opts.input.database, fromISO, toISO);
+            }
+
+            // check if user has databases defined
+            if (!sessionUser.databases) {
+                console.log("User does not have any databases");
+
+                return emptyGeneralStatistics;
             }
 
             // calculate general statistics for all databases
             const generalStatistics = await Promise.all(sessionUser.databases.map(async(database) => {
                 return await calculateGeneralStatistics(database, fromISO, toISO);
             }));
+            console.log("Returning general statistics for all databases from", fromISO, "to", toISO);
 
             // sum general statistics for all databases
             return generalStatistics.reduce((acc, curr) => {
@@ -278,12 +298,14 @@ export const statistics = router({
 
             const sessionUser = await getSessionUser();
             if (!sessionUser) {
+                console.log("User not found");
                 throw new TRPCError({
                     code: "UNAUTHORIZED",
                     message: "User not found",
                 });
             }
             if (fromISO > toISO) {
+                console.log("Invalid date range");
                 throw new TRPCError({
                     code: "BAD_REQUEST",
                     message: "Invalid date range",
@@ -292,6 +314,7 @@ export const statistics = router({
 
             if (opts.input.database) {
                 if (!sessionUser.databases.includes(opts.input.database)) {
+                    console.log("User does not have access to the database");
                     throw new TRPCError({
                         code: "FORBIDDEN",
                         message: "User does not have access to the database",
@@ -306,18 +329,15 @@ export const statistics = router({
                 return await calculateDailyStatistics(database, fromISO, toISO);
             }));
 
+            // if no daily statistics found, return empty statistics
             if (dailyDatabaseStatistics.length === 0) {
                 console.log("No daily statistics found");
 
                 return extractStatistics(Array.from(constructInterval(fromISO, toISO).values()));
             }
 
-            if (dailyDatabaseStatistics.length === 1) {
-                return extractStatistics(dailyDatabaseStatistics[0]);
-            }
-
             // merge daily statistics from all databases to get the final statistics
-            const finalStatistics: DailyStatisticsData[] = dailyDatabaseStatistics[1];
+            const finalStatistics: DailyStatisticsData[] = dailyDatabaseStatistics[0];
             for (let i = 1; i < dailyDatabaseStatistics.length; i++) {
                 finalStatistics.forEach((stat, index) => {
                     finalStatistics[index] = mergeDailyStatisticsData(stat, dailyDatabaseStatistics[i][index]);

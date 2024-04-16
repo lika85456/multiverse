@@ -16,7 +16,6 @@ export const authOptions = {
             clientId: ENV.GOOGLE_ID,
             clientSecret: ENV.GOOGLE_SECRET,
         }),
-    // ...add more providers here
     ],
     adapter: MongoDBAdapter(clientPromise),
     secret: ENV.SECRET_KEY,

@@ -9,6 +9,8 @@ import DatabaseSectionNavigation from "@/app/(auth-required)/databases/[codeName
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { trpc } from "@/lib/trpc/client";
+import Loading from "@/features/fetching/Loading";
+import GeneralError from "@/features/fetching/GeneralError";
 
 export default function DatabaseHeader({
     databaseCodeName,
@@ -24,8 +26,8 @@ export default function DatabaseHeader({
 
     return (
         <>
-            {isLoading && <div> Loading... </div>}
-            {isError && <div> Error </div>}
+            {isLoading && <Loading/>}
+            {isError && <GeneralError/>}
             {isSuccess && database && (
                 <div className="flex flex-col w-full">
                     <div className="flex flex-row w-full items-center justify-between">

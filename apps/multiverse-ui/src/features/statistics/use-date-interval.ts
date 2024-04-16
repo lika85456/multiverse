@@ -59,7 +59,7 @@ export default function useDateInterval(defaultInterval: DefinedDateRange = {
     };
 
     return {
-        date,
+        dateRange: date,
         handleDateIntervalChange,
     };
 }

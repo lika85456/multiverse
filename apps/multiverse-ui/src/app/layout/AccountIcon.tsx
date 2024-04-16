@@ -58,7 +58,7 @@ export default function AccountIcon({ user, }: {
                     </Avatar>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="bg-card text-card-foreground border-0 mr-4 mt-1">
-                    <DropdownMenuLabel>{user?.name}</DropdownMenuLabel>
+                    <DropdownMenuLabel>{user?.name ?? user?.email?.split("@")[0]}</DropdownMenuLabel>
                     <DropdownMenuSeparator className="bg-border" />
                     <Link href={"/account"}>
                         <DropdownMenuItem className="font-bold focus:bg-primary focus:text-primary-foreground">

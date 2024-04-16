@@ -141,6 +141,7 @@ export default function PriceCalculator() {
     const [reads, setReads] = useState(10_000);
     const [writes, setWrites] = useState(10_000);
 
+    //TODO - move to BE???
     const costs = calculateCost({
         dimensions,
         reads,

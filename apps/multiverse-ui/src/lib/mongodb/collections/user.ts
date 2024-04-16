@@ -6,18 +6,18 @@ import { getAwsTokenByTokenId } from "@/lib/mongodb/collections/aws-token";
 
 export interface UserGet {
   _id: ObjectId;
-  name: string;
+  name?: string;
   email: string;
-  image: string;
+  image?: string;
   awsToken?: ObjectId;
   sqsQueue?: string;
   databases: string[];
 }
 
 export interface UserInsert {
-  name: string;
+  name?: string;
   email: string;
-  image: string;
+  image?: string;
   awsToken?: ObjectId;
   sqsQueue?: string;
   databases: string[];

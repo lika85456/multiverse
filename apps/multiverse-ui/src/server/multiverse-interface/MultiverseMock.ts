@@ -5,13 +5,13 @@ import type {
     Query, QueryResult, SearchResultVector
 } from "@multiverse/multiverse/src/core/Query";
 import type { NewVector } from "@multiverse/multiverse/src/core/Vector";
-import * as fs from "fs";
 import type {
     AddEvent, Event, QueryEvent, RemoveEvent
 } from "@/features/statistics/statistics-processor/event";
 import {
     GetQueueUrlCommand, SendMessageCommand, SQSClient
 } from "@aws-sdk/client-sqs";
+import fs from "fs";
 
 type DatabaseWrapper = {
     multiverseDatabase: MultiverseDatabaseMock;
@@ -41,7 +41,7 @@ async function loadJsonFile() {
                     config: database.multiverseDatabase,
                     awsToken: database.awsToken,
                 }),
-                vectors: database.vectors
+                vectors: database.vectors,
             });
         }
     } catch (error) {
@@ -158,7 +158,7 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
         }
         const newValue: DatabaseWrapper = {
             multiverseDatabase: database.multiverseDatabase,
-            vectors: [...database.vectors, ...vector]
+            vectors: [...database.vectors, ...vector],
         };
         databases.set(this.databaseConfiguration.name, newValue);
         await refresh();
@@ -184,7 +184,7 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
 
         databases.set(this.databaseConfiguration.name, {
             multiverseDatabase: database.multiverseDatabase,
-            vectors: vectors.filter((vector) => !label.includes(vector.label))
+            vectors: vectors.filter((vector) => !label.includes(vector.label)),
         });
         await refresh();
 
@@ -252,7 +252,7 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
         }
         databases.set(this.databaseConfiguration.name, {
             multiverseDatabase: this,
-            vectors: databases.get(this.databaseConfiguration.name)?.vectors || []
+            vectors: databases.get(this.databaseConfiguration.name)?.vectors || [],
         });
 
         await refresh();
@@ -303,17 +303,35 @@ export class MultiverseMock implements IMultiverse {
             return Promise.resolve(undefined);
         }
 
+        // Check if the database belongs to the authenticated user
+        if (database.multiverseDatabase.getAwsToken().awsToken.accessKeyId !== this.awsToken.accessKeyId) {
+            return Promise.resolve(undefined);
+        }
+
         return Promise.resolve(database.multiverseDatabase);
     }
 
     async listDatabases(): Promise<IMultiverseDatabase[]> {
         await loadJsonFile();
 
-        return Promise.resolve(Array.from(databases.values()).map((database) => database.multiverseDatabase));
+        return (Array.from(databases.values())
+            .map((database) => database.multiverseDatabase))
+            .filter((database) => {
+                // Filter databases that belong to the authenticated user
+                return database.getAwsToken().awsToken.accessKeyId === this.awsToken.accessKeyId;
+            });
     }
 
     async removeDatabase(name: string): Promise<void> {
         await loadJsonFile();
+        const database = databases.get(name);
+        if (!database) {
+            return Promise.resolve();
+        }
+        if (database.multiverseDatabase.getAwsToken().awsToken.accessKeyId !== this.awsToken.accessKeyId) {
+            return Promise.resolve();
+        }
+
         databases.delete(name);
         await refresh();
 

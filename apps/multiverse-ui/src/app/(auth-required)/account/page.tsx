@@ -11,7 +11,7 @@ export default async function Account() {
 
     return (
         <>
-            <PageTitle title={`${sessionUser.name} - account`} />
+            <PageTitle title={`${sessionUser.name ?? sessionUser?.email?.split("@")[0]} - account`} />
             <Separator className="bg-border m-4" />
             <AWSToken />
         </>
