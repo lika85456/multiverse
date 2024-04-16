@@ -19,7 +19,7 @@ export default function QueryResult({ vector, codeName }: { vector: QueryResultP
                     .slice(0, 10)
                     .map((element) => ` ${element.toFixed(3)}`)} ...]`}</div>
                 <div className="flex justify-end w-16 text-primary-foreground">
-                    {vector.resultDistance}
+                    {vector.resultDistance.toFixed(3)}
                 </div>
             </div>
             <DeleteVectorModal label={vector.label} codeName={codeName} />

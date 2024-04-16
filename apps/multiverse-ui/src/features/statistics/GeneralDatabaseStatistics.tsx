@@ -5,15 +5,16 @@ import GeneralStatistics, { createProps } from "@/features/statistics/GeneralSta
 import SectionTitle from "@/app/layout/components/SectionTitle";
 import { trpc } from "@/lib/trpc/client";
 import { useMemo } from "react";
+import { UTCDate } from "@date-fns/utc";
 
 export default function GeneralDatabaseStatistics() {
     const params = useParams();
     const databaseCodeName = params.codeName as string;
 
-    const today = useMemo(() => new Date(), []);
+    const today = useMemo(() => new UTCDate(), []);
     const { data: generalStatistics, isSuccess } = trpc.statistics.general.get.useQuery({
         database: databaseCodeName,
-        from: new Date(today.getFullYear(), today.getMonth(), 1).toISOString(),
+        from: new UTCDate(today.getFullYear(), today.getMonth(), 1).toISOString(),
         to: today.toISOString(),
     },);
 

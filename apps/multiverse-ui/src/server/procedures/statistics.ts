@@ -9,6 +9,7 @@ import { getSessionUser } from "@/lib/mongodb/collections/user";
 import {
     addDays, differenceInDays, eachDayOfInterval, isAfter, isEqual, isSameDay
 } from "date-fns";
+import { UTCDate } from "@date-fns/utc";
 
 export interface GeneralStatisticsData {
     costs: {
@@ -65,7 +66,7 @@ const emptyDailyStatistics = {
     averageResponseTime: 0,
 };
 
-const dateIntervalISO = (from: string | Date, to: string | Date): { fromISO: string, toISO: string } => {
+const dateIntervalISO = (from: string | UTCDate, to: string | UTCDate): { fromISO: string, toISO: string } => {
     return {
         fromISO: convertToISODate(from),
         toISO: convertToISODate(to),
@@ -153,20 +154,20 @@ const constructInterval = (from: string, to: string): Map<string, DailyStatistic
     // }, { step: 1 });
     // console.log(JSON.stringify(x, null, 2));
 
-    if (isAfter(new Date(fromISO), new Date(toISO))) {
+    if (isAfter(new UTCDate(fromISO), new UTCDate(toISO))) {
         throw new Error("Invalid date range");
     }
 
     const emptyInterval = new Map<string, DailyStatisticsData>();
 
     // fill the interval with empty daily statistics
-    let tmpDate = new Date(fromISO);
-    while (differenceInDays(new Date(toISO), new Date(tmpDate)) >= 0) {
+    let tmpDate = new UTCDate(fromISO);
+    while (differenceInDays(new UTCDate(toISO), new UTCDate(tmpDate)) >= 0) {
         emptyInterval.set(convertToISODate(tmpDate), {
             ...emptyDailyStatistics,
             date: convertToISODate(tmpDate),
         });
-        tmpDate = addDays(new Date(tmpDate), 1);
+        tmpDate = addDays(new UTCDate(tmpDate), 1);
     }
 
     return emptyInterval;

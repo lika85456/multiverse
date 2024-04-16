@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/popover";
 import { useCallback, useEffect } from "react";
 import { IoCheckmark, IoClose } from "react-icons/io5";
+import { UTCDate } from "@date-fns/utc";
 
 enum PredefinedOptions {
   // TODAY = "Today",
@@ -91,20 +92,20 @@ export function DateIntervalPicker({
         //     break;
         case PredefinedOptions.LAST_WEEK:
             setNewDate({
-                from: addDays(new Date(), -7),
-                to: new Date(),
+                from: addDays(new UTCDate(), -7),
+                to: new UTCDate(),
             });
             break;
         case PredefinedOptions.LAST_MONTH:
             setNewDate({
-                from: addMonths(new Date(), -1),
-                to: new Date(),
+                from: addMonths(new UTCDate(), -1),
+                to: new UTCDate(),
             });
             break;
         case PredefinedOptions.LAST_YEAR:
             setNewDate({
-                from: addYears(new Date(), -1),
-                to: new Date(),
+                from: addYears(new UTCDate(), -1),
+                to: new UTCDate(),
             });
             break;
         case PredefinedOptions.CUSTOM:

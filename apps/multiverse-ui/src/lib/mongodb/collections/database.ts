@@ -8,6 +8,7 @@ import {
     addGeneralDatabaseStatistics, getGeneralDatabaseStatistics,
     removeGeneralDatabaseStatistics
 } from "@/lib/mongodb/collections/general-database-statistics";
+import { UTCDate } from "@date-fns/utc";
 
 export interface SecretToken {
     name: string;
@@ -84,7 +85,7 @@ export const createDatabase = async(databaseData: DatabaseInsertMongoDb): Promis
             }
             await addGeneralDatabaseStatistics({
                 databaseName: database.codeName,
-                updated: new Date(),
+                updated: new UTCDate(),
                 dataSize: 0,
                 totalVectors: 0,
             });

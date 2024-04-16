@@ -8,6 +8,7 @@ import { CopyIcon } from "lucide-react";
 import { toast } from "sonner";
 import DeleteConnectionTokenModal from "@/features/connectionToken/DeleteConnectionTokenModal";
 import type { SecretToken } from "@/lib/mongodb/collections/database";
+import { UTCDate } from "@date-fns/utc";
 
 export interface ConnectionTokenItemProps {
   token: SecretToken;
@@ -60,7 +61,7 @@ export default function ConnectionTokenItem({ token, }: ConnectionTokenItemProps
             Valid until
                     </div>
                     <div className="font-bold select-none">
-                        {new Date(token.validUntil).toLocaleDateString("en-US")}
+                        {new UTCDate(token.validUntil).toLocaleDateString("en-US")}
                     </div>
                 </div>
             </div>

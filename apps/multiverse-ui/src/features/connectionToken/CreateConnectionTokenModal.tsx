@@ -29,15 +29,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import useModal from "@/features/hooks/use-modal";
 import { trpc } from "@/lib/trpc/client";
+import { UTCDate } from "@date-fns/utc";
 
 export default function CreateConnectionTokenModal({ codeName }: {codeName: string}) {
     const {
         modalOpen, handleOpenModal, handleCloseModal
     } = useModal();
-    const [date, setDate] = React.useState<Date>();
+    const [date, setDate] = React.useState<UTCDate>();
     const [tokenName, setTokenName] = useState("");
     const [focused, setFocused] = useState(false);
-    const disabledSubmit = !(date && date > new Date() && tokenName.length > 0);
+    const disabledSubmit = !(date && date > new UTCDate() && tokenName.length > 0);
     const mutation = trpc.database.secretToken.post.useMutation();
     const util = trpc.useUtils();
     const onConfirmCreate = async() => {
@@ -90,7 +91,7 @@ export default function CreateConnectionTokenModal({ codeName }: {codeName: stri
                                 "w-full justify-start text-left font-normal bg-inherit hover:bg-primary hover:text-primary-foreground focus:bg-primary",
                                 !date && "text-muted-foreground",
                                 date &&
-                  date < new Date() &&
+                  date < new UTCDate() &&
                   "border-destructive text-destructive",
                             )}
                         >
@@ -102,7 +103,7 @@ export default function CreateConnectionTokenModal({ codeName }: {codeName: stri
                         <Calendar
                             mode="single"
                             selected={date}
-                            onSelect={setDate}
+                            onSelect={(d) => setDate(d ? new UTCDate(d) : undefined)}
                             initialFocus
                         />
                     </PopoverContent>

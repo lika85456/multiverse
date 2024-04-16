@@ -7,6 +7,7 @@ import {
     addGeneralDatabaseStatistics,
     getGeneralDatabaseStatistics
 } from "@/lib/mongodb/collections/general-database-statistics";
+import { UTCDate } from "@date-fns/utc";
 
 export class StatisticsProcessor {
 
@@ -23,7 +24,7 @@ export class StatisticsProcessor {
 
     private groupByDate(events: Event[]): Map<string, Event[]> {
         return events.reduce((acc, event) => {
-            const date = convertToISODate(new Date(event.timestamp));
+            const date = convertToISODate(new UTCDate(event.timestamp));
             if (!acc.has(date)) {
                 acc.set(date, []);
             }
@@ -88,7 +89,7 @@ export class StatisticsProcessor {
             if (!generalStatistics) {
                 await addGeneralDatabaseStatistics({
                     databaseName: databaseName,
-                    updated: new Date(timestamp),
+                    updated: new UTCDate(timestamp),
                     dataSize: dataSize,
                     totalVectors: totalVectors,
                 });
@@ -98,7 +99,7 @@ export class StatisticsProcessor {
             }
             // general statistics exist for this database, update if the latest write event is newer
             if (latestWriteEvent.timestamp > generalStatistics.updated.getTime()) {
-                generalStatistics.updated = new Date(timestamp);
+                generalStatistics.updated = new UTCDate(timestamp);
                 generalStatistics.dataSize = dataSize;
                 generalStatistics.totalVectors = totalVectors;
 

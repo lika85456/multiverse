@@ -12,6 +12,7 @@ import {
     GetQueueUrlCommand, SendMessageCommand, SQSClient
 } from "@aws-sdk/client-sqs";
 import fs from "fs";
+import { UTCDate } from "@date-fns/utc";
 
 type DatabaseWrapper = {
     multiverseDatabase: MultiverseDatabaseMock;
@@ -164,7 +165,7 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
         await refresh();
 
         const event: AddEvent = {
-            timestamp: Date.now(),
+            timestamp: UTCDate.now(),
             dbName: this.databaseConfiguration.name,
             type: "add",
             totalVectors: newValue.vectors.length,
@@ -189,7 +190,7 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
         await refresh();
 
         const event: RemoveEvent = {
-            timestamp: Date.now(),
+            timestamp: UTCDate.now(),
             dbName: this.databaseConfiguration.name,
             type: "remove",
             totalVectors: databases.get(this.databaseConfiguration.name)?.vectors.length || 0,
@@ -220,7 +221,7 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
         const duration = endTime - startTime;
 
         const event: QueryEvent = {
-            timestamp: Date.now(),
+            timestamp: UTCDate.now(),
             dbName: this.databaseConfiguration.name,
             type: "query",
             query: JSON.stringify(query),

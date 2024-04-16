@@ -1,5 +1,7 @@
 import type { ObjectId } from "mongodb";
 import clientPromise from "@/lib/mongodb/mongodb";
+import { UTCDate } from "@date-fns/utc";
+import { formatISO } from "date-fns";
 
 export const collectionName = "daily_statistics";
 
@@ -27,12 +29,8 @@ export interface DailyStatisticsAdd {
     totalCost: number;
 }
 
-export const convertToISODate = (date: Date | string): string => {
-    if (typeof date === "string") {
-        return new Date(date).toISOString().split("T")[0];
-    }
-
-    return date.toISOString().split("T")[0];
+export const convertToISODate = (date: UTCDate | string): string => {
+    return formatISO(new UTCDate(date), { representation: "date" });
 };
 
 export const getDailyStatistics = async(dates: string[], databaseName: string): Promise<DailyStatisticsGet[]> => {

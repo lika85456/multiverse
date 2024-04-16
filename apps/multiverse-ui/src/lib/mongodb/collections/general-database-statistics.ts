@@ -1,6 +1,7 @@
 import type { ObjectId } from "mongodb";
 import clientPromise from "@/lib/mongodb/mongodb";
 import { getDatabase } from "@/lib/mongodb/collections/database";
+import type { UTCDate } from "@date-fns/utc";
 
 export const collectionName = "general_database_statistics";
 
@@ -9,7 +10,7 @@ export interface GeneralDatabaseStatisticsGet{
     // unique, identifies general statistics for a database
     databaseName: string;
     // statistics data
-    updated: Date; // for data freshness comparison
+    updated: UTCDate; // for data freshness comparison
     dataSize: number;
     totalVectors: number;
 }
@@ -18,7 +19,7 @@ export interface GeneralDatabaseStatisticsInsert{
     // unique, identifies general statistics for a database
     databaseName: string;
     // statistics data
-    updated: Date; // for data freshness comparison
+    updated: UTCDate; // for data freshness comparison
     dataSize: number;
     totalVectors: number;
 }

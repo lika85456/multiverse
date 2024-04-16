@@ -10,11 +10,12 @@ import AddAWSTokenModal from "@/features/account/AddAWSTokenModal";
 import { useMemo } from "react";
 import Loading from "@/features/fetching/Loading";
 import GeneralError from "@/features/fetching/GeneralError";
+import { UTCDate } from "@date-fns/utc";
 
 function Statistics() {
-    const today = useMemo(() => new Date(), []);
+    const today = useMemo(() => new UTCDate(), []);
     const { dateRange } = useDateInterval({
-        from: new Date(today.getFullYear(), today.getMonth(), 1),
+        from: new UTCDate(today.getFullYear(), today.getMonth(), 1),
         to: today,
     });
 
