@@ -49,7 +49,6 @@ export function DeleteAWSTokenModal({ accessKeyId }: {accessKeyId: string}) {
         await mutation.mutateAsync();
     };
 
-    // TODO - Add a confirmation input into dialog for deleting the token
     return (
         <AlertDialog open={modalOpen}>
             <AlertDialogTrigger

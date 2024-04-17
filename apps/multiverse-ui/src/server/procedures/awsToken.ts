@@ -172,7 +172,7 @@ export const awsToken = router({
             }));
 
             // delete aws token from mongodb
-            await removeAwsToken();
+            await removeAwsToken(sessionUser._id);
             log.info(`AWS token deleted for user ${sessionUser.email}`);
         } catch (error) {
             throw handleError({

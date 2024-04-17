@@ -15,7 +15,6 @@ export default function DatabaseStatistics() {
     const codeName = useParams().codeName as string;
     const { dateRange, handleDateIntervalChange } = useDateInterval();
 
-    //TODO - fix invalid date picked
     const [data, setData] = React.useState<GraphData>({
         reads: [],
         writes: [],

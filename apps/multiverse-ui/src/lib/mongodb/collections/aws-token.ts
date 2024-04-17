@@ -158,20 +158,20 @@ export const getAwsTokenByOwner = async(ownerId: ObjectId,): Promise<AwsTokenGet
  * @throws {Error} if the token is not found
  * @throws {Error} if the token is not removed
  */
-export const removeAwsToken = async(): Promise<void> => {
-    const sessionUser = await getSessionUser();
-    if (sessionUser === undefined) {
-        throw new Error("Cannot remove AWS Token, user is not logged in");
-    }
-
+export const removeAwsToken = async(userId: ObjectId): Promise<void> => {
     const client = await clientPromise;
     const db = client.db();
     const session = client.startSession();
     try {
         await session.withTransaction(async() => {
+            const user = await getUserById(userId);
+            if (!user) {
+                throw new Error("User not found");
+            }
+
             const result = await db
                 .collection("aws_tokens")
-                .deleteOne({ ownerId: sessionUser._id });
+                .deleteOne({ ownerId: user._id });
             if (!result.acknowledged) {
                 throw new Error("AWS token not removed");
             }
@@ -184,7 +184,7 @@ export const removeAwsToken = async(): Promise<void> => {
 
             // remove the token from the user
             const updatedUser = {
-                ...sessionUser,
+                ...user,
                 awsToken: undefined,
             };
             await updateUser(updatedUser._id, updatedUser);
