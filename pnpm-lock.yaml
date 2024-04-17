@@ -124,6 +124,9 @@ importers:
       '@multiverse/env':
         specifier: workspace:^
         version: link:../../packages/env
+      '@multiverse/log':
+        specifier: workspace:^
+        version: link:../../packages/log
       '@multiverse/multiverse':
         specifier: workspace:^
         version: link:../../packages/multiverse

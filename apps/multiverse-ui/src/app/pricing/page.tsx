@@ -15,8 +15,12 @@ export default async function Pricing() {
         <div className="flex flex-col w-full">
             <PageTitle title={"Pricing"} />
             <Separator className="mb-4" />
-            {session && sessionUser && <PricingStatistics />}
-            <Separator />
+            {session && sessionUser && (
+                <>
+                    <PricingStatistics />)
+                    <Separator />
+                </>)
+            }
             <PriceCalculator />
         </div>
     );

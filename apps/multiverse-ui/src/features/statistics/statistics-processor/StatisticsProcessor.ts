@@ -47,13 +47,13 @@ export class StatisticsProcessor {
             return {
                 timestamp: event.timestamp,
                 totalVectors: event.totalVectors,
-                dataSize: event.totalVectors * 500, //TODO use returned data when provided
+                dataSize: event.totalVectors * (4 * 1536 * 500), //TODO use returned data when provided
             };
         } else if (event.type === "remove") {
             return {
                 timestamp: event.timestamp,
                 totalVectors: event.totalVectors,
-                dataSize: event.totalVectors * 500, //TODO use returned data when provided
+                dataSize: event.totalVectors * (4 * 1536 * 500), //TODO use returned data when provided
             };
         }
 

@@ -1,3 +1,5 @@
+"use client";
+
 import {
     AlertDialog,
     AlertDialogContent,
@@ -14,18 +16,28 @@ import { TrashIcon } from "lucide-react";
 import useModal from "@/features/hooks/use-modal";
 import { trpc } from "@/lib/trpc/client";
 import { toast } from "sonner";
+import { useState } from "react";
+import { Input } from "@/components/ui/input";
+import Spinner from "@/features/fetching/Spinner";
 
-export function DeleteAWSTokenModal() {
-    const refetchToken = trpc.useUtils().awsToken.get.refetch;
+export function DeleteAWSTokenModal({ accessKeyId }: {accessKeyId: string}) {
+    const utils = trpc.useUtils();
+    const [typedToken, setTypedToken] = useState("");
+    const [isProcessing, setIsProcessing] = useState(false);
     const mutation = trpc.awsToken.delete.useMutation({
         onSuccess: async() => {
             try {
                 toast("AWS Token removed");
-                await refetchToken();
+                await utils.awsToken.get.invalidate();
                 handleCloseModal();
+                setIsProcessing(false);
             } catch (error) {
                 toast("Error removing AWS Token");
             }
+        },
+        onError: async() => {
+            toast("Error removing AWS Token");
+            setIsProcessing(false);
         }
     });
     const {
@@ -33,6 +45,7 @@ export function DeleteAWSTokenModal() {
     } = useModal();
 
     const onConfirmDelete = async() => {
+        setIsProcessing(true);
         await mutation.mutateAsync();
     };
 
@@ -61,9 +74,22 @@ export function DeleteAWSTokenModal() {
                     <AlertDialogDescription className="text-secondary-foreground">
             Do you really wish to delete this AWS Token? This action cannot be
             undone and Multiverse loses access to related AWS Account and
-            databases. All the data will be cleaned and lost.
+            databases. All the data will be cleaned and lost. To confirm deletion, type{" "}
+                        <span className="text-destructive font-bold tracking-wide">
+              “{accessKeyId}”
+                        </span>
                     </AlertDialogDescription>
                 </AlertDialogHeader>
+                <Input
+                    id={"typedToken"}
+                    placeholder={"Access Key Id"}
+                    onChange={(e) => setTypedToken(e.target.value)}
+                    className={`bg-inherit ${
+                        typedToken !== accessKeyId
+                            ? "border-destructive text-destructive"
+                            : "text-primary-foreground"
+                    }`}
+                />
                 <AlertDialogFooter>
                     <Button
                         className="flex w-full bg-inherit hover:bg-primary"
@@ -73,10 +99,14 @@ export function DeleteAWSTokenModal() {
             Cancel
                     </Button>
                     <Button
+                        disabled={typedToken !== accessKeyId || isProcessing}
                         className="flex w-full text-destructive-foreground bg-destructive hover:bg-destructive_light"
                         onClick={onConfirmDelete}
                     >
-                        <TrashIcon className="w-6 h-6 mr-2" />
+                        {!isProcessing && <TrashIcon className="w-6 h-6 mr-2" />}
+                        {isProcessing && <div className="mr-2">
+                            <Spinner/>
+                        </div>}
             Delete
                     </Button>
                 </AlertDialogFooter>

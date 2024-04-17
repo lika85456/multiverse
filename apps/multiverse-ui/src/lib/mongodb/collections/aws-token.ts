@@ -1,6 +1,8 @@
 import clientPromise from "@/lib/mongodb/mongodb";
 import type { ObjectId } from "mongodb";
-import { getSessionUser, updateUser } from "@/lib/mongodb/collections/user";
+import {
+    getSessionUser, getUserById, updateUser
+} from "@/lib/mongodb/collections/user";
 import { decryptSecretAccessKey, encryptSecretAccessKey } from "@/lib/encryption/aws-token";
 
 export interface AwsTokenGet {
@@ -13,14 +15,15 @@ export interface AwsTokenGet {
 export interface AwsTokenInsert {
   accessKeyId: string;
   secretAccessKey: string;
+  ownerId: ObjectId;
 }
 
 export const addAwsToken = async(tokenData: AwsTokenInsert,): Promise<AwsTokenGet | undefined> => {
-    const sessionUser = await getSessionUser();
-    if (!sessionUser) {
+    const owner = await getUserById(tokenData.ownerId);
+    if (!owner) {
         throw new Error("Not logged in");
     }
-    if (sessionUser.awsToken) {
+    if (owner.awsToken) {
         throw new Error("User already has an AWS token");
     }
     const client = await clientPromise;
@@ -32,10 +35,10 @@ export const addAwsToken = async(tokenData: AwsTokenInsert,): Promise<AwsTokenGe
             const result = await db.collection("aws_tokens").insertOne({
                 accessKeyId: tokenData.accessKeyId,
                 secretAccessKey: encryptSecretAccessKey(tokenData.accessKeyId, tokenData.secretAccessKey),
-                ownerId: sessionUser._id,
+                ownerId: owner._id,
             });
-            const updatedUser = await updateUser(sessionUser._id, {
-                ...sessionUser,
+            const updatedUser = await updateUser(owner._id, {
+                ...owner,
                 awsToken: result.insertedId,
             });
 
@@ -43,7 +46,7 @@ export const addAwsToken = async(tokenData: AwsTokenInsert,): Promise<AwsTokenGe
                 return {
                     _id: result.insertedId,
                     ...tokenData, // return decrypted data
-                    ownerId: sessionUser._id,
+                    ownerId: owner._id,
                 };
             }
         });

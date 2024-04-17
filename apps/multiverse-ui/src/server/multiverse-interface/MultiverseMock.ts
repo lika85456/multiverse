@@ -22,6 +22,10 @@ type DatabaseWrapper = {
 const databases = new Map<string, DatabaseWrapper>();
 const file = "./src/server/multiverse-interface/multiverseMock.json";
 
+const sleep = (ms: number) => {
+    return new Promise(resolve => setTimeout(resolve, ms));
+};
+
 async function loadJsonFile() {
     try {
         if (!fs.existsSync(file)) {
@@ -171,6 +175,8 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
             totalVectors: newValue.vectors.length,
         };
 
+        await sleep(200);
+
         await this.sendStatistics(event);
 
         return Promise.resolve(undefined);
@@ -196,6 +202,8 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
             totalVectors: databases.get(this.databaseConfiguration.name)?.vectors.length || 0,
         };
 
+        await sleep(200);
+
         await this.sendStatistics(event);
 
         return Promise.resolve();
@@ -216,6 +224,8 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
                 distance: Math.abs(queryMetrics - vector.vector.reduce((acc, value) => acc + value, 0))
             };
         }).sort((a, b) => a.distance - b.distance).slice(0, query.k);
+
+        await sleep(200);
 
         const endTime = performance.now();
         const duration = endTime - startTime;
@@ -242,6 +252,8 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
         });
         await refresh();
 
+        await sleep(200);
+
         return Promise.resolve(undefined);
     }
 
@@ -257,6 +269,8 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
         });
 
         await refresh();
+
+        await sleep(200);
 
         return Promise.resolve();
     }
@@ -294,6 +308,10 @@ export class MultiverseMock implements IMultiverse {
         });
         await refresh();
 
+        await sleep(1000 * 10); // 10 seconds, really fast
+        // await sleep(1000 * 30); // 30 seconds, realistic scenario, fast case
+        // await sleep(1000 * 60); // 1 minute, realistic scenario, awaited case
+
         return Promise.resolve();
     }
 
@@ -309,11 +327,15 @@ export class MultiverseMock implements IMultiverse {
             return Promise.resolve(undefined);
         }
 
+        await sleep(1000);
+
         return Promise.resolve(database.multiverseDatabase);
     }
 
     async listDatabases(): Promise<IMultiverseDatabase[]> {
         await loadJsonFile();
+
+        await sleep(1000);
 
         return (Array.from(databases.values())
             .map((database) => database.multiverseDatabase))
@@ -329,12 +351,17 @@ export class MultiverseMock implements IMultiverse {
         if (!database) {
             return Promise.resolve();
         }
+        const vectorsLength = database.vectors.length;
         if (database.multiverseDatabase.getAwsToken().awsToken.accessKeyId !== this.awsToken.accessKeyId) {
             return Promise.resolve();
         }
 
         databases.delete(name);
         await refresh();
+
+        await sleep(100 * vectorsLength + 1000 * 5); // 5 seconds + 100ms per vector to simulate deletion speed
+        // await sleep(1000 * 30); // 30 seconds, realistic scenario, fast case
+        // await sleep(1000 * 60); // 1 minute, realistic scenario, awaited case
 
         return Promise.resolve();
     }

@@ -18,7 +18,7 @@ import { useParams, useRouter } from "next/navigation";
 import useModal from "@/features/hooks/use-modal";
 import { trpc } from "@/lib/trpc/client";
 import { toast } from "sonner";
-import { TailSpin } from "react-loader-spinner";
+import Spinner from "@/features/fetching/Spinner";
 
 export default function DeleteDatabaseModal() {
     const {
@@ -91,16 +91,7 @@ export default function DeleteDatabaseModal() {
 
                         {!isProcessing && <TrashIcon className="w-6 h-6 mr-2" />}
                         {isProcessing && <div className="mr-2">
-                            <TailSpin
-                                visible={true}
-                                height="24"
-                                width="24"
-                                color="#fff"
-                                ariaLabel="tail-spin-loading"
-                                radius="1"
-                                wrapperStyle={{}}
-                                wrapperClass=""
-                            />
+                            <Spinner />
                         </div>}
             Delete database
                     </Button>

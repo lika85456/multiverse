@@ -47,6 +47,9 @@ export default function UpsertVectorModal({ className, }: {className?: string })
 
         return vector;
     }, [dimensions]);
+    // TODO - naznacit zmenu aktualnych dat, vyzva na refetch
+    // TODO - toast po uspesnom pridani/zmazani
+    // TODO - check label if exists
 
     const [allowActions, setAllowActions] = useState<boolean>(true);
     const [errors, setErrors] = useState<string[]>([]);

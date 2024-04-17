@@ -13,6 +13,7 @@ import { TRPCError } from "@trpc/server";
 import { MultiverseFactory } from "@/server/multiverse-interface/MultiverseFactory";
 import { SQSHandler } from "@/features/statistics/statistics-processor/SQSHandler";
 import { GetCallerIdentityCommand, STSClient } from "@aws-sdk/client-sts";
+import log from "@multiverse/log";
 
 export const awsToken = router({
     /**
@@ -21,6 +22,7 @@ export const awsToken = router({
     get: publicProcedure.query(async() => {
         const user = await getSessionUser();
         if (!user) {
+            log.error("User not found");
             throw new TRPCError({
                 code: "UNAUTHORIZED",
                 message: "User not found",
@@ -29,15 +31,19 @@ export const awsToken = router({
 
         const awsToken = await getAwsTokenByOwner(user._id);
 
-        if (awsToken) {
-            return {
-                accessKeyId: awsToken.accessKeyId,
-                // secretAccessKey: awsToken.secretAccessKey, // do not return on frontend
-                ownerId: awsToken.ownerId,
-            };
-        }
+        if (!awsToken) {
+            log.debug(`AWS Token not found for user: ${user.email}`);
 
-        return null;
+            return null;
+        }
+        log.debug(`AWS Token found for user: ${user.email} with accessKeyId ${awsToken.accessKeyId}`);
+
+        return {
+            accessKeyId: awsToken.accessKeyId,
+            // secretAccessKey: awsToken.secretAccessKey, // do not return on frontend
+            ownerId: awsToken.ownerId,
+        };
+
     }),
     /**
      * Add the aws token to the user. Token is stored into the mongodb
@@ -48,8 +54,19 @@ export const awsToken = router({
             secretAccessKey: z.string(),
         }),)
         .mutation(async(opts) => {
+            const sessionUser = await getSessionUser();
+            if (!sessionUser) {
+                log.error("Cannot add AWS Token, user not found");
+                throw new TRPCError({
+                    code: "UNAUTHORIZED",
+                    message: "Cannot add AWS Token, user not found",
+                });
+            }
+            log.info("Adding AWS Token to user: ", sessionUser.email);
+
             const existingToken = await getAwsTokenByAccessKeyId(opts.input.accessKeyId);
             if (existingToken) {
+                log.error(`Cannot add AWS token ${opts.input.accessKeyId}, token already exists`);
                 throw new TRPCError({
                     code: "CONFLICT",
                     message: "Token already exists"
@@ -71,7 +88,7 @@ export const awsToken = router({
                     throw new Error();
                 }
             } catch (error) {
-                console.log("Error connecting to AWS account: ", error);
+                log.error("Error connecting to AWS account: ", error);
                 throw new TRPCError({
                     code: "BAD_REQUEST",
                     message: "Invalid AWS Token, could not connect to AWS account"
@@ -82,8 +99,10 @@ export const awsToken = router({
             const awsToken = await addAwsToken({
                 accessKeyId: opts.input.accessKeyId,
                 secretAccessKey: opts.input.secretAccessKey,
+                ownerId: sessionUser._id,
             });
             if (!awsToken) {
+                log.error("Error adding token to database");
                 throw new TRPCError({
                     code: "INTERNAL_SERVER_ERROR",
                     message: "Error adding token to database"
@@ -97,12 +116,13 @@ export const awsToken = router({
             // store queue in mongodb
             const result = await addQueueToUser(queueName);
             if (!result) {
+                log.error("Error adding queue to user");
                 throw new TRPCError({
                     code: "INTERNAL_SERVER_ERROR",
                     message: "Error adding queue to user"
                 });
             }
-            console.log("Queue name: ", queueName);
+            log.info("Created SQS Queue with name: ", queueName);
 
             return awsToken;
         }),
@@ -114,11 +134,13 @@ export const awsToken = router({
     delete: publicProcedure.mutation(async() => {
         const sessionUser = await getSessionUser();
         if (!sessionUser) {
+            log.error("Cannot delete AWS Token, user not found");
             throw new TRPCError({
                 code: "UNAUTHORIZED",
-                message: "User not found",
+                message: "Cannot delete AWS Token, user not found",
             });
         }
+        log.debug(`Deleting AWS token for user ${sessionUser.email}`);
 
         // delete queue from AWS and mongodb
         try {
@@ -126,7 +148,7 @@ export const awsToken = router({
             await statisticsProcessor.deleteQueue();
             await removeQueueFromUser();
         } catch (error) {
-            console.error("Error deleting queue: ", error);
+            log.error(`Error deleting queue for user ${sessionUser.email}: ${error}`);
             throw new TRPCError({
                 code: "INTERNAL_SERVER_ERROR",
                 message: "Error deleting queue"
@@ -136,6 +158,7 @@ export const awsToken = router({
         // delete all databases in the mongodb
         const deleteDatabasesResult = await deleteAllDatabases(sessionUser._id);
         if (!deleteDatabasesResult) {
+            log.error(`Error deleting databases for user ${sessionUser.email}`);
             throw new TRPCError({
                 code: "INTERNAL_SERVER_ERROR",
                 message: "Error deleting databases"
@@ -143,14 +166,21 @@ export const awsToken = router({
         }
 
         // delete all databases in the multiverse
-        for (const database of sessionUser.databases) {
-            const multiverse = await (new MultiverseFactory()).getMultiverse();
-            await multiverse.removeDatabase(database);
-        }
+        const multiverse = await (new MultiverseFactory()).getMultiverse();
+        const databases = await multiverse.listDatabases();
+        await Promise.all(databases.map(async(database) => {
+            await multiverse.removeDatabase((await database.getConfiguration()).name);
+        }));
 
         // delete aws token from mongodb
         const tokenRemovalResult = await removeAwsToken();
-
-        return tokenRemovalResult && deleteDatabasesResult;
+        if (!tokenRemovalResult) {
+            log.error(`Error deleting AWS token for user ${sessionUser.email}`);
+            throw new TRPCError({
+                code: "INTERNAL_SERVER_ERROR",
+                message: "Error deleting token"
+            });
+        }
+        log.info(`AWS token deleted for user ${sessionUser.email}`);
     }),
 });

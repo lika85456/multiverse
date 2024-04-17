@@ -151,6 +151,11 @@ export const deleteAllDatabases = async(ownerId: ObjectId) => {
                 throw new Error("Owner not found");
             }
             const databases: string[] = ownerResult.databases;
+            if (!databases || databases.length === 0) {
+                console.log(`No databases to delete for user ${ownerResult.email}`);
+
+                return true;
+            }
             await Promise.all(databases.map(async(database) => {
                 await removeAllDailyStatisticsForDatabase(database);
                 await removeGeneralDatabaseStatistics(database);

@@ -34,7 +34,7 @@ export default function AWSToken() {
                                 {awsToken.accessKeyId}
                             </div>
                         </div>
-                        <DeleteAWSTokenModal />
+                        <DeleteAWSTokenModal accessKeyId={awsToken.accessKeyId}/>
                     </div>
                 )}
 
