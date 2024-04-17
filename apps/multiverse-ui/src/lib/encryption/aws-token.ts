@@ -20,7 +20,7 @@ export const decryptSecretAccessKey = (accessKeyId: string, encryptedSecretAcces
     const iv = Buffer.from(accessKeyId.slice(0, 16));
     const key = Buffer.from(secretKey);
 
-    const decipher = crypto.createDecipheriv(algorithm, secretKey, iv);
+    const decipher = crypto.createDecipheriv(algorithm, key, iv);
     const decrypted = Buffer.concat([decipher.update(Buffer.from(encryptedSecretAccessKey, "hex")), decipher.final()]);
 
     return decrypted.toString();
