@@ -164,13 +164,21 @@ export const awsToken = router({
                 message: "Error deleting databases"
             });
         }
-
+        try {
         // delete all databases in the multiverse
-        const multiverse = await (new MultiverseFactory()).getMultiverse();
-        const databases = await multiverse.listDatabases();
-        await Promise.all(databases.map(async(database) => {
-            await multiverse.removeDatabase((await database.getConfiguration()).name);
-        }));
+            const multiverse = await (new MultiverseFactory()).getMultiverse();
+            const databases = await multiverse.listDatabases();
+            await Promise.all(databases.map(async(database) => {
+                await multiverse.removeDatabase((await database.getConfiguration()).name);
+            }));
+
+        } catch (error) {
+            log.error(`Error deleting databases for user ${sessionUser.email}`);
+            throw new TRPCError({
+                code: "INTERNAL_SERVER_ERROR",
+                message: "Error deleting databases"
+            });
+        }
 
         // delete aws token from mongodb
         const tokenRemovalResult = await removeAwsToken();

@@ -18,7 +18,12 @@ export default function DatabaseList() {
             {isError && <GeneralError/>}
             {databases && isSuccess && (
                 <ul className="flex flex-col w-full py-4 space-y-4">
-                    {databases.map((database) => {
+                    {databases.length === 0 && (
+                        <div className="flex flex-col items-center justify-center w-full">
+                            <p className="text-secondary-foreground">No databases found</p>
+                        </div>
+                    )}
+                    {databases.length !== 0 && databases.map((database) => {
                         return (
                             <li key={database.codeName}>
                                 <DatabaseItem database={{ ...database, }} />

@@ -6,10 +6,9 @@ import { convertToISODate } from "@/lib/mongodb/collections/daily-statistics";
 import { getDailyStatisticsInterval } from "@/lib/mongodb/collections/daily-statistics";
 import { TRPCError } from "@trpc/server";
 import { getSessionUser } from "@/lib/mongodb/collections/user";
-import {
-    addDays, differenceInDays, eachDayOfInterval, isAfter, isEqual, isSameDay
-} from "date-fns";
+import { eachDayOfInterval, isAfter } from "date-fns";
 import { UTCDate } from "@date-fns/utc";
+import log from "@multiverse/log";
 
 export interface GeneralStatisticsData {
     costs: {
@@ -58,7 +57,7 @@ export interface DailyStatisticsData {
 }
 
 const emptyDailyStatistics = {
-    date: "REPLACE_ME",
+    date: "REPLACE_ME", // replace with actual date, CANNOT USE LIKE THIS
     reads: 0,
     writes: 0,
     costs: 0,
@@ -75,6 +74,7 @@ const dateIntervalISO = (from: string | UTCDate, to: string | UTCDate): { fromIS
 
 const getPrice = (databaseName: string, from: string, to: string): number => {
     const { fromISO, toISO } = dateIntervalISO(from, to);
+    log.debug("Getting price for database", databaseName, "from", fromISO, "to", toISO);
 
     //TODO - get price for database and queue for the given period
     return 0;
@@ -92,6 +92,12 @@ const extractReadsWrites = (dailyStatistics: DailyStatisticsGet[]): { reads: num
     });
 };
 
+/**
+ * Calculate general statistics for a specific database in a given period of time
+ * @param databaseName
+ * @param from
+ * @param to
+ */
 const calculateGeneralStatistics = async(databaseName: string, from: string, to: string): Promise<GeneralStatisticsData> => {
     const { fromISO, toISO } = dateIntervalISO(from, to);
     // get general statistics for a specific database
@@ -120,10 +126,19 @@ const calculateGeneralStatistics = async(databaseName: string, from: string, to:
     };
 };
 
+/**
+ * Merges two daily statistics data into one.
+ * Dates must be the same, otherwise an error will be thrown.
+ * @param data1
+ * @param data2
+ */
 const mergeDailyStatisticsData = (data1: DailyStatisticsData, data2: DailyStatisticsData): DailyStatisticsData => {
     if (data1.date !== data2.date) {
-        console.log("Dates must be the same", data1.date, data2.date);
-        throw new Error("Dates must be the same");
+        log.error("Dates must be the same", data1.date, data2.date);
+        throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Dates must be the same",
+        });
     }
 
     const reads = data1.reads + data2.reads;
@@ -142,33 +157,33 @@ const mergeDailyStatisticsData = (data1: DailyStatisticsData, data2: DailyStatis
 };
 
 /**
- * Constructs an empty interval of daily statistics data.
+ * Constructs an empty interval of daily statistics data in a form of map.
  * @param from
  * @param to
  */
 const constructInterval = (from: string, to: string): Map<string, DailyStatisticsData> => {
     const { fromISO, toISO } = dateIntervalISO(from, to);
-    // const x = eachDayOfInterval({
-    //     start: fromISO,
-    //     end: toISO
-    // }, { step: 1 });
-    // console.log(JSON.stringify(x, null, 2));
 
     if (isAfter(new UTCDate(fromISO), new UTCDate(toISO))) {
-        throw new Error("Invalid date range");
+        log.error("Invalid date range", fromISO, toISO);
+        throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Invalid date range",
+        });
     }
+
+    const dates: UTCDate[] = eachDayOfInterval<UTCDate>({
+        start: fromISO,
+        end: toISO
+    }, { step: 1 });
 
     const emptyInterval = new Map<string, DailyStatisticsData>();
-
-    // fill the interval with empty daily statistics
-    let tmpDate = new UTCDate(fromISO);
-    while (differenceInDays(new UTCDate(toISO), new UTCDate(tmpDate)) >= 0) {
-        emptyInterval.set(convertToISODate(tmpDate), {
+    dates.forEach((date) => {
+        emptyInterval.set(convertToISODate(date), {
             ...emptyDailyStatistics,
-            date: convertToISODate(tmpDate),
+            date: convertToISODate(date),
         });
-        tmpDate = addDays(new UTCDate(tmpDate), 1);
-    }
+    });
 
     return emptyInterval;
 };
@@ -182,7 +197,7 @@ const constructInterval = (from: string, to: string): Map<string, DailyStatistic
 const calculateDailyStatistics = async(databaseName: string, from: string, to: string): Promise<DailyStatisticsData[]> => {
     const { fromISO, toISO } = dateIntervalISO(from, to);
 
-    console.log("Calculating daily statistics for the database", databaseName, "from", fromISO, "to", toISO);
+    log.debug("Calculating daily statistics for the database", databaseName, "from", fromISO, "to", toISO);
     const dailyStatistics = await getDailyStatisticsInterval(databaseName, fromISO, toISO);
 
     // construct interval containing every day in the given period (from - to)
@@ -203,6 +218,11 @@ const calculateDailyStatistics = async(databaseName: string, from: string, to: s
     return Array.from(interval.values());
 };
 
+/**
+ * Extracts statistics from daily statistics data.
+ * Statistics are extracted in a form usable for the frontend.
+ * @param data
+ */
 export const extractStatistics = (data: DailyStatisticsData[]): GraphData => {
     return {
         costs: data.map((stat) => {
@@ -233,7 +253,15 @@ export const extractStatistics = (data: DailyStatisticsData[]): GraphData => {
 };
 
 export const statistics = router({
+    /**
+     * Router for general statistics.
+     */
     general: router({
+        /**
+         * Get general statistics for a specific period of time.
+         * If database is not defined, general statistics merged from all databases are returned.
+         * If no databases are defined, empty general statistics are returned.
+         */
         get: publicProcedure.input(z.object({
             database: z.optional(z.string().min(3)),
             from: z.string().refine((v) => new Date(v) instanceof Date, { message: "Invalid date", }),
@@ -243,30 +271,31 @@ export const statistics = router({
 
             const sessionUser = await getSessionUser();
             if (!sessionUser) {
-                console.log("User not found");
+                log.error("Cannot get general statistics, user is not authenticated");
                 throw new TRPCError({
                     code: "UNAUTHORIZED",
-                    message: "User not found",
+                    message: "Cannot get general statistics, user is not authenticated",
                 });
             }
+            log.info("Calculating general statistics for the user", sessionUser.email, "from", fromISO, "to", toISO);
 
             if (opts.input.database) {
                 // calculate general statistics for a specific database
                 if (!sessionUser.databases.includes(opts.input.database)) {
-                    console.log("User does not have access to the database");
+                    log.error("Cannot calculate general statistics, user does not have access to the database");
                     throw new TRPCError({
                         code: "FORBIDDEN",
                         message: "User does not have access to the database",
                     });
                 }
-                console.log("Returning general statistics for the database", opts.input.database, "from", fromISO, "to", toISO);
+                log.info("Returning general statistics for the database", opts.input.database, "from", fromISO, "to", toISO);
 
                 return await calculateGeneralStatistics(opts.input.database, fromISO, toISO);
             }
 
             // check if user has databases defined
             if (!sessionUser.databases) {
-                console.log("User does not have any databases");
+                log.info(`User ${sessionUser.email} does not have any databases, returning empty general statistics`);
 
                 return emptyGeneralStatistics;
             }
@@ -275,7 +304,7 @@ export const statistics = router({
             const generalStatistics = await Promise.all(sessionUser.databases.map(async(database) => {
                 return await calculateGeneralStatistics(database, fromISO, toISO);
             }));
-            console.log("Returning general statistics for all databases from", fromISO, "to", toISO);
+            log.info("Returning general statistics for all databases from", fromISO, "to", toISO, "for user", sessionUser.email);
 
             // sum general statistics for all databases
             return generalStatistics.reduce((acc, curr) => {
@@ -289,7 +318,15 @@ export const statistics = router({
             }, emptyGeneralStatistics);
         }),
     }),
+    /**
+     * Router for daily statistics.
+     */
     daily: router({
+        /**
+         * Get daily statistics for a specific period of time.
+         * If database is not defined, daily statistics merged from all databases are returned.
+         * If no databases are defined, empty daily statistics are returned.
+         */
         get: publicProcedure.input(z.object({
             database: z.optional(z.string().min(3)),
             from: z.string().refine((v) => new Date(v) instanceof Date, { message: "Invalid date", }),
@@ -299,40 +336,44 @@ export const statistics = router({
 
             const sessionUser = await getSessionUser();
             if (!sessionUser) {
-                console.log("User not found");
+                log.error("Cannot get daily statistics, user is not authenticated");
                 throw new TRPCError({
                     code: "UNAUTHORIZED",
-                    message: "User not found",
+                    message: "Cannot get daily statistics, user is not authenticated",
                 });
             }
             if (fromISO > toISO) {
-                console.log("Invalid date range");
+                log.error("Cannot get daily statistics, invalid date range");
                 throw new TRPCError({
                     code: "BAD_REQUEST",
-                    message: "Invalid date range",
+                    message: "Cannot get daily statistics, invalid date range"
                 });
             }
 
+            // calculate daily statistics for a specific database if defined
             if (opts.input.database) {
                 if (!sessionUser.databases.includes(opts.input.database)) {
-                    console.log("User does not have access to the database");
+                    log.error("Cannot get daily statistics, user does not have access to the database");
                     throw new TRPCError({
                         code: "FORBIDDEN",
-                        message: "User does not have access to the database",
+                        message: "Cannot get daily statistics, user does not have access to the database",
                     });
                 }
+
+                log.info("Calculating daily statistics for the database", opts.input.database, "from", fromISO, "to", toISO);
 
                 // calculate daily statistics for a specific database
                 return extractStatistics(await calculateDailyStatistics(opts.input.database, fromISO, toISO));
             }
-            // calculate daily statistics for all databases sessionUser owns
+
+            // calculate daily statistics for all databases sessionUser owns otherwise
             const dailyDatabaseStatistics = await Promise.all(sessionUser.databases.map(async(database) => {
                 return await calculateDailyStatistics(database, fromISO, toISO);
             }));
 
             // if no daily statistics found, return empty statistics
             if (dailyDatabaseStatistics.length === 0) {
-                console.log("No daily statistics found");
+                log.info(`No daily statistics found for user ${sessionUser.email} from ${fromISO} to ${toISO}`);
 
                 return extractStatistics(Array.from(constructInterval(fromISO, toISO).values()));
             }
@@ -344,6 +385,8 @@ export const statistics = router({
                     finalStatistics[index] = mergeDailyStatisticsData(stat, dailyDatabaseStatistics[i][index]);
                 });
             }
+
+            log.info("Returning daily statistics for all databases from", fromISO, "to", toISO, "for user", sessionUser.email);
 
             return extractStatistics(finalStatistics);
         }),

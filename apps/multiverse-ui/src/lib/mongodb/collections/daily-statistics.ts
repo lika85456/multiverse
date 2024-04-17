@@ -2,6 +2,7 @@ import type { ObjectId } from "mongodb";
 import clientPromise from "@/lib/mongodb/mongodb";
 import { UTCDate } from "@date-fns/utc";
 import { formatISO } from "date-fns";
+import log from "@multiverse/log";
 
 export const collectionName = "daily_statistics";
 
@@ -37,11 +38,14 @@ export const getDailyStatistics = async(dates: string[], databaseName: string): 
     const client = await clientPromise;
     const db = client.db();
 
+    log.debug(`Getting daily statistics for dates ${JSON.stringify(dates, null, 2)} for ${databaseName} `);
     try {
         const result = await db.collection(collectionName).find({
             date: dates.map((date) => convertToISODate(date)),
             databaseName
         }).toArray();
+
+        console.debug(`Found ${result.length} daily statistics`);
 
         return result.map((stat) => {
             return {
@@ -55,7 +59,7 @@ export const getDailyStatistics = async(dates: string[], databaseName: string): 
             };
         });
     } catch (error) {
-        console.log("Error getting daily statistics: ", error);
+        log.error("Error getting daily statistics: ", error);
         throw new Error("Error getting daily statistics");
     }
 };
@@ -77,6 +81,7 @@ export const getDailyStatisticsInterval = async(
         }).toArray();
 
         return result.map((stat) => {
+
             return {
                 _id: stat._id,
                 date: convertToISODate(stat.date),
@@ -88,7 +93,7 @@ export const getDailyStatisticsInterval = async(
             };
         });
     } catch (error) {
-        console.log("Error getting daily statistics: ", error);
+        log.error("Error getting daily statistics: ", error);
         throw new Error("Error getting daily statistics");
     }
 
@@ -127,7 +132,7 @@ export const addDailyStatistics = async(statistics: DailyStatisticsAdd): Promise
             }
         }, { upsert: true });
     } catch (error) {
-        console.log("Error adding daily statistics: ", error);
+        log.error("Error adding daily statistics: ", error);
         throw new Error("Error adding daily statistics");
     }
 };
@@ -136,10 +141,11 @@ export const removeAllDailyStatisticsForDatabase = async(databaseName: string): 
     const client = await clientPromise;
     const db = client.db();
 
+    log.info(`Removing all daily statistics for database ${databaseName}`);
     try {
         await db.collection(collectionName).deleteMany({ databaseName });
     } catch (error) {
-        console.log("Error removing daily statistics: ", error);
+        log.error("Error removing daily statistics: ", error);
         throw new Error("Error removing daily statistics");
     }
 };

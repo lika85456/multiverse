@@ -8,6 +8,7 @@ import {
     getGeneralDatabaseStatistics
 } from "@/lib/mongodb/collections/general-database-statistics";
 import { UTCDate } from "@date-fns/utc";
+import log from "@multiverse/log";
 
 export class StatisticsProcessor {
 
@@ -134,7 +135,7 @@ export class StatisticsProcessor {
     }
 
     private async processEventsForDatabase(databaseName: string, events: Event[]): Promise<boolean> {
-        console.log(`Processing statistics for database ${databaseName}`);
+        log.info(`Processing statistics for database ${databaseName}`);
         const eventsByDate = this.groupByDate(events);
         const allStatistics = await getDailyStatistics(Array.from(eventsByDate.keys()).map((e) => convertToISODate(e)), databaseName);
 

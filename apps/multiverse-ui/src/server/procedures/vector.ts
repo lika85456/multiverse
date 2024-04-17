@@ -1,27 +1,33 @@
 import { publicProcedure, router } from "@/server/trpc";
 import type { QueryResult } from "@multiverse/multiverse/src/core/Query";
 import z from "zod";
-
 import type { NewVector } from "@multiverse/multiverse/src/core/Vector";
-import { MultiverseFactory } from "@/server/multiverse-interface/MultiverseFactory";
+import log from "@multiverse/log";
+import { getRelatedDatabase, normalizeString } from "@/server/procedures/database";
+import { TRPCError } from "@trpc/server";
+
 export const vector = router({
     query: publicProcedure.input(z.object({
         database: z.string(),
         vector: z.array(z.number()),
         k: z.number(),
     })).mutation(async(opts): Promise<QueryResult> => {
-        const multiverse = await (new MultiverseFactory()).getMultiverse();
-        const multiverseDatabase = await multiverse.getDatabase(opts.input.database);
+        log.info(`Performing query on database ${opts.input.database}`);
+        const multiverseDatabase = await getRelatedDatabase(opts.input.database);
 
-        if (!multiverseDatabase) {
-            throw new Error("Database not found");
+        try {
+            return multiverseDatabase.query({
+                vector: opts.input.vector,
+                k: opts.input.k,
+                sendVector: false
+            });
+        } catch (error) {
+            log.error(`Error querying database ${opts.input.database}`);
+            throw new TRPCError({
+                code: "INTERNAL_SERVER_ERROR",
+                message: `Error querying database ${opts.input.database}`,
+            });
         }
-
-        return multiverseDatabase.query({
-            vector: opts.input.vector,
-            k: opts.input.k,
-            sendVector: false
-        });
     }),
     post: publicProcedure.input(z.object({
         database: z.string(),
@@ -31,26 +37,41 @@ export const vector = router({
             metadata: z.record(z.string()).optional(),
         })),
     })).mutation(async(opts): Promise<void> => {
-        const multiverse = await (new MultiverseFactory()).getMultiverse();
-        const multiverseDatabase = await multiverse.getDatabase(opts.input.database);
+        log.info("Adding new vector to database", opts.input.database);
+        const multiverseDatabase = await getRelatedDatabase(opts.input.database);
 
-        if (!multiverseDatabase) {
-            throw new Error("Database not found");
+        const newVector: NewVector[] = opts.input.vector.map(vector => ({
+            vector: vector.vector,
+            label: normalizeString(vector.label),
+            metadata: vector.metadata,
+        }));
+
+        try {
+            await multiverseDatabase.add(newVector);
+        } catch (error) {
+            log.error(`Error adding vector to database ${opts.input.database}`);
+            throw new TRPCError({
+                code: "INTERNAL_SERVER_ERROR",
+                message: `Error adding vector to database ${opts.input.database}`,
+            });
         }
-        const newVector: NewVector[] = opts.input.vector;
-        await multiverseDatabase.add(newVector);
     }),
     delete: publicProcedure.input(z.object({
         database: z.string(),
         label: z.string(),
     })).mutation(async(opts): Promise<void> => {
-        const multiverse = await (new MultiverseFactory()).getMultiverse();
-        const multiverseDatabase = await multiverse.getDatabase(opts.input.database);
+        log.info("Removing vector from database", opts.input.database);
+        const multiverseDatabase = await getRelatedDatabase(opts.input.database);
 
-        if (!multiverseDatabase) {
-            throw new Error("Database not found");
+        try {
+            await multiverseDatabase.remove([opts.input.label]);
+        } catch (error) {
+            log.error(`Error deleting vector from database ${opts.input.database}`);
+            throw new TRPCError({
+                code: "INTERNAL_SERVER_ERROR",
+                message: `Error deleting vector from database ${opts.input.database}`,
+            });
         }
-
         await multiverseDatabase.remove([opts.input.label]);
     }),
 });
