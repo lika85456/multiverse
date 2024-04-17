@@ -38,7 +38,6 @@ async function loadJsonFile() {
         if (!jsonData) {
             return;
         }
-        // console.log("jsonData", jsonData);
 
         const parsedData = JSON.parse(jsonData);
         for (const database of parsedData) {
@@ -51,7 +50,7 @@ async function loadJsonFile() {
             });
         }
     } catch (error) {
-        console.error("Error loading databases:", error);
+        log.error("Error loading databases:", error);
     }
 }
 
@@ -70,7 +69,7 @@ async function saveJsonFile() {
     try {
         fs.writeFileSync(file, JSON.stringify(data, null, 2));
     } catch (error) {
-        console.error("Error saving databases:", error);
+        log.error("Error saving databases:", error);
     }
 }
 
@@ -146,7 +145,7 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
             });
             await sqsClient.send(sendMessageCommand);
         } catch (error) {
-            console.log("Error sending statistics: ", error);
+            log.error("Error sending statistics: ", error);
         }
 
         return Promise.resolve(undefined);

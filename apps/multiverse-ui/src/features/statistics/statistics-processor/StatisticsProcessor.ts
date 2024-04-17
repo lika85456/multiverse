@@ -37,7 +37,7 @@ export class StatisticsProcessor {
 
     private calculateCost(databaseName: string, date: string): number {
         const dateISO = convertToISODate(date);
-        console.log(`Calculating cost for database ${databaseName} and date ${dateISO}`);
+        log.debug(`Calculating cost for database ${databaseName} and date ${dateISO}`);
 
         //TODO - calculate cost
         return 0;
@@ -67,7 +67,7 @@ export class StatisticsProcessor {
             // filter only write events (query events don't contain total vectors information)
             const writeEvents = events.filter((event) => event.type === "add" || event.type === "remove");
             if (writeEvents.length === 0) {
-                console.log(`No write events for database ${databaseName} received`);
+                log.info(`No write events for database ${databaseName} received`);
 
                 return;
             }
@@ -94,7 +94,7 @@ export class StatisticsProcessor {
                     dataSize: dataSize,
                     totalVectors: totalVectors,
                 });
-                console.log(`General statistics for database ${databaseName} created`);
+                log.info(`General statistics for database ${databaseName} created`);
 
                 return;
             }
@@ -105,13 +105,13 @@ export class StatisticsProcessor {
                 generalStatistics.totalVectors = totalVectors;
 
                 await addGeneralDatabaseStatistics(generalStatistics);
-                console.log(`General statistics for database ${databaseName} updated`);
+                log.info(`General statistics for database ${databaseName} updated`);
 
                 return;
             }
 
             // don't update otherwise
-            console.log(`General statistics for database ${databaseName} not updated`);
+            log.info(`General statistics for database ${databaseName} not updated`);
         });
     }
 
@@ -137,7 +137,9 @@ export class StatisticsProcessor {
     private async processEventsForDatabase(databaseName: string, events: Event[]): Promise<boolean> {
         log.info(`Processing statistics for database ${databaseName}`);
         const eventsByDate = this.groupByDate(events);
-        const allStatistics = await getDailyStatisticsForDates(Array.from(eventsByDate.keys()).map((e) => convertToISODate(e)), databaseName);
+        const allStatistics = await getDailyStatisticsForDates(Array
+            .from(eventsByDate.keys())
+            .map((e) => convertToISODate(e)), databaseName);
 
         // process events for each date
         eventsByDate.forEach((events, date) => {
@@ -155,7 +157,7 @@ export class StatisticsProcessor {
                 };
                 // apply statistics to the innit object
                 addDailyStatistics(this.applyStatistics(events, innit)).then(() => {
-                    console.log(`Statistics for database ${databaseName} and date ${date} processed`);
+                    log.info(`Statistics for database ${databaseName} and date ${date} processed`);
                 });
 
                 //update general statistics
@@ -174,7 +176,7 @@ export class StatisticsProcessor {
                 };
                 // apply statistics to the innit object constructed from the existing statistics
                 addDailyStatistics(this.applyStatistics(events, innit)).then(() => {
-                    console.log(`Statistics for database ${databaseName} and date ${date} processed`);
+                    log.info(`Statistics for database ${databaseName} and date ${date} processed`);
                 });
 
                 //update general statistics
@@ -183,23 +185,27 @@ export class StatisticsProcessor {
             } else {
                 // if there are multiple statistics for the date, log an error
                 // don't throw an error to not block the processing of other databases
-                console.log(`Multiple statistics for the same date ${date} and database ${databaseName}`);
+                log.error(`Multiple statistics for the same date ${date} and database ${databaseName}`);
             }
         });
-        console.log(`Statistics for database ${databaseName} processed`);
+        log.info(`Statistics for database ${databaseName} processed`);
 
         return true;
     }
 
     public processEvents(events: Event[]): void {
-        console.log("Processing statistics");
+        log.info("Processing statistics");
         const eventsByDbName = this.groupByDbName(events);
 
         // start processing events for each database
         eventsByDbName.forEach((events, dbName) => {
             this.processEventsForDatabase(dbName, events).then((result) => {
                 // done asynchronously to not block the processing of other databases
-                console.log(`Statistics for database ${dbName} ${result ? "processed" : "failed"}`);
+                if (result) {
+                    log.info(`Statistics processing for database ${dbName} processed`);
+                } else {
+                    log.error(`Statistics processing for database ${dbName} failed`);
+                }
             });
         });
     }
