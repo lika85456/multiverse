@@ -3,6 +3,7 @@ import z from "zod";
 import { getRelatedDatabase, normalizeString } from "@/server/procedures/database";
 import { TRPCError } from "@trpc/server";
 import log from "@multiverse/log";
+import { handleError } from "@/server";
 
 const MAX_TOKEN_NAME_LENGTH = 16;
 
@@ -20,25 +21,25 @@ export const secretToken = router({
             validUntil: z.number(),
         }),
     })).mutation(async(opts): Promise<void> => {
-        const multiverseDatabase = await getRelatedDatabase(opts.input.codeName);
-        const tokens = (await multiverseDatabase.getConfiguration()).secretTokens;
-        if (tokens.find(token => token.name === opts.input.secretToken.name)) {
-            log.error(`Token with name ${opts.input.secretToken.name} already exists`);
-            throw new TRPCError({
-                code: "CONFLICT",
-                message: "Token already exists",
-            });
-        }
         try {
+            const multiverseDatabase = await getRelatedDatabase(opts.input.codeName);
+            const tokens = (await multiverseDatabase.getConfiguration()).secretTokens;
+            if (tokens.find(token => token.name === opts.input.secretToken.name)) {
+                log.error(`Token with name ${opts.input.secretToken.name} already exists`);
+                throw new TRPCError({
+                    code: "CONFLICT",
+                    message: "Token already exists",
+                });
+            }
             await multiverseDatabase.addToken({
                 name: normalizeString(opts.input.secretToken.name, MAX_TOKEN_NAME_LENGTH),
                 validUntil: opts.input.secretToken.validUntil,
             });
         } catch (error) {
-            log.error(`Error adding token to database ${opts.input.codeName}`);
-            throw new TRPCError({
-                code: "INTERNAL_SERVER_ERROR",
-                message: `Error adding token to database ${opts.input.codeName}`,
+            throw handleError({
+                error,
+                logMessage: `Error adding token ${opts.input.secretToken.name} to database ${opts.input.codeName}`,
+                errorMessage: "Error adding token"
             });
         }
     }),
@@ -50,15 +51,14 @@ export const secretToken = router({
         codeName: z.string(),
         tokenName: z.string(),
     })).mutation(async(opts): Promise<void> => {
-        const multiverseDatabase = await getRelatedDatabase(opts.input.codeName);
-
         try {
+            const multiverseDatabase = await getRelatedDatabase(opts.input.codeName);
             await multiverseDatabase.removeToken(opts.input.tokenName);
         } catch (error) {
-            log.error(`Error removing token from database ${opts.input.codeName}`);
-            throw new TRPCError({
-                code: "INTERNAL_SERVER_ERROR",
-                message: `Error removing token from database ${opts.input.codeName}`,
+            throw handleError({
+                error,
+                logMessage: `Error removing token ${opts.input.tokenName} from database ${opts.input.codeName}`,
+                errorMessage: "Error removing token"
             });
         }
     }),

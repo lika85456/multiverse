@@ -9,6 +9,7 @@ import { getSessionUser } from "@/lib/mongodb/collections/user";
 import { eachDayOfInterval, isAfter } from "date-fns";
 import { UTCDate } from "@date-fns/utc";
 import log from "@multiverse/log";
+import { handleError } from "@/server";
 
 export interface GeneralStatisticsData {
     costs: {
@@ -66,12 +67,19 @@ const emptyDailyStatistics = {
 };
 
 const dateIntervalISO = (from: string | UTCDate, to: string | UTCDate): { fromISO: string, toISO: string } => {
+    //TODO replace with UTCDate
     return {
         fromISO: convertToISODate(from),
         toISO: convertToISODate(to),
     };
 };
 
+/**
+ * Gets price for a specific database in a given period of time from AWS API.
+ * @param databaseName
+ * @param from
+ * @param to
+ */
 const getPrice = (databaseName: string, from: string, to: string): number => {
     const { fromISO, toISO } = dateIntervalISO(from, to);
     log.debug("Getting price for database", databaseName, "from", fromISO, "to", toISO);
@@ -80,6 +88,10 @@ const getPrice = (databaseName: string, from: string, to: string): number => {
     return 0;
 };
 
+/**
+ * Extract reads and writes from daily statistics
+ * @param dailyStatistics
+ */
 const extractReadsWrites = (dailyStatistics: DailyStatisticsGet[]): { reads: number, writes: number } => {
     return dailyStatistics.reduce((acc, curr) => {
         return {
@@ -267,55 +279,60 @@ export const statistics = router({
             from: z.string().refine((v) => new Date(v) instanceof Date, { message: "Invalid date", }),
             to: z.string().refine((v) => new Date(v) instanceof Date, { message: "Invalid date", }),
         })).query(async(opts): Promise<GeneralStatisticsData> => {
-            const { fromISO, toISO } = dateIntervalISO(opts.input.from, opts.input.to);
+            try {
+                const { fromISO, toISO } = dateIntervalISO(opts.input.from, opts.input.to);
 
-            const sessionUser = await getSessionUser();
-            if (!sessionUser) {
-                log.error("Cannot get general statistics, user is not authenticated");
-                throw new TRPCError({
-                    code: "UNAUTHORIZED",
-                    message: "Cannot get general statistics, user is not authenticated",
-                });
-            }
-            log.info("Calculating general statistics for the user", sessionUser.email, "from", fromISO, "to", toISO);
-
-            if (opts.input.database) {
-                // calculate general statistics for a specific database
-                if (!sessionUser.databases.includes(opts.input.database)) {
-                    log.error("Cannot calculate general statistics, user does not have access to the database");
+                const sessionUser = await getSessionUser();
+                if (!sessionUser) {
                     throw new TRPCError({
-                        code: "FORBIDDEN",
-                        message: "User does not have access to the database",
+                        code: "UNAUTHORIZED",
+                        message: "Cannot get general statistics, user is not authenticated",
                     });
                 }
-                log.info("Returning general statistics for the database", opts.input.database, "from", fromISO, "to", toISO);
+                log.info("Calculating general statistics for the user", sessionUser.email, "from", fromISO, "to", toISO);
 
-                return await calculateGeneralStatistics(opts.input.database, fromISO, toISO);
+                if (opts.input.database) {
+                    // calculate general statistics for a specific database
+                    if (!sessionUser.databases.includes(opts.input.database)) {
+                        throw new TRPCError({
+                            code: "FORBIDDEN",
+                            message: "User does not have access to the database",
+                        });
+                    }
+                    log.info("Returning general statistics for the database", opts.input.database, "from", fromISO, "to", toISO);
+
+                    return await calculateGeneralStatistics(opts.input.database, fromISO, toISO);
+                }
+
+                // check if user has databases defined
+                if (!sessionUser.databases) {
+                    log.info(`User ${sessionUser.email} does not have any databases, returning empty general statistics`);
+
+                    return emptyGeneralStatistics;
+                }
+
+                // calculate general statistics for all databases
+                const generalStatistics = await Promise.all(sessionUser.databases.map(async(database) => {
+                    return await calculateGeneralStatistics(database, fromISO, toISO);
+                }));
+                log.info("Returning general statistics for all databases from", fromISO, "to", toISO, "for user", sessionUser.email);
+
+                // sum general statistics for all databases
+                return generalStatistics.reduce((acc, curr) => {
+                    acc.costs.value += curr.costs.value;
+                    acc.totalVectors.count += curr.totalVectors.count;
+                    acc.totalVectors.bytes += curr.totalVectors.bytes;
+                    acc.reads += curr.reads;
+                    acc.writes += curr.writes;
+
+                    return acc;
+                }, emptyGeneralStatistics);
+            } catch (error) {
+                throw handleError({
+                    error,
+                    errorMessage: "Error calculating general statistics"
+                });
             }
-
-            // check if user has databases defined
-            if (!sessionUser.databases) {
-                log.info(`User ${sessionUser.email} does not have any databases, returning empty general statistics`);
-
-                return emptyGeneralStatistics;
-            }
-
-            // calculate general statistics for all databases
-            const generalStatistics = await Promise.all(sessionUser.databases.map(async(database) => {
-                return await calculateGeneralStatistics(database, fromISO, toISO);
-            }));
-            log.info("Returning general statistics for all databases from", fromISO, "to", toISO, "for user", sessionUser.email);
-
-            // sum general statistics for all databases
-            return generalStatistics.reduce((acc, curr) => {
-                acc.costs.value += curr.costs.value;
-                acc.totalVectors.count += curr.totalVectors.count;
-                acc.totalVectors.bytes += curr.totalVectors.bytes;
-                acc.reads += curr.reads;
-                acc.writes += curr.writes;
-
-                return acc;
-            }, emptyGeneralStatistics);
         }),
     }),
     /**
@@ -332,63 +349,66 @@ export const statistics = router({
             from: z.string().refine((v) => new Date(v) instanceof Date, { message: "Invalid date", }),
             to: z.string().refine((v) => new Date(v) instanceof Date, { message: "Invalid date", }),
         })).query(async(opts): Promise<GraphData> => {
-            const { fromISO, toISO } = dateIntervalISO(opts.input.from, opts.input.to);
+            try {
+                const { fromISO, toISO } = dateIntervalISO(opts.input.from, opts.input.to);
 
-            const sessionUser = await getSessionUser();
-            if (!sessionUser) {
-                log.error("Cannot get daily statistics, user is not authenticated");
-                throw new TRPCError({
-                    code: "UNAUTHORIZED",
-                    message: "Cannot get daily statistics, user is not authenticated",
-                });
-            }
-            if (fromISO > toISO) {
-                log.error("Cannot get daily statistics, invalid date range");
-                throw new TRPCError({
-                    code: "BAD_REQUEST",
-                    message: "Cannot get daily statistics, invalid date range"
-                });
-            }
-
-            // calculate daily statistics for a specific database if defined
-            if (opts.input.database) {
-                if (!sessionUser.databases.includes(opts.input.database)) {
-                    log.error("Cannot get daily statistics, user does not have access to the database");
+                const sessionUser = await getSessionUser();
+                if (!sessionUser) {
                     throw new TRPCError({
-                        code: "FORBIDDEN",
-                        message: "Cannot get daily statistics, user does not have access to the database",
+                        code: "UNAUTHORIZED",
+                        message: "User is not authenticated",
+                    });
+                }
+                if (fromISO > toISO) {
+                    throw new TRPCError({
+                        code: "BAD_REQUEST",
+                        message: "Invalid date range"
                     });
                 }
 
-                log.info("Calculating daily statistics for the database", opts.input.database, "from", fromISO, "to", toISO);
+                // calculate daily statistics for a specific database if defined
+                if (opts.input.database) {
+                    if (!sessionUser.databases.includes(opts.input.database)) {
+                        throw new TRPCError({
+                            code: "FORBIDDEN",
+                            message: "User does not have access to the database",
+                        });
+                    }
 
-                // calculate daily statistics for a specific database
-                return extractStatistics(await calculateDailyStatistics(opts.input.database, fromISO, toISO));
-            }
+                    log.info("Calculating daily statistics for the database", opts.input.database, "from", fromISO, "to", toISO);
 
-            // calculate daily statistics for all databases sessionUser owns otherwise
-            const dailyDatabaseStatistics = await Promise.all(sessionUser.databases.map(async(database) => {
-                return await calculateDailyStatistics(database, fromISO, toISO);
-            }));
+                    // calculate daily statistics for a specific database
+                    return extractStatistics(await calculateDailyStatistics(opts.input.database, fromISO, toISO));
+                }
 
-            // if no daily statistics found, return empty statistics
-            if (dailyDatabaseStatistics.length === 0) {
-                log.info(`No daily statistics found for user ${sessionUser.email} from ${fromISO} to ${toISO}`);
+                // calculate daily statistics for all databases sessionUser owns otherwise
+                const dailyDatabaseStatistics = await Promise.all(sessionUser.databases.map(async(database) => {
+                    return await calculateDailyStatistics(database, fromISO, toISO);
+                }));
 
-                return extractStatistics(Array.from(constructInterval(fromISO, toISO).values()));
-            }
+                // if no daily statistics found, return empty statistics
+                if (dailyDatabaseStatistics.length === 0) {
+                    log.info(`No daily statistics found for user ${sessionUser.email} from ${fromISO} to ${toISO}`);
 
-            // merge daily statistics from all databases to get the final statistics
-            const finalStatistics: DailyStatisticsData[] = dailyDatabaseStatistics[0];
-            for (let i = 1; i < dailyDatabaseStatistics.length; i++) {
-                finalStatistics.forEach((stat, index) => {
-                    finalStatistics[index] = mergeDailyStatisticsData(stat, dailyDatabaseStatistics[i][index]);
+                    return extractStatistics(Array.from(constructInterval(fromISO, toISO).values()));
+                }
+
+                // merge daily statistics from all databases to get the final statistics
+                const finalStatistics: DailyStatisticsData[] = dailyDatabaseStatistics[0];
+                for (let i = 1; i < dailyDatabaseStatistics.length; i++) {
+                    finalStatistics.forEach((stat, index) => {
+                        finalStatistics[index] = mergeDailyStatisticsData(stat, dailyDatabaseStatistics[i][index]);
+                    });
+                }
+                log.info("Returning daily statistics for all databases from", fromISO, "to", toISO, "for user", sessionUser.email);
+
+                return extractStatistics(finalStatistics);
+            } catch (error) {
+                throw handleError({
+                    error,
+                    errorMessage: "Error calculating daily statistics"
                 });
             }
-
-            log.info("Returning daily statistics for all databases from", fromISO, "to", toISO, "for user", sessionUser.email);
-
-            return extractStatistics(finalStatistics);
         }),
     }),
 });

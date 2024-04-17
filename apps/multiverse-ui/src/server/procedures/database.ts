@@ -13,10 +13,18 @@ import type { UserGet } from "@/lib/mongodb/collections/user";
 import { getSessionUser } from "@/lib/mongodb/collections/user";
 import { MultiverseFactory } from "@/server/multiverse-interface/MultiverseFactory";
 import log from "@multiverse/log";
+import { handleError } from "@/server";
 
 export const MAX_DB_CODE_NAME_LENGTH = 24;
 export const MAX_DB_NAME_LENGTH = 64;
 
+/**
+ * Normalize a string by trimming and removing special characters.
+ * The length of the normalized string can be specified (default is 64).
+ * @throws {TRPCError} - if the string is empty
+ * @param str
+ * @param length
+ */
 export const normalizeString = (str: string, length = MAX_DB_NAME_LENGTH): string => {
     const normalized = str.trim().replace(/[^0-9a-zA-Z ]/gi, "").slice(0, length);
     if (normalized.length === 0) {
@@ -30,6 +38,11 @@ export const normalizeString = (str: string, length = MAX_DB_NAME_LENGTH): strin
     return normalized;
 };
 
+/**
+ * Convert a string to an alpha-numeric string.
+ * @throws {TRPCError} - if the string is empty
+ * @param str
+ */
 const stringToAlphaNumeric = (str: string): string => {
     const noSpaces = str.trim().split(" ").join("_");
     if (noSpaces.length === 0) {
@@ -39,11 +52,14 @@ const stringToAlphaNumeric = (str: string): string => {
             message: "Cannot convert to alpha numeric, invalid string provided",
         });
     }
-    const noSpecialChars = noSpaces.replace(/[^0-9a-z_]/gi, "");
 
-    return noSpecialChars.toLowerCase();
+    return noSpaces.replace(/[^0-9a-z_]/gi, "").toLowerCase();
 };
 
+/**
+ * Generate a database code name.
+ * @param name
+ */
 const generateDatabaseCodeName = (name: string): string => {
     const slicedAlphanumericalName = stringToAlphaNumeric(name).slice(0, 12);
 
@@ -58,17 +74,16 @@ const generateDatabaseCodeName = (name: string): string => {
 export const checkAccessToDatabase = async(databaseCodeName: string): Promise<UserGet> => {
     const sessionUser = await getSessionUser();
     if (!sessionUser) {
-        log.error("User not found is not authenticated");
+        log.error("User is not authenticated");
         throw new TRPCError({
             code: "UNAUTHORIZED",
-            message: "User not found is not authenticated",
+            message: "User is not authenticated",
         });
     }
     if (!sessionUser.databases || !sessionUser.databases.includes(databaseCodeName)) {
-        log.error(`User ${sessionUser.email} does not have access to database ${databaseCodeName}`);
         throw new TRPCError({
             code: "FORBIDDEN",
-            message: "User does not have access to the database",
+            message: `User ${sessionUser.email} does not have access to database ${databaseCodeName}`,
         });
     }
 
@@ -82,11 +97,9 @@ export const checkAccessToDatabase = async(databaseCodeName: string): Promise<Us
  */
 export const getRelatedDatabase = async(codeName: string) => {
     await checkAccessToDatabase(codeName);
-
     const multiverse = await (new MultiverseFactory()).getMultiverse();
     const multiverseDatabase = await multiverse.getDatabase(codeName);
     if (!multiverseDatabase) {
-        log.error(`Database ${codeName} was not found`);
         throw new TRPCError({
             code: "NOT_FOUND",
             message: `Database ${codeName} was not found`,
@@ -106,10 +119,10 @@ export const getRelatedDatabase = async(codeName: string) => {
 const storeDatabase = async(configuration: StoredDatabaseConfiguration): Promise<DatabaseGet> => {
     const sessionUser = await getSessionUser();
     if (!sessionUser) {
-        log.error("User not found is not authenticated");
+        log.error("User is not authenticated");
         throw new TRPCError({
             code: "UNAUTHORIZED",
-            message: "User not found is not authenticated",
+            message: "User is not authenticated",
         });
     }
 
@@ -125,10 +138,9 @@ const storeDatabase = async(configuration: StoredDatabaseConfiguration): Promise
 
         const result = await createDatabase(databaseToInsert);
         if (!result) {
-            log.error("Could not create the database");
             throw new TRPCError({
                 code: "INTERNAL_SERVER_ERROR",
-                message: "Could not create the database",
+                message: `Could not create the database ${configuration.name} in mongodb`,
             });
         }
         const resultDatabase = {
@@ -163,19 +175,18 @@ export const database = router({
      * @returns {DatabaseGet[]} - list of databases
      */
     list: publicProcedure.query(async(): Promise<DatabaseGet[]> => {
-        const sessionUser = await getSessionUser();
-        if (!sessionUser) {
-            log.error("User is not authenticated");
-            throw new TRPCError({
-                code: "UNAUTHORIZED",
-                message: "User is not authenticated",
-            });
-        }
-
-        const multiverse = await (new MultiverseFactory()).getMultiverse();
-        const listedDatabases = await multiverse.listDatabases();
-
         try {
+            const sessionUser = await getSessionUser();
+            if (!sessionUser) {
+                throw new TRPCError({
+                    code: "UNAUTHORIZED",
+                    message: "User is not authenticated",
+                });
+            }
+
+            const multiverse = await (new MultiverseFactory()).getMultiverse();
+            const listedDatabases = await multiverse.listDatabases();
+
             return await Promise.all(listedDatabases.map(async(database): Promise<DatabaseGet> => {
                 const configuration = await database.getConfiguration();
 
@@ -189,11 +200,9 @@ export const database = router({
                 return storeDatabase(configuration);
             }));
         } catch (error) {
-            log.error("Could not list the databases", error);
-            throw new TRPCError({
-                code: "INTERNAL_SERVER_ERROR",
-                message: "Could not list the databases",
-                cause: error
+            throw handleError({
+                error,
+                errorMessage: "Error listing databases",
             });
         }
     }),
@@ -207,27 +216,33 @@ export const database = router({
     get: publicProcedure
         .input(z.string())
         .query(async(opts): Promise<DatabaseGet> => {
-            const user = await checkAccessToDatabase(opts.input);
+            try {
+                const user = await checkAccessToDatabase(opts.input);
 
-            const multiverse = await (new MultiverseFactory()).getMultiverse();
-            const multiverseDatabase = await multiverse.getDatabase(opts.input);
-            const configuration = await multiverseDatabase?.getConfiguration();
-            if (!configuration) {
-                log.error(`Database ${opts.input} not found`);
-                throw new TRPCError({
-                    code: "NOT_FOUND",
-                    message: "Database not found",
+                // get the database from the multiverse
+                const multiverse = await (new MultiverseFactory()).getMultiverse();
+                const multiverseDatabase = await multiverse.getDatabase(opts.input);
+                const configuration = await multiverseDatabase?.getConfiguration();
+                if (!configuration) {
+                    throw new TRPCError({
+                        code: "NOT_FOUND",
+                        message: `Database ${opts.input} not found`,
+                    });
+                }
+                if (configuration.statisticsQueueName === undefined) {
+                    log.info(`Setting queue ${user.sqsQueue} to the existing database ${configuration.name}`);
+                    configuration.statisticsQueueName = user.sqsQueue;
+                    // TODO - set the queue to the multiverseDB
+                }
+
+                return await storeDatabase(configuration);
+            } catch (error) {
+                throw handleError({
+                    error,
+                    errorMessage: "Error getting database",
+                    logMessage: `Error getting database ${opts.input}`,
                 });
             }
-
-            if (configuration.statisticsQueueName === undefined) {
-                log.info(`Setting queue ${user.sqsQueue} to the existing database ${configuration.name}`);
-                configuration.statisticsQueueName = user.sqsQueue;
-                // TODO - set the queue to the multiverseDB
-            }
-
-            // TODO - check if multiverseDB has queue, if not, set it
-            return await storeDatabase(configuration);
         }),
 
     /**
@@ -246,45 +261,42 @@ export const database = router({
         region: z.string(),
         space: z.string(),
     })).mutation(async(opts) => {
-        const sessionUser = await getSessionUser();
-        if (!sessionUser) {
-            throw new TRPCError({
-                code: "UNAUTHORIZED",
-                message: "User not found",
-            });
-        }
-        const multiverse = await (new MultiverseFactory()).getMultiverse();
-        const name = normalizeString(opts.input.name);
-        const codeName = generateDatabaseCodeName(opts.input.name);
-
-        const database: StoredDatabaseConfiguration = {
-            name: codeName,
-            secretTokens: opts.input.secretTokens,
-            dimensions: opts.input.dimensions,
-            region: opts.input.region as "eu-central-1",
-            space: opts.input.space as "l2" | "cosine" | "ip",
-            statisticsQueueName: sessionUser.sqsQueue
-        };
-
         try {
+            const sessionUser = await getSessionUser();
+            if (!sessionUser) {
+                throw new TRPCError({
+                    code: "UNAUTHORIZED",
+                    message: "User not found",
+                });
+            }
+
+            const multiverse = await (new MultiverseFactory()).getMultiverse();
+            const name = normalizeString(opts.input.name);
+            const codeName = generateDatabaseCodeName(opts.input.name);
+
+            // create the database in the multiverse
+            const database: StoredDatabaseConfiguration = {
+                name: codeName,
+                secretTokens: opts.input.secretTokens,
+                dimensions: opts.input.dimensions,
+                region: opts.input.region as "eu-central-1",
+                space: opts.input.space as "l2" | "cosine" | "ip",
+                statisticsQueueName: sessionUser.sqsQueue
+            };
             await multiverse.createDatabase(database);
 
-            const createdDatabase = await createDatabase({
+            // store the database in the mongodb
+            await createDatabase({
                 name: name,
                 codeName: codeName,
                 ownerId: sessionUser._id
             });
-            if (!createdDatabase) {
-                log.error("Could not create the database");
-                throw new TRPCError({
-                    code: "INTERNAL_SERVER_ERROR",
-                    message: "Could not create the database",
-                });
-            }
         } catch (error) {
-            log.error(`Could not create the database ${database.name}`, error);
-
-            throw error;
+            throw handleError({
+                error,
+                errorMessage: "Error creating database",
+                logMessage: `Error creating database ${opts.input.name}`,
+            });
         }
     }),
     /**
@@ -294,29 +306,26 @@ export const database = router({
      */
     delete: publicProcedure.input(z.string()).mutation(async(opts) => {
         const codeName = opts.input;
-        await checkAccessToDatabase(codeName);
-
-        const multiverse = await (new MultiverseFactory()).getMultiverse();
-        const multiverseDatabase = await multiverse.getDatabase(codeName);
-        if (!multiverseDatabase) {
-            log.error(`Database ${codeName} not found`);
-            throw new TRPCError({
-                code: "NOT_FOUND",
-                message: "Could not delete the database",
-            });
-        }
-
         try {
+            await checkAccessToDatabase(codeName);
+
+            const multiverse = await (new MultiverseFactory()).getMultiverse();
+            const multiverseDatabase = await multiverse.getDatabase(codeName);
+            if (!multiverseDatabase) {
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: `Database ${codeName} not found`,
+                });
+            }
             await multiverse.removeDatabase(codeName);
             await deleteDatabase(codeName);
 
             return true;
         } catch (error) {
-            log.error("Could not delete the database", error);
-            throw new TRPCError({
-                code: "INTERNAL_SERVER_ERROR",
-                message: "Could not delete the database",
-                cause: error
+            throw handleError({
+                error,
+                errorMessage: "Error deleting database",
+                logMessage: `Error deleting database ${codeName}`,
             });
         }
     }),

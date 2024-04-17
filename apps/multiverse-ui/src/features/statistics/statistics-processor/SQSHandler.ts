@@ -6,7 +6,7 @@ import { ReceiveMessageCommand } from "@aws-sdk/client-sqs";
 import {
     CreateQueueCommand, DeleteQueueCommand, GetQueueUrlCommand, SQSClient
 } from "@aws-sdk/client-sqs";
-import { getAwsTokenByTokenId } from "@/lib/mongodb/collections/aws-token";
+import { getAwsTokenById } from "@/lib/mongodb/collections/aws-token";
 import type { Event } from "@/features/statistics/statistics-processor/event";
 
 export interface ISQSHandler {
@@ -124,7 +124,7 @@ export class SQSHandler implements ISQSHandler {
             throw new Error("AWS Token not found");
         }
 
-        const awsToken = await getAwsTokenByTokenId(sessionUser.awsToken);
+        const awsToken = await getAwsTokenById(sessionUser.awsToken);
         if (!awsToken) {
             throw new Error("AWS Token not found");
         }
@@ -164,7 +164,7 @@ export class SQSHandler implements ISQSHandler {
             throw new Error("AWS Token not found");
         }
 
-        const awsToken = await getAwsTokenByTokenId(sessionUser.awsToken);
+        const awsToken = await getAwsTokenById(sessionUser.awsToken);
         if (!awsToken) {
             throw new Error("AWS Token not found");
         }

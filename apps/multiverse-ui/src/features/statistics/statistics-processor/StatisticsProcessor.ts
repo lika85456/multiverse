@@ -2,7 +2,7 @@ import type { Event } from "@/features/statistics/statistics-processor/event";
 import type { DailyStatisticsAdd } from "@/lib/mongodb/collections/daily-statistics";
 import { convertToISODate } from "@/lib/mongodb/collections/daily-statistics";
 import { addDailyStatistics } from "@/lib/mongodb/collections/daily-statistics";
-import { getDailyStatistics } from "@/lib/mongodb/collections/daily-statistics";
+import { getDailyStatisticsForDates } from "@/lib/mongodb/collections/daily-statistics";
 import {
     addGeneralDatabaseStatistics,
     getGeneralDatabaseStatistics
@@ -137,7 +137,7 @@ export class StatisticsProcessor {
     private async processEventsForDatabase(databaseName: string, events: Event[]): Promise<boolean> {
         log.info(`Processing statistics for database ${databaseName}`);
         const eventsByDate = this.groupByDate(events);
-        const allStatistics = await getDailyStatistics(Array.from(eventsByDate.keys()).map((e) => convertToISODate(e)), databaseName);
+        const allStatistics = await getDailyStatisticsForDates(Array.from(eventsByDate.keys()).map((e) => convertToISODate(e)), databaseName);
 
         // process events for each date
         eventsByDate.forEach((events, date) => {

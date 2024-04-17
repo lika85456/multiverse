@@ -13,6 +13,7 @@ import {
 } from "@aws-sdk/client-sqs";
 import fs from "fs";
 import { UTCDate } from "@date-fns/utc";
+import log from "@multiverse/log";
 
 type DatabaseWrapper = {
     multiverseDatabase: MultiverseDatabaseMock;
@@ -157,13 +158,22 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
     }
 
     async add(vector: NewVector[]): Promise<void> {
+        await loadJsonFile();
+
         const database = databases.get(this.databaseConfiguration.name);
         if (!database) {
             return Promise.resolve();
         }
+
+        const oldVectors = database.vectors;
+        if (vector.some((newVector) => oldVectors.some((oldVector) => oldVector.label === newVector.label))) {
+            log.error("Vector with the same label already exists");
+            throw new Error("Vector with the same label already exists");
+        }
+
         const newValue: DatabaseWrapper = {
             multiverseDatabase: database.multiverseDatabase,
-            vectors: [...database.vectors, ...vector],
+            vectors: [...oldVectors, ...vector],
         };
         databases.set(this.databaseConfiguration.name, newValue);
         await refresh();
@@ -185,9 +195,12 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
     async remove(label: string[]): Promise<void> {
         const database = databases.get(this.databaseConfiguration.name);
         if (!database) {
-            return Promise.resolve();
+            throw new Error(`Database ${this.databaseConfiguration.name} not found`);
         }
         const vectors = database.vectors;
+        if (label.some((l) => !vectors.some((vector) => vector.label === l))) {
+            throw new Error("Vector not found");
+        }
 
         databases.set(this.databaseConfiguration.name, {
             multiverseDatabase: database.multiverseDatabase,
@@ -244,6 +257,10 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
     }
 
     async addToken(token: Token): Promise<void> {
+        if (this.databaseConfiguration.secretTokens.find((t) => t.name === token.name)) {
+            log.error("Token with this name already exists");
+            throw new Error("Token with this name already exists");
+        }
 
         this.databaseConfiguration.secretTokens.push({
             name: token.name,
@@ -262,6 +279,8 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
         const index = this.databaseConfiguration.secretTokens.findIndex((token) => token.name === tokenName);
         if (index !== -1) {
             this.databaseConfiguration.secretTokens.splice(index, 1);
+        } else {
+            throw new Error(`Token ${tokenName} not found`);
         }
         databases.set(this.databaseConfiguration.name, {
             multiverseDatabase: this,
