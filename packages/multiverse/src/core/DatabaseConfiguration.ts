@@ -3,34 +3,31 @@ import { z } from "zod";
 export type IndexSpace = "l2" | "cosine" | "ip";
 export type Region = "eu-central-1";
 
-export type Token = {
-    name: string;
-    // secret: string;
-    validUntil: number; // unix timestamp
-};
-
-export const DatabaseConfiguration = z.object({
-    // identifiers
+export const databaseId = z.object({
     name: z.string(),
+    region: z.string(), // main region, compute lambdas can be in different regions
+});
 
-    // infrastructure
-    region: z.string() as unknown as z.ZodType<Region>,
+export type DatabaseID = z.infer<typeof databaseId>;
+
+export const databaseConfiguration = z.object({
+    // statistics
     statisticsQueueName: z.string().optional(),
-
-    // scaling
-    warmPrimaryInstances: z.number().positive().max(10000), // primary
-
-    secondaryInstances: z.number().positive().max(10000), // fallback in the same region
-    regionalInstances: z.number().positive().max(10000), // fallback in other regions
 
     // index
     dimensions: z.number().positive().max(10000),
     space: z.instanceof(String) as unknown as z.ZodType<IndexSpace>,
 });
 
-export type DatabaseConfiguration = z.infer<typeof DatabaseConfiguration>;
+export type DatabaseConfiguration = z.infer<typeof databaseConfiguration>;
 
-export const StoredDatabaseConfiguration = z.object({
+export type Token = {
+    name: string;
+    // secret: string;
+    validUntil: number; // unix timestamp
+};
+
+export const storedDatabaseConfiguration = z.object({
     // auth
     secretTokens: z.array(z.object({
         name: z.string(),
@@ -38,6 +35,6 @@ export const StoredDatabaseConfiguration = z.object({
         validUntil: z.number().positive(),
     })),
 
-}).merge(DatabaseConfiguration);
+}).merge(databaseConfiguration);
 
-export type StoredDatabaseConfiguration = z.infer<typeof StoredDatabaseConfiguration>;
+export type StoredDatabaseConfiguration = z.infer<typeof storedDatabaseConfiguration>;

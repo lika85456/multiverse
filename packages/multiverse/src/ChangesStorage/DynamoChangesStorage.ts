@@ -6,9 +6,9 @@ import type ChangesStorage from ".";
 import {
     BatchWriteCommand, DynamoDBDocumentClient, QueryCommand
 } from "@aws-sdk/lib-dynamodb";
-import type { StoredVectorChange } from ".";
+import type { StoredVectorChange } from "./StoredVector";
 import { Vector } from "../core/Vector";
-import type { DatabaseConfiguration } from "../core/DatabaseConfiguration";
+import type { DatabaseID } from "../core/DatabaseConfiguration";
 
 const logger = log.getSubLogger({ name: "DynamoChangesStorageDeployer" });
 
@@ -132,13 +132,14 @@ export default class DynamoChangesStorage implements ChangesStorage {
     private dynamo: DynamoDBDocumentClient;
     private TTL = 60 * 60 * 24 * 2; // 2 days
 
-    constructor(private options: DatabaseConfiguration & {
+    constructor(private options: {
+        databaseId: DatabaseID;
         tableName: string;
     }) {
-        const db = new DynamoDB({ region: options.region });
+        const db = new DynamoDB({ region: options.databaseId.region });
         this.dynamo = DynamoDBDocumentClient.from(db);
         this.deployer = new DynamoChangesStorageDeployer({
-            region: this.options.region,
+            region: this.options.databaseId.region,
             tableName: this.options.tableName
         });
     }
@@ -172,7 +173,7 @@ export default class DynamoChangesStorage implements ChangesStorage {
                 [this.options.tableName]: changes.map((change, index) => ({
                     PutRequest: {
                         Item: {
-                            PK: `${this.options.name}`,
+                            PK: `${this.options.databaseId.name}`,
                             SK: change.timestamp * 1000 + index + batchIndexOffset,
                             // shortened to save space
                             action: change.action[0],
@@ -205,7 +206,7 @@ export default class DynamoChangesStorage implements ChangesStorage {
                 TableName: this.options.tableName,
                 KeyConditionExpression: "PK = :pk AND SK >= :sk",
                 ExpressionAttributeValues: {
-                    ":pk": this.options.name,
+                    ":pk": this.options.databaseId.name,
                     ":sk": timestamp * 1000
                 },
                 ExclusiveStartKey: lastEvaluatedKey,

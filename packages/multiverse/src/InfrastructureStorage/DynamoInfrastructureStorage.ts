@@ -6,7 +6,7 @@ import {
     DynamoDBDocumentClient, GetCommand, PutCommand, ScanCommand
 } from "@aws-sdk/lib-dynamodb";
 import log from "@multiverse/log";
-import type InfrastructureStorage from ".";
+import InfrastructureStorage from ".";
 import type { Infrastructure } from ".";
 
 const logger = log.getSubLogger({ name: "DynamoChangesStorageDeployer" });
@@ -93,7 +93,7 @@ export class InfrastructureStorageDeployer {
 /**
  * Each database has its own row in the table.
  */
-export default class DynamoInfrastructureStorage implements InfrastructureStorage {
+export default class DynamoInfrastructureStorage extends InfrastructureStorage {
 
     private deployer: InfrastructureStorageDeployer;
     private dynamo: DynamoDBDocumentClient;
@@ -102,6 +102,7 @@ export default class DynamoInfrastructureStorage implements InfrastructureStorag
         tableName: string;
         region: string
     }) {
+        super();
         const db = new DynamoDBClient({ region: options.region });
         this.dynamo = DynamoDBDocumentClient.from(db);
 

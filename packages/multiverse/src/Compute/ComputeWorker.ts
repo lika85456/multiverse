@@ -1,6 +1,5 @@
 import type ChangesStorage from "../ChangesStorage";
 import type Index from "../Index";
-import type { DatabaseConfiguration } from "../core/DatabaseConfiguration";
 import type SnapshotStorage from "../SnapshotStorage";
 import os from "node-os-utils";
 import fs from "fs/promises";
@@ -9,7 +8,7 @@ import type {
     StatefulResponse,
     Worker, WorkerQuery, WorkerQueryResult
 } from "./Worker";
-import type { StoredVectorChange } from "../ChangesStorage";
+import type { StoredVectorChange } from "../ChangesStorage/StoredVector";
 
 export default class ComputeWorker implements Worker {
 
@@ -17,7 +16,7 @@ export default class ComputeWorker implements Worker {
     private lastUpdate = 0;
 
     constructor(private options: {
-        config: DatabaseConfiguration,
+        partitionIndex: number,
         snapshotStorage: SnapshotStorage,
         changesStorage: ChangesStorage,
         index: Index,
@@ -31,6 +30,7 @@ export default class ComputeWorker implements Worker {
             result: undefined,
             state: {
                 instanceId: this.instanceId,
+                partitionIndex: this.options.partitionIndex,
                 lastUpdate: this.lastUpdate,
                 memoryUsed: (await os.mem.used()).usedMemMb,
                 memoryLimit: this.options.memoryLimit,
@@ -102,6 +102,8 @@ export default class ComputeWorker implements Worker {
         }
 
         await this.options.index.load(snapshot.filePath);
+
+        this.lastUpdate = snapshot.timestamp;
 
         log.debug(`Loaded snapshot ${snapshot.filePath}`, { snapshot });
 

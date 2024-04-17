@@ -1,5 +1,5 @@
 import type {
-    DatabaseConfiguration,
+    databaseConfiguration,
     Region, Token
 } from "./core/DatabaseConfiguration";
 import type { Query, QueryResult } from "./core/Query";

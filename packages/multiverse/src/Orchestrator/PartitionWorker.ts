@@ -1,11 +1,16 @@
-import { Lambda } from "@aws-sdk/client-lambda";
 import type {
-    Worker, WorkerQueryResult, WorkerState
+    CountResponse,
+    StatefulResponse,
+    Worker, WorkerQuery, WorkerQueryResult
 } from "../Compute/Worker";
-import type { DatabaseConfiguration } from "../core/DatabaseConfiguration";
-import type { Infrastructure, PartitionInfrastructureState } from "../InfrastructureStorage";
+import type { Region } from "../core/DatabaseConfiguration";
+import type { PartitionInfrastructureState, PartitionLambdaState } from "../InfrastructureStorage";
 import type InfrastructureStorage from "../InfrastructureStorage";
 import LambdaWorker from "../Compute/LambdaWorker";
+import logger from "@multiverse/log";
+import type { StoredVectorChange } from "../ChangesStorage/StoredVector";
+
+const log = logger.getSubLogger({ name: "PartitionWorker" });
 
 /**
  * Because workers need to be available at all times, they have multiple fallback instances that are warmed up periodically.
@@ -14,39 +19,32 @@ import LambdaWorker from "../Compute/LambdaWorker";
  */
 export default class PartitionWorker implements Worker {
 
-    //     configuration: DatabaseConfiguration;
-    //     partitions: {
-    //         lambda: {
-    //             name: string;
-    //             region: string;
-    //             type: "primary" | "fallback";
-    //             wakeUpInstances: number;
-    //             instances: {
-    //                 id: string;
-    //                 lastUpdated: number;
-    //             }[];
-    //         }[];
-    //         partitionIndex: number;
-    //     }[];
-    // }
-
     private infrastructureStorage: InfrastructureStorage;
     private partitionIndex: number;
     private databaseName: string;
 
     private partition: Promise<PartitionInfrastructureState>;
-    private lambdaNamesByPriority: Promise<string[]>;
+    private lambdasByPriority: Promise<PartitionLambdaState[]>;
 
     private REQUEST_TIMEOUT = 2000;
+
+    private lambdaFactory: (name: string, region: Region) => Worker;
 
     constructor(options: {
         infrastructureStorage: InfrastructureStorage;
         partitionIndex: number;
         databaseName: string;
+        lambdaFactory?: (name: string, region: Region) => Worker;
     }) {
         this.partitionIndex = options.partitionIndex;
         this.infrastructureStorage = options.infrastructureStorage;
         this.databaseName = options.databaseName;
+
+        // injected for testing
+        this.lambdaFactory = options.lambdaFactory || ((name, region) => new LambdaWorker({
+            lambdaName: name,
+            region
+        }));
 
         this.partition = this.infrastructureStorage.get(options.databaseName).then(infrastructure => {
             if (!infrastructure) {
@@ -61,7 +59,7 @@ export default class PartitionWorker implements Worker {
             return partition;
         });
 
-        this.lambdaNamesByPriority = this.partition.then(partition => {
+        this.lambdasByPriority = this.partition.then(partition => {
             const primary = partition.lambda.find(l => l.type === "primary");
             if (!primary) {
                 throw new Error("Primary not found");
@@ -71,46 +69,75 @@ export default class PartitionWorker implements Worker {
 
             const regions = partition.lambda.filter(l => l.region !== primary.region);
 
-            const lambdaNames = [primary.name, ...secondaries.map(s => s.name), ...regions.map(r => r.name)];
-
-            return lambdaNames;
+            return [primary, ...secondaries, ...regions];
         });
     }
 
-    private async request<T>(event: string, payload: any): Promise<T> {
-        const lambda = new LambdaWorker()
+    private async throwOnTimeout<T>(promise: Promise<T>, timeout: number): Promise<T> {
+        // throw if the promise does not resolve in time
+        return new Promise<T>((resolve, reject) => {
+            const timeoutId = setTimeout(() => {
+                reject(new Error("Timeout"));
+            }, timeout);
+
+            promise
+                .then(resolve)
+                .catch(reject)
+                .finally(() => clearTimeout(timeoutId));
+        });
     }
 
-    public async state(): Promise<WorkerState> {
-        throw new Error("Method not implemented.");
+    private async request<TEvent extends keyof Worker>(
+        event: TEvent,
+        payload: Parameters<Worker[TEvent]>
+    ): Promise<ReturnType<Worker[TEvent]>> {
+
+        await this.partition;
+
+        for (const lambdaState of await this.lambdasByPriority) {
+            try {
+                const worker = this.lambdaFactory(lambdaState.name, lambdaState.region);
+
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-ignore
+                const responsePromise = worker[event](...payload) as Promise<ReturnType<Worker[TEvent]>>;
+
+                const response = await this.throwOnTimeout(responsePromise, this.REQUEST_TIMEOUT);
+
+                await this.infrastructureStorage.processState(this.databaseName, response.state);
+
+                return response as ReturnType<Worker[TEvent]>;
+            } catch (e) {
+                log.debug(`Lambda ${lambdaState.name} failed: ${e}`);
+            }
+        }
+
+        throw new Error("All lambdas failed");
     }
 
-    public async query(query: { query: { vector: number[]; k: number; sendVector: boolean; metadataExpression?: string | undefined; }; updates?: ({ vector: { vector: number[]; label: string; metadata?: Record<string, string> | undefined; }; action: "add"; timestamp: number; } | { label: string; action: "remove"; timestamp: number; })[] | undefined; }): Promise<WorkerQueryResult> {
-        throw new Error("Method not implemented.");
+    public async update(updates: StoredVectorChange[]): Promise<StatefulResponse<void>> {
+        return await this.request("update", [updates]);
     }
 
-    public async add(vectors: { vector: number[]; label: string; metadata?: Record<string, string> | undefined; }[]): Promise<void> {
-        throw new Error("Method not implemented.");
+    public async state(): Promise<StatefulResponse<void>> {
+        return await this.request("state", []);
     }
 
-    public async remove(labels: string[]): Promise<void> {
-        throw new Error("Method not implemented.");
+    public async query(query: WorkerQuery): Promise<StatefulResponse<WorkerQueryResult>> {
+        return await this.request("query", [query]);
     }
 
-    public async wake(wait: number): Promise<void> {
-        throw new Error("Method not implemented.");
+    public async saveSnapshot(): Promise<StatefulResponse<void>> {
+        return await this.request("saveSnapshot", []);
     }
 
-    public async saveSnapshot(): Promise<void> {
-        throw new Error("Method not implemented.");
+    public async loadLatestSnapshot(): Promise<StatefulResponse<void>> {
+        return await this.request("loadLatestSnapshot", []);
     }
 
-    public async loadLatestSnapshot(): Promise<void> {
-        throw new Error("Method not implemented.");
+    public async count(): Promise<StatefulResponse<CountResponse>> {
+        return await this.request("count", []);
     }
 
-    public async count(): Promise<{ vectors: number; vectorDimensions: number; }> {
-        throw new Error("Method not implemented.");
-    }
-
+    // TODO: safely update and wake up all lambdas, so there is no downtime
 }

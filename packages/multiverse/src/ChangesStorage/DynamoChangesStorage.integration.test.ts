@@ -1,5 +1,5 @@
-import type { StoredVectorChange } from ".";
 import DynamoChangesStorage from "./DynamoChangesStorage";
+import type { StoredVectorChange } from "./StoredVector";
 
 async function readWholeIterator<T>(iterator: AsyncGenerator<T, void, unknown>): Promise<T[]> {
     const result = [];
@@ -15,13 +15,10 @@ describe("<DynamoChangesStorage>", () => {
 
     const storage = new DynamoChangesStorage({
         tableName: "multiverse-test-changes-storage-" + Date.now(),
-        dimensions: 3,
-        name: "dbname",
-        region: "eu-central-1",
-        space: "l2",
-        regionalInstances: 0,
-        secondaryInstances: 1,
-        warmPrimaryInstances: 1,
+        databaseId: {
+            name: "test",
+            region: "eu-central-1"
+        }
     });
 
     beforeAll(async() => {

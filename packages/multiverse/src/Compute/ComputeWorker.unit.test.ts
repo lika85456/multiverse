@@ -3,18 +3,16 @@ import HNSWIndex from "../Index/HNSWIndex";
 import LocalSnapshotStorage from "../SnapshotStorage/LocalSnapshotStorage";
 import type { WorkerQuery } from "./Worker";
 import { Vector } from "../core/Vector";
-import type { DatabaseConfiguration } from "../core/DatabaseConfiguration";
 import ComputeWorker from "./ComputeWorker";
-import type { StoredVectorChange } from "../ChangesStorage";
+import type { StoredVectorChange } from "../ChangesStorage/StoredVector";
+import type { DatabaseConfiguration } from "../core/DatabaseConfiguration";
 
 describe("<ComputeWorker>", () => {
 
-    const config = {
+    const config: DatabaseConfiguration = {
         dimensions: 1536,
-        name: "test",
-        region: "eu-central-1",
-        space: "cosine"
-    } as DatabaseConfiguration;
+        space: "ip"
+    };
 
     describe("Stateless", () => {
 
@@ -28,8 +26,8 @@ describe("<ComputeWorker>", () => {
             snapshotStorage = new LocalSnapshotStorage(Math.random().toString(36).substring(7));
             index = new HNSWIndex(config);
             worker = new ComputeWorker({
-                config,
                 changesStorage,
+                partitionIndex: 0,
                 snapshotStorage,
                 index,
                 ephemeralLimit: 5000,
@@ -166,8 +164,8 @@ describe("<ComputeWorker>", () => {
             snapshotStorage = new LocalSnapshotStorage(Math.random().toString(36).substring(7));
             index = new HNSWIndex(config);
             worker = new ComputeWorker({
-                config,
                 changesStorage,
+                partitionIndex: 0,
                 snapshotStorage,
                 index,
                 ephemeralLimit: 5000,
@@ -190,7 +188,7 @@ describe("<ComputeWorker>", () => {
                     vector: {
                         label: "test",
                         vector: vectorSaved,
-                        metadata: { test: "test" }
+                        metadata: { vectorSaved: JSON.stringify(vectorSaved) }
                     },
                 }
             ]);
@@ -204,8 +202,8 @@ describe("<ComputeWorker>", () => {
             expect(await snapshotStorage.loadLatest()).toBeDefined();
 
             const anotherWorker = new ComputeWorker({
-                config,
                 changesStorage,
+                partitionIndex: 0,
                 snapshotStorage,
                 index: new HNSWIndex(config),
                 ephemeralLimit: 5000,
@@ -241,7 +239,17 @@ describe("<ComputeWorker>", () => {
 
             expect(result2.result.result.length).toBe(1);
             expect(result2.result.result[0].label).toBe("test");
-            expect(result2.result.result[0].vector). toEqual(vectorSaved);
+            expect(result2.result.result[0].metadata.vectorSaved).toBe(JSON.stringify(vectorSaved));
+
+            // the resulting vector can have different values due to the nature of the index
+            // compare with precision of 0.0001%
+            if (!result2.result.result[0].vector)
+                throw new Error("vector is undefined");
+
+            expect(result2.result.result[0].vector
+                .map((v, i) => Math.abs(v - vectorSaved[i]) / vectorSaved[i])
+                .reduce((a, b) => a + b, 0))
+                .toBeLessThan(0.0001);
         });
     });
 });

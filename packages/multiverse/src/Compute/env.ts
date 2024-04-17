@@ -4,6 +4,7 @@ import { config } from "dotenv";
 import path from "path";
 import log from "@multiverse/log";
 import type { DatabaseConfiguration } from "../core/DatabaseConfiguration";
+import { databaseId } from "../core/DatabaseConfiguration";
 
 config({ path: path.join(__dirname, "..", "..", "..", process.env.NODE_ENV === "test" ? ".env.test" : ".env"), });
 
@@ -11,6 +12,7 @@ export const databaseEnvSchema = z.object({
     NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
     CHANGES_TABLE: z.string(),
     SNAPSHOT_BUCKET: z.string(),
+    DATABASE_IDENTIFIER: databaseId,
     DATABASE_CONFIG: z.string().transform<DatabaseConfiguration>(value => JSON.parse(value)),
     PARTITION: z.string().transform<number>(value => parseInt(value)),
 });
@@ -34,14 +36,13 @@ if (process.env.NODE_ENV === "development") {
         NODE_ENV: "development",
         CHANGES_TABLE: "multiverse-changes-dev",
         SNAPSHOT_BUCKET: "multiverse-snapshots-dev",
+        DATABASE_IDENTIFIER: {
+            name: "multiverse-dev",
+            region: "eu-central-1"
+        },
         DATABASE_CONFIG: {
-            region: "eu-central-1",
             dimensions: 1536,
-            space: "cosine",
-            name: "multiverse-index-dev",
-            regionalInstances: 0,
-            secondaryInstances: 1,
-            warmPrimaryInstances: 1,
+            space: "cosine"
         },
         PARTITION: 0,
     };

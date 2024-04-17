@@ -1,5 +1,5 @@
 import type ChangesStorage from ".";
-import type { StoredVectorChange } from ".";
+import type { StoredVectorChange } from "./StoredVector";
 
 export default class MemoryChangesStorage implements ChangesStorage {
 

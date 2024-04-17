@@ -5,7 +5,7 @@ import type InfrastructureStorage from "../InfrastructureStorage/DynamoInfrastru
 import log from "@multiverse/log";
 import type { StoredVectorChange } from "../ChangesStorage";
 import mergeResults from "../Index/mergeResults";
-import type { StoredDatabaseConfiguration } from "../core/DatabaseConfiguration";
+import type { storedDatabaseConfiguration } from "../core/DatabaseConfiguration";
 import type ComputeWorker from "../Compute/Worker";
 
 export default class IndexManager {

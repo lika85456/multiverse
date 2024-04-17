@@ -5,6 +5,7 @@ import { createReadStream, createWriteStream } from "fs";
 import { mkdir } from "fs/promises";
 import type { Readable } from "stream";
 import log from "@multiverse/log";
+import type { DatabaseID } from "../core/DatabaseConfiguration";
 
 const logger = log.getSubLogger({ name: "S3SnapshotStorage" });
 
@@ -71,21 +72,20 @@ export default class S3SnapshotStorage implements SnapshotStorage {
 
     constructor(private options: {
         bucketName: string;
-        region: string;
-        name: string;
+        databaseId: DatabaseID;
         downloadPath?: string;
     }) {
-        this.s3 = new S3({ region: options.region });
+        this.s3 = new S3({ region: options.databaseId.region });
         this.options.downloadPath = this.options.downloadPath || "/tmp/s3-snapshots";
         this.deployer = new S3SnapshotStorageDeployer({
             bucketName: this.options.bucketName,
-            region: this.options.region
+            region: this.options.databaseId.region
         });
     }
 
     public async create(filePath: string): Promise<Snapshot> {
         const now = Date.now();
-        const s3Path = `${this.options.name}/${now}.snapshot`;
+        const s3Path = `${this.options.databaseId.name}/${now}.snapshot`;
 
         logger.debug(`Uploading snapshot to s3://${this.options.bucketName}/${s3Path}`, { filePath });
 
@@ -100,17 +100,17 @@ export default class S3SnapshotStorage implements SnapshotStorage {
         return {
             filePath,
             timestamp: now,
-            databaseName: this.options.name
+            databaseName: this.options.databaseId.name
         };
     }
 
     public async loadLatest(): Promise<Snapshot | undefined> {
 
-        logger.debug(`Loading latest snapshot from s3://${this.options.bucketName}/${this.options.name}`);
+        logger.debug(`Loading latest snapshot from s3://${this.options.bucketName}/${this.options.databaseId.name}`);
 
         const s3Objects = await this.s3.listObjectsV2({
             Bucket: this.options.bucketName,
-            Prefix: this.options.name
+            Prefix: this.options.databaseId.name
         });
 
         if (!s3Objects.Contents || s3Objects.Contents.length === 0) {
@@ -131,7 +131,7 @@ export default class S3SnapshotStorage implements SnapshotStorage {
             snapshots.push({
                 filePath,
                 timestamp: +timestamp,
-                databaseName: this.options.name
+                databaseName: this.options.databaseId.name
             });
         }
 
@@ -153,7 +153,7 @@ export default class S3SnapshotStorage implements SnapshotStorage {
         }
 
         // create if not exists the folder for the index
-        await mkdir(`${this.options.downloadPath}/${this.options.name}`, { recursive: true });
+        await mkdir(`${this.options.downloadPath}/${this.options.databaseId.name}`, { recursive: true });
 
         // pipe body to filePath
         await new Promise((resolve, reject) => {
@@ -167,12 +167,12 @@ export default class S3SnapshotStorage implements SnapshotStorage {
         return {
             filePath: `${this.options.downloadPath}/${latest.filePath}`,
             timestamp: latest.timestamp,
-            databaseName: this.options.name
+            databaseName: this.options.databaseId.name
         };
     }
 
     public async directoryPath(): Promise<string> {
-        return `${this.options.downloadPath}/${this.options.name}`;
+        return `${this.options.downloadPath}/${this.options.databaseId.name}`;
     }
 
     public async deploy(): Promise<void> {

@@ -8,6 +8,16 @@ import LambdaWorker from "./LambdaWorker";
  */
 describe("<LambdaWorker>", () => {
 
+    const databaseId = {
+        name: "lambda_worker_test_db",
+        region: "eu-central-1",
+    };
+
+    const config: DatabaseConfiguration = {
+        dimensions: 3,
+        space: "ip" as const,
+    };
+
     let worker: LambdaWorker;
     let changesStorage: DynamoChangesStorage;
     let snapshotStorage: S3SnapshotStorage;
@@ -17,26 +27,19 @@ describe("<LambdaWorker>", () => {
         const changesTableName = "multiverse-changes-table-" + Math.random().toString(36).substring(7);
         const snapshotBucketName = "multiverse-snapshot-bucket-" + Math.random().toString(36).substring(7);
 
-        const config = {
-            dimensions: 3,
-            name: "dbname",
-            region: "eu-central-1" as const,
-            space: "l2" as const,
-        } as DatabaseConfiguration;
-
         worker = new LambdaWorker({
             lambdaName: "multiverse-lambda-worker-test",
             region: "eu-central-1"
         });
 
         changesStorage = new DynamoChangesStorage({
-            ...config,
+            databaseId,
             tableName: changesTableName
         });
 
         snapshotStorage = new S3SnapshotStorage({
-            ...config,
-            bucketName: snapshotBucketName
+            bucketName: snapshotBucketName,
+            databaseId
         });
 
         await Promise.all([
@@ -49,7 +52,8 @@ describe("<LambdaWorker>", () => {
             env: "development",
             partition: 0,
             snapshotBucket: snapshotBucketName,
-            configuration: config
+            configuration: config,
+            databaseId
         });
     });
 
@@ -147,6 +151,8 @@ describe("<LambdaWorker>", () => {
         });
 
         expect(result2.result.result.length).toBe(1);
+
+        // compare resulting vector (should be almost the same)
     });
 
     it("should wait before responding, thus creating new instances", async() => {

@@ -1,4 +1,3 @@
-import type { Environment } from "@aws-sdk/client-lambda";
 import { Lambda, waitUntilFunctionActiveV2 } from "@aws-sdk/client-lambda";
 import log from "@multiverse/log";
 import type {
@@ -6,9 +5,11 @@ import type {
     Worker, WorkerQuery, WorkerQueryResult
 } from "./Worker";
 import type { DatabaseEnvironment } from "./env";
-import type { DatabaseConfiguration, Region } from "../core/DatabaseConfiguration";
+import type {
+    DatabaseConfiguration, DatabaseID, Region
+} from "../core/DatabaseConfiguration";
 import { IAM } from "@aws-sdk/client-iam";
-import type { StoredVectorChange } from "../ChangesStorage";
+import type { StoredVectorChange } from "../ChangesStorage/StoredVector";
 
 const logger = log.getSubLogger({ name: "LambdaWorker" });
 
@@ -136,8 +137,19 @@ export default class LambdaWorker implements Worker {
         changesTable: string,
         snapshotBucket: string,
         env: "development" | "production",
-        configuration: DatabaseConfiguration
+        configuration: DatabaseConfiguration,
+        databaseId: DatabaseID
     }) {
+
+        const variables: DatabaseEnvironment = {
+            DATABASE_CONFIG: options.configuration,
+            DATABASE_IDENTIFIER: options.databaseId,
+            PARTITION: options.partition,
+            CHANGES_TABLE: options.changesTable,
+            SNAPSHOT_BUCKET: options.snapshotBucket,
+            NODE_ENV: options.env,
+        };
+
         const result = await this.lambda.createFunction({
             FunctionName: this.options.lambdaName,
             Code: { ImageUri: "529734186765.dkr.ecr.eu-central-1.amazonaws.com/multiverse:latest" },
@@ -148,12 +160,9 @@ export default class LambdaWorker implements Worker {
             EphemeralStorage: { Size: 1024 },
             Environment: {
                 Variables: {
-                    DATABASE_CONFIG: JSON.stringify(options.configuration) as unknown,
-                    PARTITION: options.partition + "" as unknown,
-                    CHANGES_TABLE: options.changesTable,
-                    SNAPSHOT_BUCKET: options.snapshotBucket,
+                    VARIABLES: JSON.stringify(variables),
                     NODE_ENV: options.env,
-                } as DatabaseEnvironment & Environment["Variables"]
+                }
             }
         });
 

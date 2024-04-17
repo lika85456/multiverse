@@ -5,7 +5,7 @@ import {
 import log from "@multiverse/log";
 import { IAM } from "@aws-sdk/client-iam";
 import type { OrchestratorEnvironment } from "./OrchestratorEnvironment";
-import type { StoredDatabaseConfiguration } from "../core/DatabaseConfiguration";
+import type { storedDatabaseConfiguration } from "../core/DatabaseConfiguration";
 
 export default class OrchestratorDeployer {
 
