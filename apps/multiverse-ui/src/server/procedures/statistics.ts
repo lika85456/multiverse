@@ -318,15 +318,23 @@ export const statistics = router({
                 log.info("Returning general statistics for all databases from", fromISO, "to", toISO, "for user", sessionUser.email);
 
                 // sum general statistics for all databases
-                return generalStatistics.reduce((acc, curr) => {
-                    acc.costs.value += curr.costs.value;
-                    acc.totalVectors.count += curr.totalVectors.count;
-                    acc.totalVectors.bytes += curr.totalVectors.bytes;
-                    acc.reads += curr.reads;
-                    acc.writes += curr.writes;
-
-                    return acc;
+                const result = generalStatistics.reduce((acc, curr) => {
+                    return {
+                        costs: {
+                            value: acc.costs.value + curr.costs.value,
+                            currency: "$" as const,
+                        },
+                        totalVectors: {
+                            count: acc.totalVectors.count + curr.totalVectors.count,
+                            bytes: acc.totalVectors.bytes + curr.totalVectors.bytes,
+                        },
+                        reads: acc.reads + curr.reads,
+                        writes: acc.writes + curr.writes,
+                    };
                 }, emptyGeneralStatistics);
+                log.debug(`Result ${sessionUser.email} general statistics, queries ${result.reads}, writes ${result.writes}, costs ${result.costs.value}, vectors ${result.totalVectors.count}, bytes ${result.totalVectors.bytes}`);
+
+                return result;
             } catch (error) {
                 throw handleError({
                     error,
