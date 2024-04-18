@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { IoArrowForward } from "react-icons/io5";
 import { CopyIcon } from "lucide-react";
 import { useState } from "react";
-import { toast } from "sonner";
+import { customToast } from "@/features/fetching/CustomToast";
 
 export type VectorValues = number[];
 
@@ -23,10 +23,10 @@ export default function QueryHeader({
     const handleRunQuery = () => {
         try {
             const vector = JSON.parse(providedStringVector.toString(),) as VectorValues;
-            console.log("Running query with vector", vector, "and k", k);
+            // console.log("Running query with vector", vector, "and k", k);
             onRunQuery(vector, k);
         } catch (e) {
-            toast("Invalid vector format.");
+            customToast.error("Invalid vector format.");
 
             return;
         }
@@ -37,7 +37,7 @@ export default function QueryHeader({
             const vector = JSON.parse(providedStringVector.toString(),) as VectorValues;
             onCopyRequest(vector, k);
         } catch (e) {
-            toast("Invalid vector format.");
+            customToast.error("Invalid vector format.");
 
             return;
         }

@@ -11,7 +11,6 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { CopyIcon } from "lucide-react";
-import { toast } from "sonner";
 import React, {
     useCallback, useEffect, useState
 } from "react";
@@ -20,6 +19,7 @@ import { trpc } from "@/lib/trpc/client";
 import { notFound, useParams } from "next/navigation";
 import type { NewVector } from "@multiverse/multiverse/src/core/Vector";
 import { customToast } from "@/features/fetching/CustomToast";
+import Spinner from "@/features/fetching/Spinner";
 
 export interface Vector {
   label: string;
@@ -31,17 +31,20 @@ export default function UpsertVectorModal({ className, handleInvalidateResult }:
     const {
         modalOpen, handleOpenModal, handleCloseModal
     } = useModal();
+    const [isProcessing, setIsProcessing] = useState(false);
 
     const codeName = useParams().codeName as string;
     const { data: database, isSuccess } = trpc.database.get.useQuery(codeName);
     const mutation = trpc.database.vector.post.useMutation({
         onSuccess: () => {
-            customToast.success("Vector added successfully.");
+            // customToast.success("Vector added successfully.");
             handleInvalidateResult();
             handleCloseModal();
+            setIsProcessing(false);
         },
         onError: () => {
             customToast.error("An error occurred while adding the vector.");
+            setIsProcessing(false);
         }
     });
 
@@ -55,9 +58,6 @@ export default function UpsertVectorModal({ className, handleInvalidateResult }:
 
         return vector;
     }, [dimensions]);
-    // TODO - naznacit zmenu aktualnych dat, vyzva na refetch
-    // TODO - toast po uspesnom pridani/zmazani
-    // TODO - check label if exists
 
     const [allowActions, setAllowActions] = useState<boolean>(true);
     const [errors, setErrors] = useState<string[]>([]);
@@ -66,13 +66,14 @@ export default function UpsertVectorModal({ className, handleInvalidateResult }:
     const handleCopyRequest = async() => {
         try {
             await navigator.clipboard.writeText(`${JSON.stringify(newVector)}`);
-            toast("Request has been copied into your clipboard.");
+            customToast("Request has been copied into your clipboard.");
         } catch (error) {
-            console.log("Request could not be copied.");
+            customToast.error("Request could not be copied.");
         }
     };
 
     const handleUpsertVector = async() => {
+        setIsProcessing(true);
         const newVectors: NewVector[] = [newVector];
         await mutation.mutateAsync({
             database: codeName,
@@ -238,11 +239,14 @@ export default function UpsertVectorModal({ className, handleInvalidateResult }:
             Copy request
                     </Button>
                     <Button
-                        disabled={!allowActions}
+                        disabled={!allowActions || isProcessing}
                         className="flex w-full bg-accent hover:bg-accent_light text-accent-foreground"
                         onClick={handleUpsertVector}
                     >
-                        <IoAdd className="w-6 h-6 mr-2" />
+                        {!isProcessing && <IoAdd className="w-6 h-6 mr-2" />}
+                        {isProcessing && <div className="mr-2">
+                            <Spinner />
+                        </div>}
             Upsert
                     </Button>
                 </AlertDialogFooter>

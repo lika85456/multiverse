@@ -3,7 +3,6 @@ import {
     IoAdd, IoCheckmark, IoClose
 } from "react-icons/io5";
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
 import useModal from "@/features/hooks/use-modal";
 import {
     AlertDialog,
@@ -19,6 +18,7 @@ import {
     Form, FormControl, FormField, FormItem, FormLabel, FormMessage
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
+import { customToast } from "@/features/fetching/CustomToast";
 
 const AwsTokenSchema = z.object({
     accessKeyId: z.string().min(8).max(256),
@@ -31,9 +31,9 @@ export default function AddAWSTokenModal() {
         onSuccess: async() => {
             try {
                 await refetchToken();
-                toast("AWS Token added");
+                // customToast.success("AWS Token added");
             } catch (error) {
-                toast("Error adding AWS Token");
+                customToast.error("Error adding AWS Token");
             }
         }
     });

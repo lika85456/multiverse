@@ -16,7 +16,7 @@ import Link from "next/link";
 import { LogOut } from "lucide-react";
 import { FiUser } from "react-icons/fi";
 import { signOut } from "next-auth/react";
-import { toast } from "sonner";
+import { customToast } from "@/features/fetching/CustomToast";
 
 export default function AccountIcon({ user, }: {
   user:
@@ -34,7 +34,7 @@ export default function AccountIcon({ user, }: {
         try {
             await signOut({ callbackUrl: "/login", });
         } catch (error) {
-            toast("Could not log out. Please try again later.");
+            customToast.error("Could not log out. Please try again later.");
         }
     };
 

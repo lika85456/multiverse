@@ -15,10 +15,10 @@ import { IoClose } from "react-icons/io5";
 import { TrashIcon } from "lucide-react";
 import useModal from "@/features/hooks/use-modal";
 import { trpc } from "@/lib/trpc/client";
-import { toast } from "sonner";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import Spinner from "@/features/fetching/Spinner";
+import { customToast } from "@/features/fetching/CustomToast";
 
 export function DeleteAWSTokenModal({ accessKeyId }: {accessKeyId: string}) {
     const utils = trpc.useUtils();
@@ -26,17 +26,12 @@ export function DeleteAWSTokenModal({ accessKeyId }: {accessKeyId: string}) {
     const [isProcessing, setIsProcessing] = useState(false);
     const mutation = trpc.awsToken.delete.useMutation({
         onSuccess: async() => {
-            try {
-                toast("AWS Token removed");
-                await utils.awsToken.get.invalidate();
-                handleCloseModal();
-                setIsProcessing(false);
-            } catch (error) {
-                toast("Error removing AWS Token");
-            }
+            await utils.awsToken.get.invalidate();
+            handleCloseModal();
+            setIsProcessing(false);
         },
         onError: async() => {
-            toast("Error removing AWS Token");
+            customToast.error("Error removing AWS Token");
             setIsProcessing(false);
         }
     });

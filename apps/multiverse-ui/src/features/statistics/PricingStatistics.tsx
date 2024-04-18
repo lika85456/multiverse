@@ -1,6 +1,6 @@
 "use client";
 
-import { DateIntervalPicker } from "@/features/statistics/DateIntervalPicker";
+import { DateIntervalPicker, PredefinedOptions } from "@/features/statistics/DateIntervalPicker";
 import GeneralStatistics, { createProps } from "@/features/statistics/GeneralStatistics";
 import useDateInterval from "@/features/statistics/use-date-interval";
 import StatisticsGraph from "@/features/statistics/StatisticsGraph";

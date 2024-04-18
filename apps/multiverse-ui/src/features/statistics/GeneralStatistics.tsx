@@ -1,10 +1,9 @@
 "use client";
 
-import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { trpc } from "@/lib/trpc/client";
 import type { GeneralStatisticsData } from "@/server/procedures/statistics";
 import format from "@/features/statistics/format";
+import { customToast } from "@/features/fetching/CustomToast";
 
 export interface GeneralStatisticsItemProps {
   title: string;
@@ -17,7 +16,6 @@ export interface GeneralStatisticsProps {
 }
 
 export const createProps = (data: GeneralStatisticsData) => {
-
     return [
         {
             title: "Total Cost",
@@ -46,9 +44,9 @@ export function GeneralStatisticsItem({
     const handleCopy = async() => {
         try {
             await navigator.clipboard.writeText(`${title}: ${value}`);
-            toast("Data have been copied into your clipboard.");
+            customToast("Data have been copied into your clipboard.");
         } catch (error) {
-            console.log("Data could not be copied.");
+            customToast.error("Data could not be copied.");
         }
     };
 

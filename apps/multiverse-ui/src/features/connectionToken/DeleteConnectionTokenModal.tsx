@@ -17,25 +17,37 @@ import useModal from "@/features/hooks/use-modal";
 import type { SecretToken } from "@/lib/mongodb/collections/database";
 import { trpc } from "@/lib/trpc/client";
 import { useParams } from "next/navigation";
-import { toast } from "sonner";
+import { customToast } from "@/features/fetching/CustomToast";
+import Spinner from "@/features/fetching/Spinner";
+import React, { useState } from "react";
 
 export default function DeleteConnectionTokenModal({ token }: {token: SecretToken}) {
     const {
         modalOpen, handleOpenModal, handleCloseModal
     } = useModal();
     const codeName = useParams().codeName as string;
+    const [isProcessing, setIsProcessing] = useState(false);
 
     const utils = trpc.useUtils();
-    const mutation = trpc.database.secretToken.delete.useMutation();
+    const mutation = trpc.database.secretToken.delete.useMutation({
+        onSuccess: async() => {
+            await utils.database.invalidate();
+            // customToast.success("Token deleted");
+            handleCloseModal();
+            setIsProcessing(false);
+        },
+        onError: () => {
+            customToast.error("An error occurred while deleting the token.");
+            setIsProcessing(false);
+        }
+    });
 
     const handleDeleteToken = async() => {
+        setIsProcessing(true);
         await mutation.mutateAsync({
             codeName: codeName,
             tokenName: token.name,
         });
-        await utils.database.invalidate();
-        toast("Token deleted");
-        handleCloseModal();
     };
 
     return (
@@ -71,8 +83,13 @@ export default function DeleteConnectionTokenModal({ token }: {token: SecretToke
                     <AlertDialogAction
                         onClick={handleDeleteToken}
                         className="flex flex-row w-full justify-center bg-destructive text-destructive-foreground hover:bg-destructive_light"
+                        disabled={isProcessing}
                     >
-                        <TrashIcon className="w-6 h-6 mx-2" />
+                        {!isProcessing && <TrashIcon className="w-6 h-6 mr-2" />}
+                        {isProcessing && <div className="mr-2">
+                            <Spinner />
+                        </div>}
+
             Delete
                     </AlertDialogAction>
                 </AlertDialogFooter>

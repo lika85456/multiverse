@@ -5,10 +5,10 @@ import { useState } from "react";
 import { IoEyeOutline } from "react-icons/io5";
 import { IoEyeOffOutline } from "react-icons/io5";
 import { CopyIcon } from "lucide-react";
-import { toast } from "sonner";
 import DeleteConnectionTokenModal from "@/features/connectionToken/DeleteConnectionTokenModal";
 import type { SecretToken } from "@/lib/mongodb/collections/database";
 import { UTCDate } from "@date-fns/utc";
+import { customToast } from "@/features/fetching/CustomToast";
 
 export interface ConnectionTokenItemProps {
   token: SecretToken;
@@ -22,9 +22,9 @@ export default function ConnectionTokenItem({ token, }: ConnectionTokenItemProps
     const handleCopyToken = async() => {
         try {
             await navigator.clipboard.writeText(token.secret);
-            toast("Token have been copied into your clipboard.");
+            customToast("Token have been copied into your clipboard.");
         } catch (error) {
-            console.log("Token could not be copied.");
+            customToast.error("Token could not be copied.");
         }
     };
 

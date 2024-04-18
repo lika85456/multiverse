@@ -8,7 +8,6 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
 
 import type { Vector } from "@/features/browser/UpsertVectorModal";
 import useModal from "@/features/hooks/use-modal";
@@ -18,6 +17,7 @@ import Editor from "@monaco-editor/react";
 import { CopyIcon } from "lucide-react";
 import { CgDetailsMore } from "react-icons/cg";
 import { IoClose } from "react-icons/io5";
+import { customToast } from "@/features/fetching/CustomToast";
 
 export default function ViewVectorModal({ vector }: { vector: Vector }) {
     const {
@@ -32,9 +32,9 @@ export default function ViewVectorModal({ vector }: { vector: Vector }) {
     const handleCopyData = async() => {
         try {
             await navigator.clipboard.writeText(`${JSON.stringify(vectorData)}`);
-            toast("Vector has been copied into your clipboard.");
+            customToast("Vector has been copied into your clipboard.");
         } catch (error) {
-            console.log("Vector could not be copied.");
+            customToast.error("Vector could not be copied.");
         }
     };
 

@@ -17,9 +17,10 @@ import { useCallback, useEffect } from "react";
 import { IoCheckmark, IoClose } from "react-icons/io5";
 import { UTCDate } from "@date-fns/utc";
 
-enum PredefinedOptions {
+export enum PredefinedOptions {
   // TODAY = "Today",
   LAST_WEEK = "Last Week",
+  THIS_MONTH = "This Month",
   LAST_MONTH = "Last Month",
   LAST_YEAR = "Last Year",
   CUSTOM = "Custom",
@@ -39,7 +40,7 @@ export function DateIntervalPicker({
     const [modalOpen, setModalOpen] = React.useState(false);
 
     const [prevPredefinedChoice, setPrevPredefinedChoice] =
-    React.useState<PredefinedOptions>(PredefinedOptions.LAST_WEEK);
+    React.useState<PredefinedOptions>(PredefinedOptions.CUSTOM);
     const [newPredefinedChoice, setNewPredefinedChoice] =
     React.useState<PredefinedOptions>(prevPredefinedChoice);
     const [newDate, setNewDate] = React.useState<DateRange | undefined>({
@@ -93,6 +94,12 @@ export function DateIntervalPicker({
         case PredefinedOptions.LAST_WEEK:
             setNewDate({
                 from: addDays(new UTCDate(), -7),
+                to: new UTCDate(),
+            });
+            break;
+        case PredefinedOptions.THIS_MONTH:
+            setNewDate({
+                from: new UTCDate(new UTCDate().getFullYear(), new UTCDate().getMonth(), 1),
                 to: new UTCDate(),
             });
             break;
@@ -151,6 +158,7 @@ export function DateIntervalPicker({
                         {[
                             // PredefinedOptions.TODAY,
                             PredefinedOptions.LAST_WEEK,
+                            PredefinedOptions.THIS_MONTH,
                             PredefinedOptions.LAST_MONTH,
                             PredefinedOptions.LAST_YEAR,
                             PredefinedOptions.CUSTOM,

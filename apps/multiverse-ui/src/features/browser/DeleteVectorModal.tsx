@@ -10,12 +10,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import { CopyIcon, TrashIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
 import useModal from "@/features/hooks/use-modal";
 import { IoClose } from "react-icons/io5";
 import React, { useState } from "react";
 import { trpc } from "@/lib/trpc/client";
-import { MdError } from "react-icons/md";
 import { customToast } from "@/features/fetching/CustomToast";
 import Spinner from "@/features/fetching/Spinner";
 
@@ -28,7 +26,7 @@ export default function DeleteVectorModal({
     } = useModal();
     const mutation = trpc.database.vector.delete.useMutation({
         onSuccess: async() => {
-            customToast.success("Vector deleted successfully.");
+            // customToast.success("Vector deleted successfully.");
             markAsDeleted();
             handleProcessingEnd();
             handleCloseModal();
@@ -46,9 +44,9 @@ export default function DeleteVectorModal({
     const handleCopyRequest = async() => {
         try {
             await navigator.clipboard.writeText(`{"id": "${label}"}`);
-            toast("Request has been copied into your clipboard.");
+            customToast("Request has been copied into your clipboard.");
         } catch (error) {
-            console.log("Request could not be copied.");
+            customToast.error("Request could not be copied.");
         }
     };
 

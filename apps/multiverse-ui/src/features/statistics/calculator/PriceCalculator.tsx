@@ -6,8 +6,8 @@ import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { CopyIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
 import format from "@/features/statistics/format";
+import { customToast } from "@/features/fetching/CustomToast";
 
 function calculateCost({
     writes,
@@ -160,9 +160,9 @@ export default function PriceCalculator() {
             };
 
             await navigator.clipboard.writeText(`${JSON.stringify(data)}`);
-            toast("Calculated values have been copied into your clipboard.");
+            customToast("Calculated values have been copied into your clipboard.");
         } catch (error) {
-            console.log("Calculated values could not be copied.");
+            customToast.error("Calculated values could not be copied.");
         }
     };
 

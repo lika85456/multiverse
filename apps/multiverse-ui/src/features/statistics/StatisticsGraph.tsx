@@ -1,7 +1,6 @@
 import SectionTitle from "@/app/layout/components/SectionTitle";
 import { CopyIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
 import {
     CartesianGrid,
     Legend,
@@ -14,6 +13,7 @@ import {
 } from "recharts";
 import { useTheme } from "next-themes";
 import type { StatisticsData } from "@/server/procedures/statistics";
+import { customToast } from "@/features/fetching/CustomToast";
 
 interface StatisticsGraphProps {
   title: string;
@@ -46,9 +46,9 @@ export default function StatisticsGraph({
                 title,
                 data,
             })}`,);
-            toast("Data have been copied into your clipboard.");
+            customToast("Data have been copied into your clipboard.");
         } catch (error) {
-            console.log("Data could not be copied.");
+            customToast.error("Data could not be copied.");
         }
     };
 

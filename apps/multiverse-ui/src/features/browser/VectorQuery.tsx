@@ -4,7 +4,6 @@ import type { VectorValues } from "@/features/browser/QueryHeader";
 import QueryHeader from "@/features/browser/QueryHeader";
 import type { QueryResultProps } from "@/features/browser/QueryResult";
 import QueryResult from "@/features/browser/QueryResult";
-import { toast } from "sonner";
 import { useState } from "react";
 import UpsertVectorModal from "@/features/browser/UpsertVectorModal";
 import { Button } from "@/components/ui/button";
@@ -79,18 +78,18 @@ export default function VectorQuery() {
     const handleCopyRequest = async(vector: VectorValues, k: number) => {
         try {
             await navigator.clipboard.writeText(`{"vector": [${vector.join(",")}],\n"k": ${k}}`,);
-            toast("Data have been copied into your clipboard.");
+            customToast("Data have been copied into your clipboard.");
         } catch (error) {
-            console.log("Data could not be copied.");
+            customToast.error("Data could not be copied.");
         }
     };
 
     const handleCopyResult = async() => {
         try {
             await navigator.clipboard.writeText(JSON.stringify(results.filter((res) => !deletedResults.includes(res.label))));
-            toast("Resulting vectors have been copied into your clipboard.");
+            customToast("Resulting vectors have been copied into your clipboard.");
         } catch {
-            console.log("Data could not be copied.");
+            customToast.error("Data could not be copied.");
         }
     };
 

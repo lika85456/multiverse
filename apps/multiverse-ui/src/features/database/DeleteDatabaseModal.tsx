@@ -17,8 +17,8 @@ import { Input } from "@/components/ui/input";
 import { useParams, useRouter } from "next/navigation";
 import useModal from "@/features/hooks/use-modal";
 import { trpc } from "@/lib/trpc/client";
-import { toast } from "sonner";
 import Spinner from "@/features/fetching/Spinner";
+import { customToast } from "@/features/fetching/CustomToast";
 
 export default function DeleteDatabaseModal() {
     const {
@@ -34,12 +34,12 @@ export default function DeleteDatabaseModal() {
     const handleDeleteDatabase = async() => {
         // TODO - takes too long, close and display deleting state or loading spinner
         setIsProcessing(true);
+        handleCloseModal();
+        router.push("/databases");
         await mutation.mutateAsync(codeName);
         await utils.database.list.invalidate();
-        handleCloseModal();
         setIsProcessing(false);
-        router.push("/databases");
-        toast.success("Database deleted successfully");
+        customToast.success("Database deleted successfully");
     };
 
     return (

@@ -21,7 +21,6 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { toast } from "sonner";
 import useModal from "@/features/hooks/use-modal";
 import { trpc } from "@/lib/trpc/client";
 import z from "zod";
@@ -30,6 +29,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
     Form, FormControl, FormField, FormItem, FormLabel, FormMessage
 } from "@/components/ui/form";
+import { customToast } from "@/features/fetching/CustomToast";
 
 const Regions = [{
     code: "eu-central-1",
@@ -72,12 +72,12 @@ export default function CreateDatabaseModal() {
     const mutation = trpc.database.post.useMutation({
         onSuccess: async() => {
             try {
-                toast("Database created");
+                customToast("Database created");
                 handleCloseModal();
                 await util.database.invalidate();
                 form.reset();
             } catch (error) {
-                toast("Error creating database");
+                customToast.error("Error creating database");
             }
         }
     });
@@ -107,9 +107,9 @@ export default function CreateDatabaseModal() {
     const handleCopyRequest = async() => {
         try {
             await navigator.clipboard.writeText(`${"Create mongodb text"}`);
-            toast("Data have been copied into your clipboard.");
+            customToast("Data have been copied into your clipboard.");
         } catch (error) {
-            console.log("Data could not be copied.");
+            customToast.error("Data could not be copied.");
         }
     };
 

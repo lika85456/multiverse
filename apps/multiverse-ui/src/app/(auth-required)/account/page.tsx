@@ -2,11 +2,12 @@ import AWSToken from "@/features/account/AWSToken";
 import PageTitle from "@/app/layout/components/PageTitle";
 import { Separator } from "@/components/ui/separator";
 import { getSessionUser } from "@/lib/mongodb/collections/user";
+import { redirect } from "next/navigation";
 
 export default async function Account() {
     const sessionUser = await getSessionUser();
     if (!sessionUser) {
-        return null; //TODO - redirect to login page
+        return redirect("/login");
     }
 
     return (
