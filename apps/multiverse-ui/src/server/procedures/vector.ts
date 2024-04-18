@@ -4,7 +4,6 @@ import z from "zod";
 import type { NewVector } from "@multiverse/multiverse/src/core/Vector";
 import log from "@multiverse/log";
 import { getRelatedDatabase, normalizeString } from "@/server/procedures/database";
-import { TRPCError } from "@trpc/server";
 import { handleError } from "@/server";
 
 export const vector = router({
@@ -21,7 +20,7 @@ export const vector = router({
     })).mutation(async(opts): Promise<QueryResult> => {
         try {
             log.info(`Performing query on database ${opts.input.database}`);
-            const multiverseDatabase = await getRelatedDatabase(opts.input.database);
+            const { multiverseDatabase } = await getRelatedDatabase(opts.input.database);
 
             return multiverseDatabase.query({
                 vector: opts.input.vector,
@@ -51,7 +50,7 @@ export const vector = router({
     })).mutation(async(opts): Promise<void> => {
         try {
             log.info("Adding new vector to database", opts.input.database);
-            const multiverseDatabase = await getRelatedDatabase(opts.input.database);
+            const { multiverseDatabase } = await getRelatedDatabase(opts.input.database);
 
             const newVector: NewVector[] = opts.input.vector.map(vector => ({
                 vector: vector.vector,
@@ -78,7 +77,7 @@ export const vector = router({
     })).mutation(async(opts): Promise<void> => {
         try {
             log.info("Removing vector from database", opts.input.database);
-            const multiverseDatabase = await getRelatedDatabase(opts.input.database);
+            const { multiverseDatabase } = await getRelatedDatabase(opts.input.database);
             await multiverseDatabase.remove([opts.input.label]);
         } catch (error) {
             throw handleError({

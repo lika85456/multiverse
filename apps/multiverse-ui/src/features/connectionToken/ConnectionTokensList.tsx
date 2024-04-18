@@ -16,11 +16,7 @@ export default function ConnectionTokensList() {
     if (!database && isSuccess) {
         return notFound();
     }
-
-    const tokens = database?.secretTokens;
-
-    // const connectionTokens = trpc.getConnectionTokens.useQuery();
-    // const tokens = connectionTokens.data ?? [];
+    const tokens = database?.database?.secretTokens;
 
     return (
         <>

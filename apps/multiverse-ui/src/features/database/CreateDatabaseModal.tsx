@@ -30,6 +30,8 @@ import {
     Form, FormControl, FormField, FormItem, FormLabel, FormMessage
 } from "@/components/ui/form";
 import { customToast } from "@/features/fetching/CustomToast";
+import log from "@multiverse/log";
+import sleep from "@/lib/sleep";
 
 const Regions = [{
     code: "eu-central-1",
@@ -72,10 +74,8 @@ export default function CreateDatabaseModal() {
     const mutation = trpc.database.post.useMutation({
         onSuccess: async() => {
             try {
-                customToast("Database created");
-                handleCloseModal();
                 await util.database.invalidate();
-                form.reset();
+                customToast("Database created");
             } catch (error) {
                 customToast.error("Error creating database");
             }
@@ -93,7 +93,14 @@ export default function CreateDatabaseModal() {
     });
 
     async function onSubmit(values: z.infer<typeof DatabaseFormSchema>) {
-        // TODO - takes too long, close and display adding state
+        // invalidate the database route after 200ms
+        sleep(200).then(async() => {
+            handleCloseModal();
+            form.reset();
+            await util.database.list.invalidate();
+            log.debug("TRPC database route invalidated");
+        });
+
         await mutation.mutateAsync({
             name: values.name,
             region: values.region,

@@ -11,6 +11,12 @@ import {
 import { UTCDate } from "@date-fns/utc";
 import log from "@multiverse/log";
 
+export enum EDatabaseState {
+    CREATED = "created",
+    CREATING = "creating",
+    DELETING = "deleting",
+}
+
 export interface SecretToken {
     name: string;
     secret: string;

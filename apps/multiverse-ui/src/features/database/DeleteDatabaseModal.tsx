@@ -19,6 +19,8 @@ import useModal from "@/features/hooks/use-modal";
 import { trpc } from "@/lib/trpc/client";
 import Spinner from "@/features/fetching/Spinner";
 import { customToast } from "@/features/fetching/CustomToast";
+import sleep from "@/lib/sleep";
+import log from "@multiverse/log";
 
 export default function DeleteDatabaseModal() {
     const {
@@ -28,18 +30,29 @@ export default function DeleteDatabaseModal() {
     const router = useRouter();
     const codeName = useParams().codeName as string;
     const [typedDatabaseName, setTypedDatabaseName] = useState("");
-    const mutation = trpc.database.delete.useMutation();
+    const mutation = trpc.database.delete.useMutation({
+        onSuccess: async() => {
+            await utils.database.list.invalidate();
+            setIsProcessing(false);
+            customToast.info("Database deleted successfully");
+        },
+        onError: (error) => {
+            log.error(error);
+            setIsProcessing(false);
+            customToast.error("Error deleting database");
+        },
+    });
     const utils = trpc.useUtils();
 
     const handleDeleteDatabase = async() => {
-        // TODO - takes too long, close and display deleting state or loading spinner
         setIsProcessing(true);
-        handleCloseModal();
-        router.push("/databases");
+        sleep(200).then(async() => {
+            await utils.database.list.invalidate();
+            log.debug("Invalidated database list");
+            handleCloseModal();
+            router.push("/databases");
+        });
         await mutation.mutateAsync(codeName);
-        await utils.database.list.invalidate();
-        setIsProcessing(false);
-        customToast.success("Database deleted successfully");
     };
 
     return (

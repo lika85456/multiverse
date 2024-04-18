@@ -2,7 +2,8 @@ import { publicProcedure, router } from "@/server/trpc";
 import z from "zod";
 import { generateHex } from "@/server/multiverse-interface/MultiverseMock";
 import type { StoredDatabaseConfiguration } from "@multiverse/multiverse/src/core/DatabaseConfiguration";
-import type { DatabaseGet } from "@/lib/mongodb/collections/database";
+import type { DatabaseFindMongoDb, DatabaseGet } from "@/lib/mongodb/collections/database";
+import { EDatabaseState } from "@/lib/mongodb/collections/database";
 import { deleteDatabase } from "@/lib/mongodb/collections/database";
 import { createDatabase } from "@/lib/mongodb/collections/database";
 import { getDatabase } from "@/lib/mongodb/collections/database";
@@ -10,10 +11,15 @@ import { vector } from "@/server/procedures/vector";
 import { secretToken } from "@/server/procedures/secretToken";
 import { TRPCError } from "@trpc/server";
 import type { UserGet } from "@/lib/mongodb/collections/user";
+import { removeDatabaseToBeDeletedFromUser } from "@/lib/mongodb/collections/user";
+import { addDatabaseToBeDeletedToUser } from "@/lib/mongodb/collections/user";
+import { removeDatabaseToBeCreatedFromUser } from "@/lib/mongodb/collections/user";
+import { addDatabaseToBeCreatedToUser } from "@/lib/mongodb/collections/user";
 import { getSessionUser } from "@/lib/mongodb/collections/user";
 import { MultiverseFactory } from "@/server/multiverse-interface/MultiverseFactory";
 import log from "@multiverse/log";
 import { handleError } from "@/server";
+import type { ObjectId } from "mongodb";
 
 export const MAX_DB_CODE_NAME_LENGTH = 24;
 export const MAX_DB_NAME_LENGTH = 64;
@@ -71,7 +77,18 @@ const generateDatabaseCodeName = (name: string): string => {
  * @throws {TRPCError} - if the user is not found or does not have access to the database
  * @param databaseCodeName
  */
-export const checkAccessToDatabase = async(databaseCodeName: string): Promise<UserGet> => {
+export const checkAccessToDatabase = async(databaseCodeName: string): Promise<{
+    sessionUser: UserGet,
+    database: DatabaseFindMongoDb
+}> => {
+    const database = await getDatabase(databaseCodeName);
+    if (!database) {
+        throw new TRPCError({
+            code: "NOT_FOUND",
+            message: `Database ${databaseCodeName} was not found`,
+        });
+    }
+
     const sessionUser = await getSessionUser();
     if (!sessionUser) {
         log.error("User is not authenticated");
@@ -87,7 +104,10 @@ export const checkAccessToDatabase = async(databaseCodeName: string): Promise<Us
         });
     }
 
-    return sessionUser;
+    return {
+        sessionUser,
+        database
+    };
 };
 
 /**
@@ -96,7 +116,7 @@ export const checkAccessToDatabase = async(databaseCodeName: string): Promise<Us
  * @param codeName
  */
 export const getRelatedDatabase = async(codeName: string) => {
-    await checkAccessToDatabase(codeName);
+    const { sessionUser, database } = await checkAccessToDatabase(codeName);
     const multiverse = await (new MultiverseFactory()).getMultiverse();
     const multiverseDatabase = await multiverse.getDatabase(codeName);
     if (!multiverseDatabase) {
@@ -106,7 +126,11 @@ export const getRelatedDatabase = async(codeName: string) => {
         });
     }
 
-    return multiverseDatabase;
+    return {
+        multiverseDatabase,
+        sessionUser,
+        database
+    };
 };
 
 /**
@@ -128,12 +152,13 @@ const storeDatabase = async(configuration: StoredDatabaseConfiguration): Promise
 
     const mongodbDatabase = await getDatabase(configuration.name);
 
+    // create the database in the mongodb if it does not exist
     if (!mongodbDatabase) {
         const databaseToInsert = {
             name: configuration.name,
             codeName: configuration.name,
             records: 0, // records will be updated after the first write into the queue
-            ownerId: sessionUser._id
+            ownerId: sessionUser._id,
         };
 
         const result = await createDatabase(databaseToInsert);
@@ -174,7 +199,11 @@ export const database = router({
      * Missing databases are added to the mongodb with name and codeName set to multiverse database name.
      * @returns {DatabaseGet[]} - list of databases
      */
-    list: publicProcedure.query(async(): Promise<DatabaseGet[]> => {
+    list: publicProcedure.query(async(): Promise<{
+        databases: DatabaseGet[],
+        dbsToBeCreated: string[],
+        dbsToBeDeleted: string[]
+    }> => {
         try {
             const sessionUser = await getSessionUser();
             if (!sessionUser) {
@@ -184,11 +213,22 @@ export const database = router({
                 });
             }
 
+            const dbsToBeCreated = sessionUser.dbsToBeCreated || [];
+            const dbsToBeDeleted = sessionUser.dbsToBeDeleted || [];
+
             const multiverse = await (new MultiverseFactory()).getMultiverse();
             const listedDatabases = await multiverse.listDatabases();
 
-            return await Promise.all(listedDatabases.map(async(database): Promise<DatabaseGet> => {
+            const databases = (await Promise.all(listedDatabases.map(async(database): Promise<(DatabaseGet | undefined)> => {
                 const configuration = await database.getConfiguration();
+
+                // check if database is being created or deleted
+                if (dbsToBeCreated.includes(configuration.name)) {
+                    return undefined;
+                }
+                if (dbsToBeDeleted.includes(configuration.name)) {
+                    return undefined;
+                }
 
                 if (configuration.statisticsQueueName === undefined) {
                     log.info(`Setting queue ${sessionUser.sqsQueue} to the existing database ${configuration.name}`);
@@ -197,8 +237,15 @@ export const database = router({
                 }
 
                 // guaranteed that the database is stored in the mongodb
-                return storeDatabase(configuration);
-            }));
+                return await storeDatabase(configuration);
+            }))).filter(database => database !== undefined) as DatabaseGet[];
+
+            return {
+                databases: databases,
+                dbsToBeCreated,
+                dbsToBeDeleted
+            };
+
         } catch (error) {
             throw handleError({
                 error,
@@ -215,9 +262,26 @@ export const database = router({
      */
     get: publicProcedure
         .input(z.string())
-        .query(async(opts): Promise<DatabaseGet> => {
+        .query(async(opts): Promise<{
+            database: DatabaseGet | undefined,
+            state: EDatabaseState
+        }> => {
             try {
-                const user = await checkAccessToDatabase(opts.input);
+                const { sessionUser } = await checkAccessToDatabase(opts.input);
+
+                // check if database is being created or deleted
+                if (sessionUser.databases && sessionUser.dbsToBeCreated.includes(opts.input)) {
+                    return {
+                        database: undefined,
+                        state: EDatabaseState.CREATING
+                    };
+                }
+                if (sessionUser.databases && sessionUser.dbsToBeDeleted.includes(opts.input)) {
+                    return {
+                        database: undefined,
+                        state: EDatabaseState.DELETING
+                    };
+                }
 
                 // get the database from the multiverse
                 const multiverse = await (new MultiverseFactory()).getMultiverse();
@@ -230,12 +294,17 @@ export const database = router({
                     });
                 }
                 if (configuration.statisticsQueueName === undefined) {
-                    log.info(`Setting queue ${user.sqsQueue} to the existing database ${configuration.name}`);
-                    configuration.statisticsQueueName = user.sqsQueue;
+                    log.info(`Setting queue ${sessionUser.sqsQueue} to the existing database ${configuration.name}`);
+                    configuration.statisticsQueueName = sessionUser.sqsQueue;
                     // TODO - set the queue to the multiverseDB
                 }
 
-                return await storeDatabase(configuration);
+                const storedDatabase = await storeDatabase(configuration);
+
+                return {
+                    database: storedDatabase,
+                    state: EDatabaseState.CREATED
+                };
             } catch (error) {
                 throw handleError({
                     error,
@@ -261,18 +330,22 @@ export const database = router({
         region: z.string(),
         space: z.string(),
     })).mutation(async(opts) => {
+        const sessionUser = await getSessionUser();
+        if (!sessionUser) {
+            throw new TRPCError({
+                code: "UNAUTHORIZED",
+                message: "User not found",
+            });
+        }
+        let codeName = "";
+
         try {
-            const sessionUser = await getSessionUser();
-            if (!sessionUser) {
-                throw new TRPCError({
-                    code: "UNAUTHORIZED",
-                    message: "User not found",
-                });
-            }
+            codeName = generateDatabaseCodeName(opts.input.name);
+            const name = normalizeString(opts.input.name);
+            // add the database to the user's list of databases to be created
+            await addDatabaseToBeCreatedToUser(sessionUser._id, codeName);
 
             const multiverse = await (new MultiverseFactory()).getMultiverse();
-            const name = normalizeString(opts.input.name);
-            const codeName = generateDatabaseCodeName(opts.input.name);
 
             // create the database in the multiverse
             const database: StoredDatabaseConfiguration = {
@@ -297,6 +370,8 @@ export const database = router({
                 errorMessage: "Error creating database",
                 logMessage: `Error creating database ${opts.input.name}`,
             });
+        } finally {
+            await removeDatabaseToBeCreatedFromUser(sessionUser._id, codeName);
         }
     }),
     /**
@@ -306,8 +381,14 @@ export const database = router({
      */
     delete: publicProcedure.input(z.string()).mutation(async(opts) => {
         const codeName = opts.input;
+        let userId: ObjectId | undefined = undefined;
+
         try {
-            await checkAccessToDatabase(codeName);
+            const { sessionUser } = await checkAccessToDatabase(codeName);
+            userId = sessionUser._id;
+
+            // add the database to the user's list of databases to be deleted
+            await addDatabaseToBeDeletedToUser(userId, codeName);
 
             const multiverse = await (new MultiverseFactory()).getMultiverse();
             const multiverseDatabase = await multiverse.getDatabase(codeName);
@@ -327,6 +408,10 @@ export const database = router({
                 errorMessage: "Error deleting database",
                 logMessage: `Error deleting database ${codeName}`,
             });
+        } finally {
+            if (userId) {
+                await removeDatabaseToBeDeletedFromUser(userId, codeName);
+            }
         }
     }),
     vector,

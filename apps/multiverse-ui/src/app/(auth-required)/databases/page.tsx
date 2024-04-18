@@ -27,17 +27,15 @@ function Statistics() {
         to: dateRange.to.toISOString()
     });
 
-    console.log("generalStatistics");
-
     return (
         <>
             {isLoading && <Loading/>}
             {isError && <GeneralError/>}
-            {isSuccess && generalStatistics &&
-            <>
-                <GeneralStatistics items={createProps(generalStatistics)} />
-            </>
-            }
+            {isSuccess && generalStatistics && (
+                <>
+                    <GeneralStatistics items={createProps(generalStatistics)} />
+                </>
+            )}
         </>
     );
 }
