@@ -1,5 +1,3 @@
-"use client";
-
 import { IoAdd, IoClose } from "react-icons/io5";
 import { Button } from "@/components/ui/button";
 import useModal from "@/features/hooks/use-modal";
@@ -21,6 +19,7 @@ import Editor from "@monaco-editor/react";
 import { trpc } from "@/lib/trpc/client";
 import { notFound, useParams } from "next/navigation";
 import type { NewVector } from "@multiverse/multiverse/src/core/Vector";
+import { customToast } from "@/features/fetching/CustomToast";
 
 export interface Vector {
   label: string;
@@ -28,14 +27,23 @@ export interface Vector {
   vector: number[];
 }
 
-export default function UpsertVectorModal({ className, }: {className?: string }) {
+export default function UpsertVectorModal({ className, handleInvalidateResult }: {className?: string, handleInvalidateResult: () => void}) {
     const {
         modalOpen, handleOpenModal, handleCloseModal
     } = useModal();
 
     const codeName = useParams().codeName as string;
     const { data: database, isSuccess } = trpc.database.get.useQuery(codeName);
-    const mutation = trpc.database.vector.post.useMutation();
+    const mutation = trpc.database.vector.post.useMutation({
+        onSuccess: () => {
+            customToast.success("Vector added successfully.");
+            handleInvalidateResult();
+            handleCloseModal();
+        },
+        onError: () => {
+            customToast.error("An error occurred while adding the vector.");
+        }
+    });
 
     const dimensions = database?.dimensions;
     const defaultVector = useCallback(() => {
@@ -70,7 +78,6 @@ export default function UpsertVectorModal({ className, }: {className?: string })
             database: codeName,
             vector: newVectors
         });
-        handleCloseModal();
     };
 
     const findExcessJsonKeys = (json: any): string[] => {

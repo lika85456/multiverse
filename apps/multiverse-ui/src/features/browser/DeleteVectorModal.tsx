@@ -13,16 +13,36 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import useModal from "@/features/hooks/use-modal";
 import { IoClose } from "react-icons/io5";
-import React from "react";
+import React, { useState } from "react";
 import { trpc } from "@/lib/trpc/client";
+import { MdError } from "react-icons/md";
+import { customToast } from "@/features/fetching/CustomToast";
+import Spinner from "@/features/fetching/Spinner";
 
-export default function DeleteVectorModal({ label, codeName }: { label: string, codeName: string}) {
+export default function DeleteVectorModal({
+    label, codeName, markAsDeleted
+}: { label: string, codeName: string, markAsDeleted: () => void}) {
+    const [isProcessing, setIsProcessing] = useState(false);
     const {
         modalOpen, handleOpenModal, handleCloseModal
     } = useModal();
-    const mutation = trpc.database.vector.delete.useMutation();
+    const mutation = trpc.database.vector.delete.useMutation({
+        onSuccess: async() => {
+            customToast.success("Vector deleted successfully.");
+            markAsDeleted();
+            handleProcessingEnd();
+            handleCloseModal();
+        },
+        onError: async(error) => {
+            if (error.data?.code === "NOT_FOUND") {
+                customToast.error("Vector not found.");
+            } else {
+                customToast.error("An error occurred while deleting the vector.");
+            }
+            handleProcessingEnd();
+        }
+    });
 
-    // TODO - preskrtnut po zmazani vektoru
     const handleCopyRequest = async() => {
         try {
             await navigator.clipboard.writeText(`{"id": "${label}"}`);
@@ -33,13 +53,21 @@ export default function DeleteVectorModal({ label, codeName }: { label: string, 
     };
 
     const handleDeleteVector = async() => {
+        handleProcessingStart();
         await mutation.mutateAsync({
             label: label,
             database: codeName
         });
 
         console.log(`Deleting vector with label: ${label}`);
-        handleCloseModal();
+    };
+
+    const handleProcessingStart = () => {
+        setIsProcessing(true);
+    };
+
+    const handleProcessingEnd = () => {
+        setIsProcessing(false);
     };
 
     return (
@@ -83,8 +111,12 @@ export default function DeleteVectorModal({ label, codeName }: { label: string, 
                     <Button
                         className="flex w-full bg-destructive hover:bg-destructive_light text-destructive-foreground"
                         onClick={handleDeleteVector}
+                        disabled={isProcessing}
                     >
-                        <TrashIcon className="w-6 h-6 mr-2" />
+                        {!isProcessing && <TrashIcon className="w-6 h-6 mr-2" />}
+                        {isProcessing && <div className="mr-2">
+                            <Spinner />
+                        </div>}
             Delete
                     </Button>
                 </AlertDialogFooter>

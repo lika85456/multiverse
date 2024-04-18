@@ -42,6 +42,18 @@ const config = {
                     DEFAULT: "hsl(var(--destructive))",
                     foreground: "hsl(var(--destructive-foreground))",
                 },
+                error: {
+                    DEFAULT: "hsl(var(--error))",
+                    foreground: "hsl(var(--error-foreground))",
+                },
+                warning: {
+                    DEFAULT: "hsl(var(--warning))",
+                    foreground: "hsl(var(--warning-foreground))",
+                },
+                success: {
+                    DEFAULT: "hsl(var(--success))",
+                    foreground: "hsl(var(--success-foreground))",
+                },
                 destructive_light: {
                     DEFAULT: "hsl(var(--destructive-light))",
                     foreground: "hsl(var(--destructive-foreground-light))",
