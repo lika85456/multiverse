@@ -198,7 +198,7 @@ describe("<ComputeWorker>", () => {
             expect(await snapshotStorage.loadLatest()).toBeDefined();
         });
 
-        it("should load the snapshot in another worker", async() => {
+        it("should load the snapshot in another worker automagically", async() => {
             expect(await snapshotStorage.loadLatest()).toBeDefined();
 
             const anotherWorker = new ComputeWorker({
@@ -210,7 +210,7 @@ describe("<ComputeWorker>", () => {
                 memoryLimit: 5000
             });
 
-            // should be empty
+            // should NOT be empty
             const result = await anotherWorker.query({
                 query: {
                     k: 10,
@@ -221,32 +221,16 @@ describe("<ComputeWorker>", () => {
                 updates: []
             });
 
-            expect(result.result.result.length).toBe(0);
-
-            // load snapshot
-            await anotherWorker.loadLatestSnapshot();
-
-            // should have one item
-            const result2 = await anotherWorker.query({
-                query: {
-                    k: 10,
-                    vector: vectorSaved,
-                    metadataExpression: "",
-                    sendVector: true
-                },
-                updates: []
-            });
-
-            expect(result2.result.result.length).toBe(1);
-            expect(result2.result.result[0].label).toBe("test");
-            expect(result2.result.result[0].metadata.vectorSaved).toBe(JSON.stringify(vectorSaved));
+            expect(result.result.result.length).toBe(1);
+            expect(result.result.result[0].label).toBe("test");
+            expect(result.result.result[0].metadata.vectorSaved).toBe(JSON.stringify(vectorSaved));
 
             // the resulting vector can have different values due to the nature of the index
             // compare with precision of 0.0001%
-            if (!result2.result.result[0].vector)
+            if (!result.result.result[0].vector)
                 throw new Error("vector is undefined");
 
-            expect(result2.result.result[0].vector
+            expect(result.result.result[0].vector
                 .map((v, i) => Math.abs(v - vectorSaved[i]) / vectorSaved[i])
                 .reduce((a, b) => a + b, 0))
                 .toBeLessThan(0.0001);

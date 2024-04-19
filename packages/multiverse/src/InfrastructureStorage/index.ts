@@ -1,7 +1,8 @@
 import { z } from "zod";
 import type { WorkerState } from "../Compute/Worker";
 import type {
-    DatabaseConfiguration, DatabaseID, Region
+    DatabaseID, Region,
+    StoredDatabaseConfiguration
 } from "../core/DatabaseConfiguration";
 
 export type PartitionLambdaState = {
@@ -34,7 +35,7 @@ export type ScalingTargetConfiguration = z.infer<typeof scalingTargetConfigurati
 
 export type Infrastructure = {
     databaseId: DatabaseID;
-    configuration: DatabaseConfiguration;
+    configuration: StoredDatabaseConfiguration;
     scalingTargetConfiguration: ScalingTargetConfiguration;
 
     /**
@@ -43,8 +44,11 @@ export type Infrastructure = {
     partitions: PartitionInfrastructureState[];
 };
 
+// TODO: RACING CONDITION!!!
+
 export default abstract class InfrastructureStorage {
     abstract set(dbName: string, infrastructure: Infrastructure): Promise<void>;
+    abstract setProperty<T extends keyof Infrastructure>(dbName: string, property: T, value: Infrastructure[T]): Promise<void>;
     abstract get(dbName: string): Promise<Infrastructure | undefined>;
     abstract remove(dbName: string): Promise<void>;
     abstract list(): Promise<Infrastructure[]>;
@@ -66,7 +70,7 @@ export default abstract class InfrastructureStorage {
         }
     }
 
-    async processState(dbName: string, lambdaName: string, state: WorkerState) {
+    public async processState(dbName: string, lambdaName: string, state: WorkerState) {
         const infrastructure = await this.get(dbName);
         if (!infrastructure) {
             throw new Error(`Database ${dbName} not found`);
@@ -97,5 +101,23 @@ export default abstract class InfrastructureStorage {
         this.trimOldInstances(infrastructure);
 
         await this.set(dbName, infrastructure);
+    }
+
+    public async getOldestUpdateTimestamp(infrastructure: Infrastructure, partitionIndex: number): Promise<number> {
+        const partition = infrastructure.partitions.find(p => p.partitionIndex === partitionIndex);
+        if (!partition) {
+            throw new Error(`Partition ${partitionIndex} not found`);
+        }
+
+        let oldest = Date.now();
+        for (const lambda of partition.lambda) {
+            for (const instance of lambda.instances) {
+                if (instance.lastUpdated < oldest) {
+                    oldest = instance.lastUpdated;
+                }
+            }
+        }
+
+        return oldest;
     }
 }

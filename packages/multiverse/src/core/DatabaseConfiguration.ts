@@ -16,14 +16,14 @@ export const databaseConfiguration = z.object({
 
     // index
     dimensions: z.number().positive().max(10000),
-    space: z.instanceof(String) as unknown as z.ZodType<IndexSpace>,
+    space: z.enum(["l2", "cosine", "ip"]) as z.ZodType<IndexSpace>,
 });
 
 export type DatabaseConfiguration = z.infer<typeof databaseConfiguration>;
 
 export type Token = {
     name: string;
-    // secret: string;
+    secret: string;
     validUntil: number; // unix timestamp
 };
 

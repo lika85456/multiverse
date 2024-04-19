@@ -4,7 +4,9 @@ import type {
     Worker, WorkerQuery, WorkerQueryResult
 } from "../Compute/Worker";
 import type { Region } from "../core/DatabaseConfiguration";
-import type { PartitionInfrastructureState, PartitionLambdaState } from "../InfrastructureStorage";
+import type {
+    Infrastructure, PartitionInfrastructureState, PartitionLambdaState
+} from "../InfrastructureStorage";
 import type InfrastructureStorage from "../InfrastructureStorage";
 import LambdaWorker from "../Compute/LambdaWorker";
 import logger from "@multiverse/log";
@@ -27,14 +29,17 @@ export default class PartitionWorker implements Worker {
     private lambdasByPriority: Promise<PartitionLambdaState[]>;
 
     private REQUEST_TIMEOUT = 2000;
+    private REQUEST_ALL_WAIT_TIME = 2000;
 
-    private lambdaFactory: (name: string, region: Region) => Worker;
+    private lambdaFactory: (name: string, region: Region, waitTime: number) => Worker;
 
     constructor(options: {
         infrastructureStorage: InfrastructureStorage;
         partitionIndex: number;
         databaseName: string;
-        lambdaFactory?: (name: string, region: Region) => Worker;
+
+        lambdaFactory?: (name: string, region: Region, waitTime: number) => Worker;
+        infrastructure?: Infrastructure;
     }) {
         this.partitionIndex = options.partitionIndex;
         this.infrastructureStorage = options.infrastructureStorage;
@@ -46,31 +51,37 @@ export default class PartitionWorker implements Worker {
             region
         }));
 
-        this.partition = this.infrastructureStorage.get(options.databaseName).then(infrastructure => {
-            if (!infrastructure) {
-                throw new Error(`Database ${options.databaseName} not found`);
-            }
+        this.partition = (
+            options.infrastructure
+                ? Promise.resolve(options.infrastructure)
+                : this.infrastructureStorage.get(options.databaseName)
+        )
+            .then(infrastructure => {
+                if (!infrastructure) {
+                    throw new Error(`Database ${options.databaseName} not found`);
+                }
 
-            const partition = infrastructure.partitions.find(p => p.partitionIndex === options.partitionIndex);
-            if (!partition) {
-                throw new Error(`Partition ${options.partitionIndex} not found`);
-            }
+                const partition = infrastructure.partitions.find(p => p.partitionIndex === options.partitionIndex);
+                if (!partition) {
+                    throw new Error(`Partition ${options.partitionIndex} not found`);
+                }
 
-            return partition;
-        });
+                return partition;
+            });
 
-        this.lambdasByPriority = this.partition.then(partition => {
-            const primary = partition.lambda.find(l => l.type === "primary");
-            if (!primary) {
-                throw new Error("Primary not found");
-            }
+        this.lambdasByPriority = this.partition
+            .then(partition => {
+                const primary = partition.lambda.find(l => l.type === "primary");
+                if (!primary) {
+                    throw new Error("Primary not found");
+                }
 
-            const secondaries = partition.lambda.filter(l => l.type === "fallback" && l.region === primary.region);
+                const secondaries = partition.lambda.filter(l => l.type === "fallback" && l.region === primary.region);
 
-            const regions = partition.lambda.filter(l => l.region !== primary.region);
+                const regions = partition.lambda.filter(l => l.region !== primary.region);
 
-            return [primary, ...secondaries, ...regions];
-        });
+                return [primary, ...secondaries, ...regions];
+            });
     }
 
     private async throwOnTimeout<T>(promise: Promise<T>, timeout: number): Promise<T> {
@@ -87,6 +98,7 @@ export default class PartitionWorker implements Worker {
         });
     }
 
+    // TODO: this is a naive implementation and could be very much improved
     private async request<TEvent extends keyof Worker>(
         event: TEvent,
         payload: Parameters<Worker[TEvent]>
@@ -96,7 +108,7 @@ export default class PartitionWorker implements Worker {
 
         for (const lambdaState of await this.lambdasByPriority) {
             try {
-                const worker = this.lambdaFactory(lambdaState.name, lambdaState.region);
+                const worker = this.lambdaFactory(lambdaState.name, lambdaState.region, 0);
 
                 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                 // @ts-ignore
@@ -104,7 +116,7 @@ export default class PartitionWorker implements Worker {
 
                 const response = await this.throwOnTimeout(responsePromise, this.REQUEST_TIMEOUT);
 
-                await this.infrastructureStorage.processState(this.databaseName, response.state);
+                await this.infrastructureStorage.processState(this.databaseName, lambdaState.name, response.state);
 
                 return response as ReturnType<Worker[TEvent]>;
             } catch (e) {
@@ -113,6 +125,45 @@ export default class PartitionWorker implements Worker {
         }
 
         throw new Error("All lambdas failed");
+    }
+
+    public async requestAll<TEvent extends keyof Worker>(
+        event: TEvent,
+        payload: Parameters<Worker[TEvent]>,
+        lambdaType: "primary" | "fallback" | "all"
+    ): Promise<Array<ReturnType<Worker[TEvent]>>> {
+
+        await this.partition;
+
+        const responses: Array<ReturnType<Worker[TEvent]>> = [];
+
+        for (const lambdaState of await this.lambdasByPriority) {
+            if (lambdaType !== "all" && lambdaState.type !== lambdaType) {
+                continue;
+            }
+
+            try {
+                const worker = this.lambdaFactory(lambdaState.name, lambdaState.region, this.REQUEST_ALL_WAIT_TIME);
+
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-ignore
+                const responsePromise = worker[event](...payload) as Promise<ReturnType<Worker[TEvent]>>;
+
+                const response = await this.throwOnTimeout(responsePromise, this.REQUEST_TIMEOUT);
+
+                await this.infrastructureStorage.processState(this.databaseName, lambdaState.name, response.state);
+
+                responses.push(response);
+            } catch (e) {
+                log.debug(`Lambda ${lambdaState.name} failed: ${e}`);
+            }
+        }
+
+        if (responses.length === 0) {
+            throw new Error("All lambdas failed");
+        }
+
+        return responses;
     }
 
     public async update(updates: StoredVectorChange[]): Promise<StatefulResponse<void>> {
@@ -129,6 +180,10 @@ export default class PartitionWorker implements Worker {
 
     public async saveSnapshot(): Promise<StatefulResponse<void>> {
         return await this.request("saveSnapshot", []);
+    }
+
+    public async saveSnapshotWithUpdates(updates: StoredVectorChange[]): Promise<StatefulResponse<void>> {
+        return await this.request("saveSnapshotWithUpdates", [updates]);
     }
 
     public async loadLatestSnapshot(): Promise<StatefulResponse<void>> {

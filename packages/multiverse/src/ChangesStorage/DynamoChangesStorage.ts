@@ -234,6 +234,50 @@ export default class DynamoChangesStorage implements ChangesStorage {
         return;
     }
 
+    public async count(): Promise<number> {
+        const result = await this.dynamo.send(new QueryCommand({
+            TableName: this.options.tableName,
+            KeyConditionExpression: "PK = :pk",
+            ExpressionAttributeValues: { ":pk": this.options.databaseId.name },
+            Select: "COUNT"
+        }));
+
+        return result.Count ?? 0;
+    }
+
+    /**
+     * removes all changes before the given timestamp
+     * @param timestamp
+     */
+    public async clearBefore(timestamp: number): Promise<void> {
+        let lastEvaluatedKey: any = undefined;
+
+        do {
+            const result = await this.dynamo.send(new QueryCommand({
+                TableName: this.options.tableName,
+                KeyConditionExpression: "PK = :pk AND SK < :sk",
+                ExpressionAttributeValues: {
+                    ":pk": this.options.databaseId.name,
+                    ":sk": timestamp * 1000
+                },
+                ExclusiveStartKey: lastEvaluatedKey,
+                ScanIndexForward: true
+            }));
+
+            const keys = result.Items?.map(item => ({
+                PK: item.PK,
+                SK: item.SK
+            }));
+
+            if (keys) {
+                // eslint-disable-next-line max-len
+                await this.dynamo.send(new BatchWriteCommand({ RequestItems: { [this.options.tableName]: keys.map(key => ({ DeleteRequest: { Key: key } })) } }));
+            }
+
+            lastEvaluatedKey = result.LastEvaluatedKey;
+        } while (lastEvaluatedKey);
+    }
+
     public async getAllChangesAfter(timestamp: number): Promise<StoredVectorChange[]> {
         const changes = [];
         for await (const change of this.changesAfter(timestamp)) {

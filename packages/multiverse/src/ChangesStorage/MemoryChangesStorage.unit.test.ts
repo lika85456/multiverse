@@ -78,6 +78,11 @@ describe("<MemoryChangesStorage>", () => {
         expect(readChanges).toHaveLength(103);
     });
 
+    it("should count 103", async() => {
+        const count = await storage.count();
+        expect(count).toBe(103);
+    });
+
     it("should read correctly changesAfter", async() => {
         const changes: StoredVectorChange[] = Array.from({ length: 100 }, (_, i) => ({
             action: "add",

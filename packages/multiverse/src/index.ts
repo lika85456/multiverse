@@ -4,7 +4,7 @@ import type {
 } from "./core/DatabaseConfiguration";
 import type { Query, QueryResult } from "./core/Query";
 import type { NewVector } from "./core/Vector";
-import OrchestratorDeployer from "./Orchestrator/OrchestratorDeployer";
+import OrchestratorDeployer from "./Orchestrator/OLD/OrchestratorDeployer";
 import { ENV } from "./env";
 import type InfrastructureStorage from "./InfrastructureStorage";
 import DynamoInfrastructureStorage from "./InfrastructureStorage/DynamoInfrastructureStorage";

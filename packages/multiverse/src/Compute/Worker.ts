@@ -40,8 +40,11 @@ export type CountResponse = {
 export interface Worker {
     query(query: WorkerQuery): Promise<StatefulResponse<WorkerQueryResult>>;
     update(updates: StoredVectorChange[]): Promise<StatefulResponse<void>>;
+
     saveSnapshot(): Promise<StatefulResponse<void>>;
+    saveSnapshotWithUpdates(updates: StoredVectorChange[]): Promise<StatefulResponse<void>>;
     loadLatestSnapshot(): Promise<StatefulResponse<void>>;
+
     count(): Promise<StatefulResponse<CountResponse>>;
     state(): Promise<StatefulResponse<void>>;
 }

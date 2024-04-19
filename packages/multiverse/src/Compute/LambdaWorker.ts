@@ -4,12 +4,13 @@ import type {
     StatefulResponse,
     Worker, WorkerQuery, WorkerQueryResult
 } from "./Worker";
-import type { DatabaseEnvironment } from "./env";
 import type {
     DatabaseConfiguration, DatabaseID, Region
 } from "../core/DatabaseConfiguration";
 import { IAM } from "@aws-sdk/client-iam";
 import type { StoredVectorChange } from "../ChangesStorage/StoredVector";
+import type { DatabaseEnvironment } from "./EnvSchema";
+import { databaseEnvSchema } from "./EnvSchema";
 
 const logger = log.getSubLogger({ name: "LambdaWorker" });
 
@@ -50,6 +51,13 @@ export default class LambdaWorker implements Worker {
         return await this.invoke({
             event: "saveSnapshot",
             payload: []
+        });
+    }
+
+    public async saveSnapshotWithUpdates(updates: StoredVectorChange[]): Promise<StatefulResponse<void>> {
+        return await this.invoke({
+            event: "saveSnapshotWithUpdates",
+            payload: [updates]
         });
     }
 
@@ -149,6 +157,8 @@ export default class LambdaWorker implements Worker {
             SNAPSHOT_BUCKET: options.snapshotBucket,
             NODE_ENV: options.env,
         };
+
+        databaseEnvSchema.parse(variables);
 
         const result = await this.lambda.createFunction({
             FunctionName: this.options.lambdaName,

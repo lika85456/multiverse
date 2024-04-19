@@ -15,6 +15,8 @@ export default class ComputeWorker implements Worker {
     private instanceId = Math.random().toString(36).slice(2);
     private lastUpdate = 0;
 
+    private coldStartPromise;
+
     constructor(private options: {
         partitionIndex: number,
         snapshotStorage: SnapshotStorage,
@@ -23,6 +25,7 @@ export default class ComputeWorker implements Worker {
         memoryLimit: number,
         ephemeralLimit: number,
     }) {
+        this.coldStartPromise = this.loadLatestSnapshot();
     }
 
     public async state(): Promise<StatefulResponse<void>> {
@@ -41,6 +44,8 @@ export default class ComputeWorker implements Worker {
     }
 
     public async update(updates: StoredVectorChange[]): Promise<StatefulResponse<void>> {
+        await this.coldStartPromise;
+
         for (const update of updates) {
             // some of the updates might have been proccessed already (if lastUpdate===update.timestamp),
             // but if in the right order, it should lead to the same results
@@ -64,7 +69,9 @@ export default class ComputeWorker implements Worker {
     }
 
     public async query(query: WorkerQuery): Promise<StatefulResponse<WorkerQueryResult>> {
-        if (query.updates) {
+        await this.coldStartPromise;
+
+        if (query.updates && query.updates.length > 0) {
             await this.update(query.updates);
         }
 
@@ -77,6 +84,8 @@ export default class ComputeWorker implements Worker {
     }
 
     public async wake(wait: number): Promise<void> {
+        await this.coldStartPromise;
+
         await new Promise((resolve) => setTimeout(resolve, wait));
     }
 
@@ -90,6 +99,12 @@ export default class ComputeWorker implements Worker {
         log.debug(`Saved snapshot ${snapshot.filePath}`, { snapshot });
 
         return await this.state();
+    }
+
+    public async saveSnapshotWithUpdates(updates: StoredVectorChange[]): Promise<StatefulResponse<void>> {
+        await this.update(updates);
+
+        return await this.saveSnapshot();
     }
 
     public async loadLatestSnapshot(): Promise<StatefulResponse<void>> {
@@ -114,6 +129,8 @@ export default class ComputeWorker implements Worker {
         vectors: number,
         vectorDimensions: number
     }>> {
+        await this.coldStartPromise;
+
         return { // TODO: implement properly
             ...(await this.state()),
             result: {

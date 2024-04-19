@@ -8,11 +8,11 @@ import type {
     APIGatewayProxyEvent, APIGatewayProxyResult, Context
 } from "aws-lambda";
 import DynamoChangesStorage from "../ChangesStorage/DynamoChangesStorage";
-import { databaseEnvSchema } from "./env";
 import HNSWIndex from "../Index/HNSWIndex";
 import S3SnapshotStorage from "../SnapshotStorage/S3SnapshotStorage";
 import type { Worker } from "./Worker";
 import ComputeWorker from "./ComputeWorker";
+import { databaseEnvSchema } from "./EnvSchema";
 
 if (!process.env.VARIABLES) {
     throw new Error("Missing environment variables");

@@ -1,4 +1,4 @@
-import { HierarchicalNSW, } from "hnswlib-node";
+import { HierarchicalNSW } from "hnswlib-node";
 import type Index from ".";
 import type { Query, SearchResultVector } from "../core/Query";
 import crypto from "crypto";
@@ -66,11 +66,6 @@ export default class HNSWIndex implements Index {
     public async add(vectors: NewVector[]): Promise<void> {
         const index = this.index;
         vectors.forEach(vector => {
-
-            // if exists continue
-            if (this.idMap[this.hashLabel(vector.label)]) {
-                return;
-            }
 
             const id = this.hashLabel(vector.label);
 

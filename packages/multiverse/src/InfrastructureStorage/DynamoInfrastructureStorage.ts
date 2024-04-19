@@ -90,6 +90,10 @@ export class InfrastructureStorageDeployer {
     }
 }
 
+type StoredInfrastructure = {
+    pk: string;
+} & Infrastructure;
+
 /**
  * Each database has its own row in the table.
  */
@@ -113,11 +117,22 @@ export default class DynamoInfrastructureStorage extends InfrastructureStorage {
     }
 
     public async set(dbName: string, infrastructure: Infrastructure): Promise<void> {
+
         await this.dynamo.send(new PutCommand({
             TableName: this.options.tableName,
             Item: {
                 pk: dbName,
-                infrastructure
+                ...infrastructure
+            }
+        }));
+    }
+
+    public async setProperty<T extends keyof Infrastructure>(dbName: string, property: T, value: Infrastructure[T]): Promise<void> {
+        await this.dynamo.send(new PutCommand({
+            TableName: this.options.tableName,
+            Item: {
+                pk: dbName,
+                [property]: value
             }
         }));
     }
@@ -126,7 +141,15 @@ export default class DynamoInfrastructureStorage extends InfrastructureStorage {
         return this.dynamo.send(new GetCommand({
             TableName: this.options.tableName,
             Key: { pk: dbName }
-        })).then(res => res.Item?.infrastructure);
+        }))
+            .then(res => {
+                if (res.Item) {
+                    const item = res.Item as StoredInfrastructure;
+                    const { pk: _pk, ...infrastructure } = item;
+
+                    return infrastructure;
+                }
+            });
     }
 
     public async remove(dbName: string): Promise<void> {
@@ -138,7 +161,17 @@ export default class DynamoInfrastructureStorage extends InfrastructureStorage {
 
     public async list(): Promise<Infrastructure[]> {
         return this.dynamo.send(new ScanCommand({ TableName: this.options.tableName }))
-            .then(res => res.Items?.map(i => i.infrastructure) as Infrastructure[]);
+            .then(res => {
+                if (res.Items) {
+                    return res.Items.map(item => {
+                        const { pk: _pk, ...infrastructure } = item as StoredInfrastructure;
+
+                        return infrastructure;
+                    });
+                }
+
+                return [];
+            });
     }
 
     public async deploy() {

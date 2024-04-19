@@ -6,25 +6,24 @@ import log from "@multiverse/log";
 import type {
     APIGatewayProxyEvent, APIGatewayProxyResult, Context
 } from "aws-lambda";
-import OrchestratorWorker from "./OrchestratorWorker";
-import IndexManager from "./IndexManager";
-import InfrastructureManager from "./InfrastructureManager";
-import { ORCHESTRATOR_ENV } from "./OrchestratorEnvironment";
+import IndexManager from "./OLD/IndexManager";
+import InfrastructureManager from "./OLD/InfrastructureManager";
+import { ORCHESTRATOR_ENV } from "./env";
 import DynamoChangesStorage from "../ChangesStorage/DynamoChangesStorage";
 import InfrastructureStorage from "../InfrastructureStorage/DynamoInfrastructureStorage";
 import lambdaDatabaseClientFactory from "../Compute/LambdaWorker";
+import type Orchestrator from "./Orchestrator";
 
 type OrchestratorEvent = {
-    event: keyof OrchestratorWorker,
-    payload: Parameters<OrchestratorWorker[keyof OrchestratorWorker]>
+    event: keyof Orchestrator,
+    payload: Parameters<Orchestrator[keyof Orchestrator]>
 };
 
 const indexConfiguration = ORCHESTRATOR_ENV.DATABASE_CONFIG;
 
 const changesStorage = new DynamoChangesStorage({
-    ...indexConfiguration,
     tableName: ORCHESTRATOR_ENV.CHANGES_TABLE,
-    partition: 0 // TODO remove partitions from changes storage
+    databaseId: 
 });
 
 const infrastructureStorage = new InfrastructureStorage({
