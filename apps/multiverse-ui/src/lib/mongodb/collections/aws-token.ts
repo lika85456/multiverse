@@ -1,8 +1,6 @@
 import clientPromise from "@/lib/mongodb/mongodb";
 import type { ObjectId } from "mongodb";
-import {
-    getSessionUser, getUserById, updateUser
-} from "@/lib/mongodb/collections/user";
+import { getUserById, updateUser } from "@/lib/mongodb/collections/user";
 import { decryptSecretAccessKey, encryptSecretAccessKey } from "@/lib/encryption/aws-token";
 import log from "@multiverse/log";
 

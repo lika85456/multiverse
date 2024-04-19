@@ -6,22 +6,26 @@ import { getAwsTokenById } from "@/lib/mongodb/collections/aws-token";
 import log from "@multiverse/log";
 
 export interface UserGet {
-  _id: ObjectId;
-  name?: string;
-  email: string;
-  image?: string;
-  awsToken?: ObjectId;
-  sqsQueue?: string;
-  databases: string[];
+    _id: ObjectId;
+    name?: string;
+    email: string;
+    image?: string;
+    awsToken?: ObjectId;
+    sqsQueue?: string;
+    databases: string[];
+    dbsToBeDeleted: string[];
+    dbsToBeCreated: string[];
 }
 
 export interface UserInsert {
-  name?: string;
-  email: string;
-  image?: string;
-  awsToken?: ObjectId;
-  sqsQueue?: string;
-  databases: string[];
+    name?: string;
+    email: string;
+    image?: string;
+    awsToken?: ObjectId;
+    sqsQueue?: string;
+    databases: string[];
+    dbsToBeDeleted: string[];
+    dbsToBeCreated: string[];
 }
 
 /**
@@ -46,6 +50,8 @@ export const getUserByEmail = async(email: string,): Promise<UserGet | undefined
             awsToken: result.awsToken,
             databases: result.databases,
             sqsQueue: result.sqsQueue,
+            dbsToBeDeleted: result.dbsToBeDeleted ?? [],
+            dbsToBeCreated: result.dbsToBeCreated ?? [],
         };
     } catch (error) {
         log.error(error);
@@ -75,6 +81,8 @@ export const getUserById = async(userId: ObjectId): Promise<UserGet | undefined>
             awsToken: result.awsToken,
             databases: result.databases,
             sqsQueue: result.sqsQueue,
+            dbsToBeDeleted: result.dbsToBeDeleted ?? [],
+            dbsToBeCreated: result.dbsToBeCreated ?? [],
         };
     } catch (error) {
         log.error(error);
@@ -184,6 +192,141 @@ export const removeDatabaseFromUser = async(ownerId: ObjectId, codeName: string)
         throw new Error(`Error removing database ${codeName} from owner ${ownerId}`);
     }
 
+};
+
+export const addDatabaseToBeDeletedToUser = async(ownerId: ObjectId, codeName: string): Promise<void> => {
+    try {
+        const db = (await clientPromise).db();
+        const result = await db.collection("users").findOne({ _id: ownerId });
+        if (!result) {
+            throw new Error("User not found");
+        }
+        const dbsToBeDeleted = result.dbsToBeDeleted ? [...result.dbsToBeDeleted, codeName] : [codeName];
+
+        const updatedUserResult = await db
+            .collection("users")
+            .updateOne(
+                { _id: ownerId },
+                { $set: { dbsToBeDeleted } }
+            );
+
+        if (!updatedUserResult.acknowledged) {
+            throw new Error("Update not acknowledged");
+        }
+    } catch (error) {
+        log.error(error);
+        throw new Error(`Error adding database ${codeName} to be deleted to user ${ownerId}`);
+    }
+};
+
+export const getDatabasesToBeDeletedFromUser = async(ownerId: ObjectId): Promise<string[]> => {
+    try {
+        const db = (await clientPromise).db();
+        const result = await db.collection("users").findOne({ _id: ownerId });
+        if (!result) {
+            throw new Error("User not found");
+        }
+
+        return result.dbsToBeDeleted ?? [];
+    } catch (error) {
+        log.error(error);
+        throw new Error(`Error getting databases to be deleted from owner ${ownerId}`);
+    }
+
+};
+
+export const removeDatabaseToBeDeletedFromUser = async(ownerId: ObjectId, codeName: string): Promise<void> => {
+    try {
+        const db = (await clientPromise).db();
+        const result = await db.collection("users").findOne({ _id: ownerId });
+        if (!result) {
+            throw new Error("User not found");
+        }
+
+        const oldDbsToBeDeleted: string[] = result.dbsToBeDeleted ?? [];
+        const newDbsToBeDeleted: string[] = oldDbsToBeDeleted.filter((db) => db !== codeName);
+
+        const updatedUserResult = await db
+            .collection("users")
+            .updateOne(
+                { _id: ownerId },
+                { $set: { dbsToBeDeleted: newDbsToBeDeleted } }
+            );
+
+        if (!updatedUserResult.acknowledged) {
+            throw new Error("Update not acknowledged");
+        }
+    } catch (error) {
+        log.error(error);
+        throw new Error(`Error removing database ${codeName} to be deleted from owner ${ownerId}`);
+    }
+};
+
+export const addDatabaseToBeCreatedToUser = async(ownerId: ObjectId, codeName: string): Promise<void> => {
+    try {
+        const db = (await clientPromise).db();
+        const result = await db.collection("users").findOne({ _id: ownerId });
+        if (!result) {
+            throw new Error("User not found");
+        }
+        const dbsToBeCreated = result.dbsToBeCreated ? [...result.dbsToBeCreated, codeName] : [codeName];
+
+        const updatedUserResult = await db
+            .collection("users")
+            .updateOne(
+                { _id: ownerId },
+                { $set: { dbsToBeCreated } }
+            );
+
+        if (!updatedUserResult.acknowledged) {
+            throw new Error("Update not acknowledged");
+        }
+    } catch (error) {
+        log.error(error);
+        throw new Error(`Error adding database ${codeName} to be created to user ${ownerId}`);
+    }
+};
+
+export const getDatabasesToBeCreatedFromUser = async(ownerId: ObjectId): Promise<string[]> => {
+    try {
+        const db = (await clientPromise).db();
+        const result = await db.collection("users").findOne({ _id: ownerId });
+        if (!result) {
+            throw new Error("User not found");
+        }
+
+        return result.dbsToBeCreated ?? [];
+    } catch (error) {
+        log.error(error);
+        throw new Error(`Error getting databases to be created from owner ${ownerId}`);
+    }
+};
+
+export const removeDatabaseToBeCreatedFromUser = async(ownerId: ObjectId, codeName: string): Promise<void> => {
+    try {
+        const db = (await clientPromise).db();
+        const result = await db.collection("users").findOne({ _id: ownerId });
+        if (!result) {
+            throw new Error("User not found");
+        }
+
+        const oldDbsToBeCreated: string[] = result.dbsToBeCreated ?? [];
+        const newDbsToBeCreated: string[] = oldDbsToBeCreated.filter((db) => db !== codeName);
+
+        const updatedUserResult = await db
+            .collection("users")
+            .updateOne(
+                { _id: ownerId },
+                { $set: { dbsToBeCreated: newDbsToBeCreated } }
+            );
+
+        if (!updatedUserResult.acknowledged) {
+            throw new Error("Update not acknowledged");
+        }
+    } catch (error) {
+        log.error(error);
+        throw new Error(`Error removing database ${codeName} to be created from owner ${ownerId}`);
+    }
 };
 
 /**

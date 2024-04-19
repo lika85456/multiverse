@@ -61,7 +61,7 @@ export default function ConnectionTokenItem({ token, }: ConnectionTokenItemProps
             Valid until
                     </div>
                     <div className="font-bold select-none">
-                        {new UTCDate(token.validUntil).toLocaleDateString("en-US")}
+                        {new UTCDate(token.validUntil).toDateString()}
                     </div>
                 </div>
             </div>

@@ -11,6 +11,7 @@ import type { ReactNode } from "react";
 import { trpc } from "@/lib/trpc/client";
 import Loading from "@/features/fetching/Loading";
 import GeneralError from "@/features/fetching/GeneralError";
+import { redirect } from "next/navigation";
 
 export default function DatabaseHeader({
     databaseCodeName,
@@ -20,24 +21,35 @@ export default function DatabaseHeader({
   children: ReactNode;
 }) {
     const {
-        data: database, isError, isSuccess, isLoading
+        data: result, isError, error, isSuccess, isLoading
     } = trpc.database.get.useQuery(databaseCodeName);
-    if (!isLoading && !database) return Page404();
+
+    // If the database was not created yet, redirect to the databases page
+    if (isSuccess && result && result.state !== "created") {
+        return redirect("/databases");
+    }
+    // If the database does not exist, return a 404 page
+    if (isError && error) {
+        if (error.data?.code === "NOT_FOUND")
+            return Page404();
+
+        return <GeneralError />;
+    }
 
     return (
         <>
             {isLoading && <Loading/>}
             {isError && <GeneralError/>}
-            {isSuccess && database && (
+            {isSuccess && result && result.database && (
                 <div className="flex flex-col w-full">
                     <div className="flex flex-row w-full items-center justify-between">
-                        <PageTitle title={database.name} />
+                        <PageTitle title={result.database.name} />
                         <Link href={"/databases"}>
                             <IoClose className="w-8 h-8 ml-auto" />
                         </Link>
                     </div>
-                    <DatabaseInfo database={database} />
-                    <DatabaseSectionNavigation database={database} />
+                    <DatabaseInfo database={result.database} />
+                    <DatabaseSectionNavigation database={result.database} />
                     <Separator className="mb-4" />
                     {children}
                 </div>)}

@@ -100,11 +100,11 @@ export default function VectorQuery() {
     return (
         <div className="flex flex-col w-full pb-16">
             <UpsertVectorModal className="self-end py-4" handleInvalidateResult={handleUpsertVector} />
-            <QueryHeader
-                dimensions={10}
+            {isSuccess && database && database.database?.dimensions && <QueryHeader
+                dimensions={database.database?.dimensions}
                 onRunQuery={handleRunQuery}
                 onCopyRequest={handleCopyRequest}
-            />
+            />}
             {queryState === "not-ran" && (
                 <div className="flex w-full py-8 justify-center text-secondary-foreground">
           Run a query to display vectors

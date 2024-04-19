@@ -159,6 +159,8 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
     async add(vector: NewVector[]): Promise<void> {
         await loadJsonFile();
 
+        await sleep(200);
+
         const database = databases.get(this.databaseConfiguration.name);
         if (!database) {
             return Promise.resolve();
@@ -184,14 +186,14 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
             totalVectors: newValue.vectors.length,
         };
 
-        await sleep(200);
-
         await this.sendStatistics(event);
 
         return Promise.resolve(undefined);
     }
 
     async remove(label: string[]): Promise<void> {
+        await sleep(200);
+
         const database = databases.get(this.databaseConfiguration.name);
         if (!database) {
             throw new Error(`Database ${this.databaseConfiguration.name} not found`);
@@ -214,8 +216,6 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
             totalVectors: databases.get(this.databaseConfiguration.name)?.vectors.length || 0,
         };
 
-        await sleep(200);
-
         await this.sendStatistics(event);
 
         return Promise.resolve();
@@ -223,6 +223,9 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
 
     async query(query: Query): Promise<QueryResult> {
         const startTime = performance.now();
+
+        await sleep(200);
+
         const queryMetrics = query.vector.reduce((acc, value) => acc + value, 0);
         const vectors = databases.get(this.databaseConfiguration.name)?.vectors;
         if (!vectors) {
@@ -236,8 +239,6 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
                 distance: Math.abs(queryMetrics - vector.vector.reduce((acc, value) => acc + value, 0))
             };
         }).sort((a, b) => a.distance - b.distance).slice(0, query.k);
-
-        await sleep(200);
 
         const endTime = performance.now();
         const duration = endTime - startTime;
@@ -256,6 +257,8 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
     }
 
     async addToken(token: Token): Promise<void> {
+        await sleep(200);
+
         if (this.databaseConfiguration.secretTokens.find((t) => t.name === token.name)) {
             log.error("Token with this name already exists");
             throw new Error("Token with this name already exists");
@@ -268,12 +271,12 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
         });
         await refresh();
 
-        await sleep(200);
-
         return Promise.resolve(undefined);
     }
 
     async removeToken(tokenName: string): Promise<void> {
+        await sleep(200);
+
         await loadJsonFile();
         const index = this.databaseConfiguration.secretTokens.findIndex((token) => token.name === tokenName);
         if (index !== -1) {
@@ -287,8 +290,6 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
         });
 
         await refresh();
-
-        await sleep(200);
 
         return Promise.resolve();
     }
@@ -314,6 +315,11 @@ export class MultiverseMock implements IMultiverse {
 
     async createDatabase(options: Omit<StoredDatabaseConfiguration, "region">,): Promise<void> {
         await loadJsonFile();
+
+        await sleep(1000 * 20); // 20 seconds, really fast
+        // await sleep(1000 * 30); // 30 seconds, realistic scenario, fast case
+        // await sleep(1000 * 60); // 1 minute, realistic scenario, awaited case
+
         databases.set(options.name, {
             multiverseDatabase: new MultiverseDatabaseMock({
                 config: {
@@ -326,15 +332,14 @@ export class MultiverseMock implements IMultiverse {
         });
         await refresh();
 
-        await sleep(1000 * 10); // 10 seconds, really fast
-        // await sleep(1000 * 30); // 30 seconds, realistic scenario, fast case
-        // await sleep(1000 * 60); // 1 minute, realistic scenario, awaited case
-
         return Promise.resolve();
     }
 
     async getDatabase(name: string): Promise<IMultiverseDatabase | undefined> {
         await loadJsonFile();
+
+        await sleep(1000);
+
         const database = databases.get(name);
         if (!database) {
             return Promise.resolve(undefined);
@@ -344,8 +349,6 @@ export class MultiverseMock implements IMultiverse {
         if (database.multiverseDatabase.getAwsToken().awsToken.accessKeyId !== this.awsToken.accessKeyId) {
             return Promise.resolve(undefined);
         }
-
-        await sleep(1000);
 
         return Promise.resolve(database.multiverseDatabase);
     }
@@ -365,11 +368,16 @@ export class MultiverseMock implements IMultiverse {
 
     async removeDatabase(name: string): Promise<void> {
         await loadJsonFile();
+
         const database = databases.get(name);
         if (!database) {
             return Promise.resolve();
         }
         const vectorsLength = database.vectors.length;
+        await sleep(100 * vectorsLength + 1000 * 20); // 5 seconds + 100ms per vector to simulate deletion speed
+        // await sleep(1000 * 30); // 30 seconds, realistic scenario, fast case
+        // await sleep(1000 * 60); // 1 minute, realistic scenario, awaited case
+
         if (database.multiverseDatabase.getAwsToken().awsToken.accessKeyId !== this.awsToken.accessKeyId) {
             return Promise.resolve();
         }
@@ -377,11 +385,6 @@ export class MultiverseMock implements IMultiverse {
         databases.delete(name);
         await refresh();
 
-        await sleep(100 * vectorsLength + 1000 * 5); // 5 seconds + 100ms per vector to simulate deletion speed
-        // await sleep(1000 * 30); // 30 seconds, realistic scenario, fast case
-        // await sleep(1000 * 60); // 1 minute, realistic scenario, awaited case
-
         return Promise.resolve();
     }
-
 }

@@ -19,6 +19,8 @@ export default function QueryHeader({
     onCopyRequest,
 }: VectorQueryProps) {
     const [providedStringVector, setProvidedStringVector] = useState<string>(`[${new Array(dimensions).fill(0).map(() => "0.000")}]`,);
+    const [isValid, setIsValid] = useState<boolean>(true);
+    const [vector, setVector] = useState<VectorValues>(new Array(dimensions).fill(0));
     const [k, setK] = useState(30);
     const handleRunQuery = () => {
         try {
@@ -32,9 +34,27 @@ export default function QueryHeader({
         }
     };
 
+    const transformToVector = (stringVector: string) => {
+        try {
+            const vectorValue = JSON.parse(stringVector) as VectorValues;
+            if (vectorValue.length === dimensions) {
+                setVector(vectorValue);
+                setIsValid(true);
+            } else {
+                setIsValid(false);
+            }
+        } catch (e) {
+            setIsValid(false);
+        }
+    };
+
+    const handleOnChangeVector = (e: string) => {
+        setProvidedStringVector(e);
+        transformToVector(e);
+    };
+
     const handleCopyRequest = async() => {
         try {
-            const vector = JSON.parse(providedStringVector.toString(),) as VectorValues;
             onCopyRequest(vector, k);
         } catch (e) {
             customToast.error("Invalid vector format.");
@@ -51,7 +71,7 @@ export default function QueryHeader({
                         "[0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000 ... ] "
                     }
                     defaultValue={providedStringVector}
-                    onChange={(e) => setProvidedStringVector(e.target.value)}
+                    onChange={(e) => handleOnChangeVector(e.target.value)}
                     className="flex w-full rounded-r-none"
                 />
                 <div className="flex flex-row w-fit border items-center px-2">
@@ -65,6 +85,7 @@ export default function QueryHeader({
                     />
                 </div>
                 <Button
+                    disabled={!isValid}
                     className="rounded-l-none bg-accent hover:bg-accent_light text-accent-foreground"
                     onClick={handleRunQuery}
                 >
@@ -73,6 +94,7 @@ export default function QueryHeader({
                 </Button>
             </div>
             <Button
+                disabled={!isValid}
                 className="flex flex-row w-fit hover:text-secondary-foreground"
                 onClick={handleCopyRequest}
             >

@@ -16,7 +16,9 @@ import React, {
 } from "react";
 import Editor from "@monaco-editor/react";
 import { trpc } from "@/lib/trpc/client";
-import { notFound, useParams } from "next/navigation";
+import {
+    notFound, redirect, useParams
+} from "next/navigation";
 import type { NewVector } from "@multiverse/multiverse/src/core/Vector";
 import { customToast } from "@/features/fetching/CustomToast";
 import Spinner from "@/features/fetching/Spinner";
@@ -48,7 +50,7 @@ export default function UpsertVectorModal({ className, handleInvalidateResult }:
         }
     });
 
-    const dimensions = database?.dimensions;
+    const dimensions = database?.database?.dimensions;
     const defaultVector = useCallback(() => {
         const vector: Vector = {
             label: "red tractor",
@@ -168,7 +170,7 @@ export default function UpsertVectorModal({ className, handleInvalidateResult }:
         }
     }, [defaultVector, modalOpen]);
 
-    if (!isSuccess && !database) {
+    if (isSuccess && (!database || !database.database)) {
         return notFound();
     }
 

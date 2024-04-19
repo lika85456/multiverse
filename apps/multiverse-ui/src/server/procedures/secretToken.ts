@@ -22,7 +22,7 @@ export const secretToken = router({
         }),
     })).mutation(async(opts): Promise<void> => {
         try {
-            const multiverseDatabase = await getRelatedDatabase(opts.input.codeName);
+            const { multiverseDatabase } = await getRelatedDatabase(opts.input.codeName);
             const tokens = (await multiverseDatabase.getConfiguration()).secretTokens;
             if (tokens.find(token => token.name === opts.input.secretToken.name)) {
                 log.error(`Token with name ${opts.input.secretToken.name} already exists`);
@@ -52,7 +52,7 @@ export const secretToken = router({
         tokenName: z.string(),
     })).mutation(async(opts): Promise<void> => {
         try {
-            const multiverseDatabase = await getRelatedDatabase(opts.input.codeName);
+            const { multiverseDatabase } = await getRelatedDatabase(opts.input.codeName);
             await multiverseDatabase.removeToken(opts.input.tokenName);
         } catch (error) {
             throw handleError({
