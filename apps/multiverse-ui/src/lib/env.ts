@@ -9,7 +9,7 @@ config({
         "..",
         "..",
         "..",
-        process.env.NODE_ENV === "test" ? ".env.test" : ".env",
+        process.env.NODE_ENV === "test" ? ".env" : ".env",
     ),
 });
 

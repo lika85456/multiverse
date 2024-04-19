@@ -140,7 +140,13 @@ export class SQSHandler implements ISQSHandler {
             }
         });
 
-        const createQueueCommand = new CreateQueueCommand({ QueueName: queueName });
+        const createQueueCommand = new CreateQueueCommand({
+            QueueName: queueName,
+            tags: {
+                multiverse: "multiverse",
+                "multiverse:databaseCodeName": "test"
+            }
+        });
         log.info("Creating queue: ", queueName);
         try {
             await sqsClient.send(createQueueCommand);

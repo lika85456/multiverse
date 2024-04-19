@@ -43,18 +43,20 @@ export class StatisticsProcessor {
         return 0;
     }
 
+    VECTOR_SIZE = ((4 * 1536) + 500);
+
     private extractWriteData(event: Event) {
         if (event.type === "add") {
             return {
                 timestamp: event.timestamp,
                 totalVectors: event.totalVectors,
-                dataSize: event.totalVectors * (4 * 1536 * 500), //TODO use returned data when provided
+                dataSize: event.totalVectors * this.VECTOR_SIZE, //TODO use returned data when provided
             };
         } else if (event.type === "remove") {
             return {
                 timestamp: event.timestamp,
                 totalVectors: event.totalVectors,
-                dataSize: event.totalVectors * (4 * 1536 * 500), //TODO use returned data when provided
+                dataSize: event.totalVectors * this.VECTOR_SIZE, //TODO use returned data when provided
             };
         }
 

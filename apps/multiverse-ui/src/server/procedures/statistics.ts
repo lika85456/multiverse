@@ -2,14 +2,15 @@ import { publicProcedure, router } from "@/server/trpc";
 import z from "zod";
 import { getGeneralDatabaseStatistics, } from "@/lib/mongodb/collections/general-database-statistics";
 import type { DailyStatisticsGet } from "@/lib/mongodb/collections/daily-statistics";
-import { convertToISODate } from "@/lib/mongodb/collections/daily-statistics";
-import { getDailyStatisticsInterval } from "@/lib/mongodb/collections/daily-statistics";
+import { convertToISODate, getDailyStatisticsInterval } from "@/lib/mongodb/collections/daily-statistics";
 import { TRPCError } from "@trpc/server";
 import { getSessionUser } from "@/lib/mongodb/collections/user";
 import { eachDayOfInterval, isAfter } from "date-fns";
 import { UTCDate } from "@date-fns/utc";
 import log from "@multiverse/log";
 import { handleError } from "@/server";
+import { CostsProcessor } from "@/features/statistics/statistics-processor/CostsProcessor";
+import type { ObjectId } from "mongodb";
 
 export interface GeneralStatisticsData {
     costs: {
@@ -75,20 +76,6 @@ const dateIntervalISO = (from: string | UTCDate, to: string | UTCDate): { fromIS
 };
 
 /**
- * Gets price for a specific database in a given period of time from AWS API.
- * @param databaseName
- * @param from
- * @param to
- */
-const getPrice = (databaseName: string, from: string, to: string): number => {
-    const { fromISO, toISO } = dateIntervalISO(from, to);
-    log.debug("Getting price for database", databaseName, "from", fromISO, "to", toISO);
-
-    //TODO - get price for database and queue for the given period
-    return 0;
-};
-
-/**
  * Extract reads and writes from daily statistics
  * @param dailyStatistics
  */
@@ -109,8 +96,15 @@ const extractReadsWrites = (dailyStatistics: DailyStatisticsGet[]): { reads: num
  * @param databaseName
  * @param from
  * @param to
+ * @param userId
  */
-const calculateGeneralStatistics = async(databaseName: string, from: string, to: string): Promise<GeneralStatisticsData> => {
+const calculateGeneralStatistics = async({
+    from, to, databaseName
+}: {
+    from: string,
+    to: string,
+    databaseName: string
+},): Promise<GeneralStatisticsData> => {
     const { fromISO, toISO } = dateIntervalISO(from, to);
     // get general statistics for a specific database
     const generalDatabaseStatistics = await getGeneralDatabaseStatistics(databaseName);
@@ -123,10 +117,10 @@ const calculateGeneralStatistics = async(databaseName: string, from: string, to:
     const dailyStatistics = await getDailyStatisticsInterval(databaseName, fromISO, toISO);
     const { reads, writes } = extractReadsWrites(dailyStatistics);
 
-    // return existing general database statistics
+    // return existing general database statistics with empty costs
     return {
         costs: {
-            value: getPrice(databaseName, fromISO, toISO,),
+            value: 0,
             currency: "$" as const,
         },
         totalVectors: {
@@ -198,6 +192,15 @@ const constructInterval = (from: string, to: string): Map<string, DailyStatistic
     });
 
     return emptyInterval;
+};
+
+const calculateCostsMerged = async(from: UTCDate, to: UTCDate, userId: ObjectId, databaseCodeName?: string): Promise<number> => {
+    const costsProcessor = new CostsProcessor();
+    const result = await costsProcessor.getCosts(from, to, userId, databaseCodeName);
+
+    return result.reduce((acc, curr) => {
+        return acc + curr.cost;
+    }, 0);
 };
 
 /**
@@ -281,6 +284,8 @@ export const statistics = router({
         })).query(async(opts): Promise<GeneralStatisticsData> => {
             try {
                 const { fromISO, toISO } = dateIntervalISO(opts.input.from, opts.input.to);
+                const fromUTC = new UTCDate(fromISO);
+                const toUTC = new UTCDate(toISO);
 
                 const sessionUser = await getSessionUser();
                 if (!sessionUser) {
@@ -301,7 +306,18 @@ export const statistics = router({
                     }
                     log.info("Returning general statistics for the database", opts.input.database, "from", fromISO, "to", toISO);
 
-                    return await calculateGeneralStatistics(opts.input.database, fromISO, toISO);
+                    // calculate general statistics for a specific database
+                    const generalStatistics = await calculateGeneralStatistics({
+                        from: fromISO,
+                        to: toISO,
+                        databaseName: opts.input.database,
+                    });
+
+                    // get costs from AWS API and add them to the general statistics
+                    generalStatistics.costs.value = await calculateCostsMerged(fromUTC, toUTC, sessionUser._id, opts.input.database);
+
+                    // return general statistics with costs
+                    return generalStatistics;
                 }
 
                 // check if user has databases defined
@@ -313,12 +329,16 @@ export const statistics = router({
 
                 // calculate general statistics for all databases
                 const generalStatistics = await Promise.all(sessionUser.databases.map(async(database) => {
-                    return await calculateGeneralStatistics(database, fromISO, toISO);
+                    return await calculateGeneralStatistics({
+                        from: fromISO,
+                        to: toISO,
+                        databaseName: database,
+                    });
                 }));
                 log.info("Returning general statistics for all databases from", fromISO, "to", toISO, "for user", sessionUser.email);
 
                 // sum general statistics for all databases
-                const result = generalStatistics.reduce((acc, curr) => {
+                const summedGeneralStatistics = generalStatistics.reduce((acc, curr) => {
                     return {
                         costs: {
                             value: acc.costs.value + curr.costs.value,
@@ -332,9 +352,13 @@ export const statistics = router({
                         writes: acc.writes + curr.writes,
                     };
                 }, emptyGeneralStatistics);
-                log.debug(`Result ${sessionUser.email} general statistics, queries ${result.reads}, writes ${result.writes}, costs ${result.costs.value}, vectors ${result.totalVectors.count}, bytes ${result.totalVectors.bytes}`);
 
-                return result;
+                // get costs from AWS API and add them to the general statistics
+                summedGeneralStatistics.costs.value = await calculateCostsMerged(fromUTC, toUTC, sessionUser._id);
+
+                log.debug(`Result ${sessionUser.email} general statistics, queries ${summedGeneralStatistics.reads}, writes ${summedGeneralStatistics.writes}, costs ${summedGeneralStatistics.costs.value}, vectors ${summedGeneralStatistics.totalVectors.count}, bytes ${summedGeneralStatistics.totalVectors.bytes}`);
+
+                return summedGeneralStatistics;
             } catch (error) {
                 throw handleError({
                     error,
@@ -343,6 +367,7 @@ export const statistics = router({
             }
         }),
     }),
+
     /**
      * Router for daily statistics.
      */
@@ -418,5 +443,5 @@ export const statistics = router({
                 });
             }
         }),
-    }),
+    })
 });
