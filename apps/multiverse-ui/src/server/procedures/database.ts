@@ -20,6 +20,7 @@ import { MultiverseFactory } from "@/server/multiverse-interface/MultiverseFacto
 import log from "@multiverse/log";
 import { handleError } from "@/server";
 import type { ObjectId } from "mongodb";
+import { getGeneralDatabaseStatistics } from "@/lib/mongodb/collections/general-database-statistics";
 
 export const MAX_DB_CODE_NAME_LENGTH = 24;
 export const MAX_DB_NAME_LENGTH = 64;
@@ -181,11 +182,18 @@ const storeDatabase = async(configuration: StoredDatabaseConfiguration): Promise
         return resultDatabase;
     }
 
+    let records = 0;
+    const generalDatabaseStatistics = await getGeneralDatabaseStatistics(configuration.name);
+    if (generalDatabaseStatistics) {
+        records = generalDatabaseStatistics.totalVectors;
+    }
     // guaranteed that the database is stored in the mongodb, return the database combined with the configuration
     const resultDatabase = {
         ...configuration,
         ...mongodbDatabase,
+        records
     };
+
     log.debug("Database found", JSON.stringify(resultDatabase, null, 2));
 
     return resultDatabase;
@@ -341,7 +349,8 @@ export const database = router({
 
         try {
             codeName = generateDatabaseCodeName(opts.input.name);
-            const name = normalizeString(opts.input.name);
+            const name = opts.input.name;
+
             // add the database to the user's list of databases to be created
             await addDatabaseToBeCreatedToUser(sessionUser._id, codeName);
 
@@ -400,6 +409,7 @@ export const database = router({
             }
             await multiverse.removeDatabase(codeName);
             await deleteDatabase(codeName);
+            log.info(`Database ${codeName} deleted`);
 
             return true;
         } catch (error) {

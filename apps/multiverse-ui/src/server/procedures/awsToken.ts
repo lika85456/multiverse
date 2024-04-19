@@ -79,7 +79,7 @@ export const awsToken = router({
         } catch (error) {
             throw handleError({
                 error,
-                logMessage: `Error getting AWS token for user ${user.email}: ${error}`,
+                logMessage: `Error getting AWS token for user ${user.email}`,
                 errorMessage: "Error getting AWS token"
             });
         }

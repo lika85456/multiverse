@@ -18,9 +18,9 @@ export const DbsToCreate = ({ dbsToCreate }: {dbsToCreate: string[]}) => {
     const restDbsString = restDbsCount > 0 ? ` +${restDbsCount}` : "";
 
     return (
-        <div className="flex flex-row items-center justify-center w-full bg-success/60 py-2 my-2 rounded-md">
-            <Spinner/>
-            <p className="text-success-foreground">{`Creating database${dbsToCreate.length > 1 ? "s" : ""} ${displayedDbsString}${restDbsString}.`}</p>
+        <div className="flex flex-row items-center justify-center w-full bg-success/60 py-2 my-2 rounded-md space-x-2">
+            <Spinner colorResolver={() => "#000"}/>
+            <p className="text-success-foreground ml-2">{`Creating database${dbsToCreate.length > 1 ? "s" : ""} ${displayedDbsString}${restDbsString}.`}</p>
         </div>
     );
 };
@@ -36,9 +36,9 @@ export const DbsToDelete = ({ dbsToDelete }: {dbsToDelete: string[]}) => {
     const restDbsString = restDbsCount > 0 ? ` +${restDbsCount}` : "";
 
     return (
-        <div className="flex flex-row items-center justify-center w-full bg-warning/70 py-2 my-2 rounded-md">
-            <Spinner/>
-            <p className="text-warning-foreground">{`Deleting database${dbsToDelete.length > 1 ? "s" : ""} ${displayedDbsString}${restDbsString}.`}</p>
+        <div className="flex flex-row items-center justify-center w-full bg-warning/70 py-2 my-2 rounded-md space-x-2">
+            <Spinner colorResolver={() => "#000"}/>
+            <p className="text-warning-foreground ml-2">{`Deleting database${dbsToDelete.length > 1 ? "s" : ""} ${displayedDbsString}${restDbsString}.`}</p>
         </div>
     );
 };

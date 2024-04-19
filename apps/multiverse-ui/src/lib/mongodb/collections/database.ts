@@ -37,7 +37,6 @@ export interface DatabaseFindMongoDb {
     _id: ObjectId;
     name: string;
     codeName: string;
-    records: number;
     ownerId: ObjectId;
 }
 
@@ -61,13 +60,12 @@ export const getDatabase = async(codeName: string): Promise<DatabaseFindMongoDb 
             return undefined;
         }
 
-        const resultGeneralStatistics = await getGeneralDatabaseStatistics(result.codeName);
+        await getGeneralDatabaseStatistics(result.codeName);
 
         return {
             _id: result._id,
             name: result.name,
             codeName: result.codeName,
-            records: resultGeneralStatistics?.totalVectors ?? 0,
             ownerId: result.ownerId,
         };
     } catch (error) {
@@ -157,7 +155,7 @@ export const deleteDatabase = async(codeName: string): Promise<void> => {
             await removeAllDailyStatisticsForDatabase(database.codeName);
             await removeGeneralDatabaseStatistics(database.codeName);
 
-            log.info(`Database successfully ${database.codeName} deleted`);
+            log.info(`Database ${database.codeName} successfully deleted`);
         });
     } catch (error) {
         if (session.inTransaction()) {

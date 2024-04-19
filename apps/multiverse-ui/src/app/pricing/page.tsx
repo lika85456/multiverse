@@ -17,7 +17,7 @@ export default async function Pricing() {
             <Separator className="mb-4" />
             {session && sessionUser && (
                 <>
-                    <PricingStatistics />)
+                    <PricingStatistics />
                     <Separator />
                 </>)
             }

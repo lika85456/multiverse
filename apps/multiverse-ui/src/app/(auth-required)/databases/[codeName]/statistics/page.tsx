@@ -21,7 +21,7 @@ export default function DatabaseStatistics() {
         costs: [],
         responseTime: [],
     });
-    console.log("date " + dateRange.from.toISOString() + " " + dateRange.to.toISOString());
+
     const {
         data: dailyStatistics, isLoading, isError
     } = trpc.statistics.daily.get.useQuery({
