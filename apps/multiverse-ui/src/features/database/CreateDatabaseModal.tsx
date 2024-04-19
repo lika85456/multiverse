@@ -21,7 +21,6 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { toast } from "sonner";
 import useModal from "@/features/hooks/use-modal";
 import { trpc } from "@/lib/trpc/client";
 import z from "zod";
@@ -30,6 +29,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
     Form, FormControl, FormField, FormItem, FormLabel, FormMessage
 } from "@/components/ui/form";
+import { customToast } from "@/features/fetching/CustomToast";
+import log from "@multiverse/log";
+import sleep from "@/lib/sleep";
 
 const Regions = [{
     code: "eu-central-1",
@@ -72,12 +74,10 @@ export default function CreateDatabaseModal() {
     const mutation = trpc.database.post.useMutation({
         onSuccess: async() => {
             try {
-                toast("Database created");
-                handleCloseModal();
                 await util.database.invalidate();
-                form.reset();
+                customToast("Database created");
             } catch (error) {
-                toast("Error creating database");
+                customToast.error("Error creating database");
             }
         }
     });
@@ -93,6 +93,14 @@ export default function CreateDatabaseModal() {
     });
 
     async function onSubmit(values: z.infer<typeof DatabaseFormSchema>) {
+        // invalidate the database route after 200ms
+        sleep(200).then(async() => {
+            handleCloseModal();
+            form.reset();
+            await util.database.list.invalidate();
+            log.debug("TRPC database route invalidated");
+        });
+
         await mutation.mutateAsync({
             name: values.name,
             region: values.region,
@@ -106,9 +114,9 @@ export default function CreateDatabaseModal() {
     const handleCopyRequest = async() => {
         try {
             await navigator.clipboard.writeText(`${"Create mongodb text"}`);
-            toast("Data have been copied into your clipboard.");
+            customToast("Data have been copied into your clipboard.");
         } catch (error) {
-            console.log("Data could not be copied.");
+            customToast.error("Data could not be copied.");
         }
     };
 

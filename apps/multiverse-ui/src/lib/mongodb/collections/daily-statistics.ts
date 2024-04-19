@@ -1,5 +1,8 @@
 import type { ObjectId } from "mongodb";
 import clientPromise from "@/lib/mongodb/mongodb";
+import { UTCDate } from "@date-fns/utc";
+import { formatISO } from "date-fns";
+import log from "@multiverse/log";
 
 export const collectionName = "daily_statistics";
 
@@ -27,23 +30,26 @@ export interface DailyStatisticsAdd {
     totalCost: number;
 }
 
-export const convertToISODate = (date: Date | string): string => {
-    if (typeof date === "string") {
-        return new Date(date).toISOString().split("T")[0];
-    }
-
-    return date.toISOString().split("T")[0];
+export const convertToISODate = (date: UTCDate | string): string => {
+    return formatISO(new UTCDate(date), { representation: "date" });
 };
 
-export const getDailyStatistics = async(dates: string[], databaseName: string): Promise<DailyStatisticsGet[]> => {
+/**
+ * Get daily statistics for a database for a list of dates
+ * @param dates - list of dates to get statistics for
+ * @param databaseName - name of the database to get statistics for
+ */
+export const getDailyStatisticsForDates = async(dates: string[], databaseName: string): Promise<DailyStatisticsGet[]> => {
     const client = await clientPromise;
     const db = client.db();
 
+    log.debug(`Getting daily statistics for dates ${JSON.stringify(dates, null, 2)} for ${databaseName} `);
     try {
         const result = await db.collection(collectionName).find({
             date: dates.map((date) => convertToISODate(date)),
             databaseName
         }).toArray();
+        log.debug(`Found ${result.length} daily statistics`);
 
         return result.map((stat) => {
             return {
@@ -57,10 +63,17 @@ export const getDailyStatistics = async(dates: string[], databaseName: string): 
             };
         });
     } catch (error) {
+        log.error(error);
         throw new Error("Error getting daily statistics");
     }
 };
 
+/**
+ * Get daily statistics for a database for a date
+ * @param databaseName - name of the database to get statistics for
+ * @param dateFrom - start date
+ * @param dateTo - end date
+ */
 export const getDailyStatisticsInterval = async(
     databaseName: string,
     dateFrom: string,
@@ -69,7 +82,6 @@ export const getDailyStatisticsInterval = async(
     try {
         const client = await clientPromise;
         const db = client.db();
-        console.log("a");
         const result = await db.collection(collectionName).find({
             date: {
                 $gte: convertToISODate(dateFrom),
@@ -77,11 +89,8 @@ export const getDailyStatisticsInterval = async(
             },
             databaseName
         }).toArray();
-        console.log("b");
 
         return result.map((stat) => {
-            console.log("c");
-
             return {
                 _id: stat._id,
                 date: convertToISODate(stat.date),
@@ -93,12 +102,18 @@ export const getDailyStatisticsInterval = async(
             };
         });
     } catch (error) {
-        console.log("Error getting daily statistics: ", error);
+        log.error(error);
         throw new Error("Error getting daily statistics");
     }
 
 };
 
+/**
+ * Add daily statistics for a database
+ * If the statistics for the date already exists, the values are added to the existing values
+ * If the statistics for the date does not exist, the values are set to the new values
+ * @param statistics
+ */
 export const addDailyStatistics = async(statistics: DailyStatisticsAdd): Promise<void> => {
     const client = await clientPromise;
     const db = client.db();
@@ -132,18 +147,25 @@ export const addDailyStatistics = async(statistics: DailyStatisticsAdd): Promise
             }
         }, { upsert: true });
     } catch (error) {
-        console.log("Error adding daily statistics: ", error);
+        log.error(error);
         throw new Error("Error adding daily statistics");
     }
 };
 
+/**
+ * Remove all daily statistics for a database
+ * @param databaseName - name of the database to remove statistics for
+ */
 export const removeAllDailyStatisticsForDatabase = async(databaseName: string): Promise<void> => {
     const client = await clientPromise;
     const db = client.db();
 
+    log.info(`Removing all daily statistics for database ${databaseName}`);
     try {
         await db.collection(collectionName).deleteMany({ databaseName });
+        log.info(`Removed all daily statistics for database ${databaseName}`);
     } catch (error) {
+        log.error(error);
         throw new Error("Error removing daily statistics");
     }
 };

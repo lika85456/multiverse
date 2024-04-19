@@ -1,30 +1,45 @@
 import { publicProcedure, router } from "@/server/trpc";
 import type { QueryResult } from "@multiverse/multiverse/src/core/Query";
 import z from "zod";
-import { MultiverseMock } from "@/server/multiverse-interface/MultiverseMock";
-import type { IMultiverse } from "@multiverse/multiverse/src";
-
 import type { NewVector } from "@multiverse/multiverse/src/core/Vector";
-import { MultiverseFactory } from "@/server/multiverse-interface/MultiverseFactory";
+import log from "@multiverse/log";
+import { getRelatedDatabase, normalizeString } from "@/server/procedures/database";
+import { handleError } from "@/server";
+
 export const vector = router({
+    /**
+     * Perform a query on the database.
+     * @param database - the database to query
+     * @param vector - the vector to query
+     * @param k - the number of results to return
+     */
     query: publicProcedure.input(z.object({
         database: z.string(),
         vector: z.array(z.number()),
         k: z.number(),
     })).mutation(async(opts): Promise<QueryResult> => {
-        const multiverse = await (new MultiverseFactory()).getMultiverse();
-        const multiverseDatabase = await multiverse.getDatabase(opts.input.database);
+        try {
+            log.info(`Performing query on database ${opts.input.database}`);
+            const { multiverseDatabase } = await getRelatedDatabase(opts.input.database);
 
-        if (!multiverseDatabase) {
-            throw new Error("Database not found");
+            return multiverseDatabase.query({
+                vector: opts.input.vector,
+                k: opts.input.k,
+                sendVector: false
+            });
+        } catch (error) {
+            throw handleError({
+                error,
+                logMessage: `Error performing query on database ${opts.input.database}`,
+                errorMessage: "Error performing query"
+            });
         }
-
-        return multiverseDatabase.query({
-            vector: opts.input.vector,
-            k: opts.input.k,
-            sendVector: false
-        });
     }),
+    /**
+     * Add a new vector to the database.
+     * @param database - the database to add the vector to
+     * @param vector - the vector to add
+     */
     post: publicProcedure.input(z.object({
         database: z.string(),
         vector: z.array(z.object({
@@ -33,26 +48,43 @@ export const vector = router({
             metadata: z.record(z.string()).optional(),
         })),
     })).mutation(async(opts): Promise<void> => {
-        const multiverse = await (new MultiverseFactory()).getMultiverse();
-        const multiverseDatabase = await multiverse.getDatabase(opts.input.database);
+        try {
+            log.info("Adding new vector to database", opts.input.database);
+            const { multiverseDatabase } = await getRelatedDatabase(opts.input.database);
 
-        if (!multiverseDatabase) {
-            throw new Error("Database not found");
+            const newVector: NewVector[] = opts.input.vector.map(vector => ({
+                vector: vector.vector,
+                label: normalizeString(vector.label),
+                metadata: vector.metadata,
+            }));
+            await multiverseDatabase.add(newVector);
+        } catch (error) {
+            throw handleError({
+                error,
+                logMessage: `Error adding vector to database ${opts.input.database}`,
+                errorMessage: "Error adding vector to database"
+            });
         }
-        const newVector: NewVector[] = opts.input.vector;
-        await multiverseDatabase.add(newVector);
     }),
+    /**
+     * Delete a vector from the database.
+     * @param database - the database to delete the vector from
+     * @param label - the label of the vector to delete
+     */
     delete: publicProcedure.input(z.object({
         database: z.string(),
         label: z.string(),
     })).mutation(async(opts): Promise<void> => {
-        const multiverse = await (new MultiverseFactory()).getMultiverse();
-        const multiverseDatabase = await multiverse.getDatabase(opts.input.database);
-
-        if (!multiverseDatabase) {
-            throw new Error("Database not found");
+        try {
+            log.info("Removing vector from database", opts.input.database);
+            const { multiverseDatabase } = await getRelatedDatabase(opts.input.database);
+            await multiverseDatabase.remove([opts.input.label]);
+        } catch (error) {
+            throw handleError({
+                error,
+                logMessage: `Error deleting vector from database ${opts.input.database}`,
+                errorMessage: "Error deleting vector from database"
+            });
         }
-
-        await multiverseDatabase.remove([opts.input.label]);
     }),
 });

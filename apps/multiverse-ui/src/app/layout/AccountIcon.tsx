@@ -16,7 +16,7 @@ import Link from "next/link";
 import { LogOut } from "lucide-react";
 import { FiUser } from "react-icons/fi";
 import { signOut } from "next-auth/react";
-import { toast } from "sonner";
+import { customToast } from "@/features/fetching/CustomToast";
 
 export default function AccountIcon({ user, }: {
   user:
@@ -34,7 +34,7 @@ export default function AccountIcon({ user, }: {
         try {
             await signOut({ callbackUrl: "/login", });
         } catch (error) {
-            toast("Could not log out. Please try again later.");
+            customToast.error("Could not log out. Please try again later.");
         }
     };
 
@@ -58,7 +58,7 @@ export default function AccountIcon({ user, }: {
                     </Avatar>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="bg-card text-card-foreground border-0 mr-4 mt-1">
-                    <DropdownMenuLabel>{user?.name}</DropdownMenuLabel>
+                    <DropdownMenuLabel>{user?.name ?? user?.email?.split("@")[0]}</DropdownMenuLabel>
                     <DropdownMenuSeparator className="bg-border" />
                     <Link href={"/account"}>
                         <DropdownMenuItem className="font-bold focus:bg-primary focus:text-primary-foreground">

@@ -8,6 +8,14 @@ import {
     addGeneralDatabaseStatistics, getGeneralDatabaseStatistics,
     removeGeneralDatabaseStatistics
 } from "@/lib/mongodb/collections/general-database-statistics";
+import { UTCDate } from "@date-fns/utc";
+import log from "@multiverse/log";
+
+export enum EDatabaseState {
+    CREATED = "created",
+    CREATING = "creating",
+    DELETING = "deleting",
+}
 
 export interface SecretToken {
     name: string;
@@ -29,7 +37,6 @@ export interface DatabaseFindMongoDb {
     _id: ObjectId;
     name: string;
     codeName: string;
-    records: number;
     ownerId: ObjectId;
 }
 
@@ -39,6 +46,12 @@ export interface DatabaseInsertMongoDb {
     ownerId: ObjectId;
 }
 
+/**
+ * Get a database by its codeName
+ * @param codeName
+ * @returns {DatabaseFindMongoDb} - the database
+ * @returns {undefined} - if the database does not exist
+ */
 export const getDatabase = async(codeName: string): Promise<DatabaseFindMongoDb | undefined> => {
     try {
         const db = (await clientPromise).db();
@@ -47,21 +60,27 @@ export const getDatabase = async(codeName: string): Promise<DatabaseFindMongoDb 
             return undefined;
         }
 
-        const resultGeneralStatistics = await getGeneralDatabaseStatistics(result.codeName);
+        await getGeneralDatabaseStatistics(result.codeName);
 
         return {
             _id: result._id,
             name: result.name,
             codeName: result.codeName,
-            records: resultGeneralStatistics?.totalVectors ?? 0,
             ownerId: result.ownerId,
         };
     } catch (error) {
-        return undefined;
+        log.error(error);
+        throw new Error(`Error getting database ${codeName}`);
     }
 };
 
-export const createDatabase = async(databaseData: DatabaseInsertMongoDb): Promise<ObjectId | undefined> => {
+/**
+ * Create a new database. The database is added to the user's list of databases.
+ * @param databaseData - the data of the database to create
+ * @returns {ObjectId} - the id of the created database
+ * @throws {Error} - if the database could not be created
+ */
+export const createDatabase = async(databaseData: DatabaseInsertMongoDb): Promise<ObjectId> => {
     const client = await clientPromise;
     const session = client.startSession();
     const db = client.db();
@@ -76,13 +95,10 @@ export const createDatabase = async(databaseData: DatabaseInsertMongoDb): Promis
             if (!database) {
                 throw new Error("Database not found");
             }
-            const resultUser = await addDatabaseToUser(databaseData.ownerId, database.codeName);
-            if (!resultUser.acknowledged) {
-                throw new Error("Database not added to user");
-            }
+            await addDatabaseToUser(databaseData.ownerId, database.codeName);
             await addGeneralDatabaseStatistics({
                 databaseName: database.codeName,
-                updated: new Date(),
+                updated: new UTCDate(),
                 dataSize: 0,
                 totalVectors: 0,
             });
@@ -90,23 +106,33 @@ export const createDatabase = async(databaseData: DatabaseInsertMongoDb): Promis
             return resultDatabase.insertedId;
         });
     } catch (error) {
-        console.log("Error creating database:", error);
         if (session.inTransaction()) {
             await session.abortTransaction();
         }
 
-        throw new Error("Error creating database");
+        log.error(error);
+        throw new Error(`Error creating database ${databaseData.codeName}`);
     } finally {
         await session.endSession();
     }
 };
 
-export const deleteDatabase = async(codeName: string): Promise<boolean> => {
+/**
+ * Delete a database. The database is removed from the user's list of databases.
+ * All statistics for the database are removed.
+ * @throws {Error} - if the database could not be deleted
+ * @throws {Error} - if the database does not exist
+ * @throws {Error} - if the database could not be removed from the user
+ * @throws {Error} - if the statistics for the database could not be removed
+ * @throws {Error} - if the general statistics for the database could not be removed
+ * @param codeName
+ */
+export const deleteDatabase = async(codeName: string): Promise<void> => {
     const client = await clientPromise;
     const session = client.startSession();
     const db = (await clientPromise).db();
     try {
-        return await session.withTransaction(async() => {
+        await session.withTransaction(async() => {
             const database = await db.collection("databases").findOne({ codeName });
             if (!database) {
                 throw new Error("Database not found");
@@ -114,28 +140,44 @@ export const deleteDatabase = async(codeName: string): Promise<boolean> => {
             //remove existing database
             const result = await db.collection("databases").deleteOne({ codeName });
             if (!result.acknowledged) {
-                throw new Error("Database not deleted");
+                throw new Error("Database deletion not acknowledged");
             }
+            if (result.deletedCount > 1) {
+                log.error("More than one database was deleted, this should not happen");
+            }
+            if (result.deletedCount === 0) {
+                throw new Error("No database was deleted, this should not happen");
+            }
+
             //remove database from user's list of databases
             await removeDatabaseFromUser(database?.ownerId, database.codeName);
             //remove all statistics for the database
             await removeAllDailyStatisticsForDatabase(database.codeName);
             await removeGeneralDatabaseStatistics(database.codeName);
 
-            return result.acknowledged;
+            log.info(`Database ${database.codeName} successfully deleted`);
         });
     } catch (error) {
-        console.log("Error deleting database:", error);
         if (session.inTransaction()) {
             await session.abortTransaction();
         }
 
+        log.error(error);
         throw new Error("Error deleting database");
     } finally {
         await session.endSession();
     }
 };
 
+/**
+ * Delete all databases of a user. All statistics for the databases are removed.
+ * @throws {Error} - if the user does not exist
+ * @throws {Error} - if the databases could not be deleted
+ * @throws {Error} - if the databases could not be removed from the user
+ * @throws {Error} - if the statistics for the databases could not be removed
+ * @throws {Error} - if the general statistics for the databases could not be removed
+ * @param ownerId
+ */
 export const deleteAllDatabases = async(ownerId: ObjectId) => {
     const client = await clientPromise;
     const session = client.startSession();
@@ -148,31 +190,38 @@ export const deleteAllDatabases = async(ownerId: ObjectId) => {
                 throw new Error("Owner not found");
             }
             const databases: string[] = ownerResult.databases;
+            if (!databases || databases.length === 0) {
+                log.info(`No databases to delete for user ${ownerResult.email}`);
+
+                return;
+            }
+
+            // remove all daily statistics for all databases of the user and his general statistics
             await Promise.all(databases.map(async(database) => {
                 await removeAllDailyStatisticsForDatabase(database);
                 await removeGeneralDatabaseStatistics(database);
             }));
 
+            // remove all databases
             const result = await db.collection("databases").deleteMany({ ownerId });
             if (!result.acknowledged) {
-                console.log("Databases not deleted");
-                throw new Error("Databases not deleted");
+                throw new Error(`Databases not deleted for user ${ownerResult.email}`);
             }
+            // remove all databases from user
             const resultUser = removeAllDatabaseFromUser(ownerId);
             if (!resultUser) {
-                console.log("Databases not removed from user");
-                throw new Error("Databases not removed from user");
+                throw new Error(`Databases not deleted from user ${ownerResult.email}`);
             }
 
-            return true;
+            log.info(`All databases deleted for user ${ownerResult.email}`);
         });
     } catch (error) {
-        console.log("Error deleting all databases:", error);
         if (session.inTransaction()) {
             await session.abortTransaction();
         }
 
-        throw new Error("Error deleting all databases");
+        log.error(error);
+        throw new Error(`Error deleting all databases for user ${ownerId}`);
     } finally {
         await session.endSession();
     }

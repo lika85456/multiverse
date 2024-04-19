@@ -1,5 +1,5 @@
-import { toast } from "sonner";
 import type { DatabaseGet } from "@/lib/mongodb/collections/database";
+import { customToast } from "@/features/fetching/CustomToast";
 
 export default function DatabaseInfo({ database }: {
     database: DatabaseGet;
@@ -7,9 +7,9 @@ export default function DatabaseInfo({ database }: {
     const handleCopyData = async(value: string) => {
         try {
             await navigator.clipboard.writeText(value);
-            toast("Data have been copied into your clipboard.");
+            customToast("Data have been copied into your clipboard.");
         } catch (error) {
-            console.log("Data could not be copied.");
+            customToast.error("Data could not be copied.");
         }
     };
 

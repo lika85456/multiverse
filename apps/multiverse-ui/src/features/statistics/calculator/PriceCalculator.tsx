@@ -6,8 +6,8 @@ import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { CopyIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
 import format from "@/features/statistics/format";
+import { customToast } from "@/features/fetching/CustomToast";
 
 function calculateCost({
     writes,
@@ -93,12 +93,6 @@ function calculateCost({
     reads * poolLambdaDiskPerMs * COMPUTE_TIME;
     // writes do not need to be calculated, because they are included in reads
 
-    // console.log({
-    //     dynamoCost,
-    //     s3Cost,
-    //     lambdaCost,
-    // });
-
     return {
         dynamoCost,
         s3Cost,
@@ -124,7 +118,6 @@ function CalculatorSlider({
   logarithmic?: boolean;
   onChange: (value: number) => void;
 }) {
-    //TODO make value on the side an input field
     return (
         <div className="flex flex-col w-full items-start my-8">
             <Label className="text-lg mb-4">{label}</Label>
@@ -148,6 +141,7 @@ export default function PriceCalculator() {
     const [reads, setReads] = useState(10_000);
     const [writes, setWrites] = useState(10_000);
 
+    //TODO - move to BE???
     const costs = calculateCost({
         dimensions,
         reads,
@@ -166,9 +160,9 @@ export default function PriceCalculator() {
             };
 
             await navigator.clipboard.writeText(`${JSON.stringify(data)}`);
-            toast("Calculated values have been copied into your clipboard.");
+            customToast("Calculated values have been copied into your clipboard.");
         } catch (error) {
-            console.log("Calculated values could not be copied.");
+            customToast.error("Calculated values could not be copied.");
         }
     };
 
@@ -238,3 +232,6 @@ export default function PriceCalculator() {
         </div>
     );
 }
+// TODO - collapsible details of the calculation
+// TODO - price disclaimer
+// TODO - dimensions and metadata size as inputs

@@ -1,7 +1,6 @@
 import Link from "next/link";
 
 import { RiDatabase2Line } from "react-icons/ri";
-
 export type DatabaseItemProps = {
   database: {
     codeName: string;

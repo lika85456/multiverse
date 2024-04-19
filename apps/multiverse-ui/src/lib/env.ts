@@ -9,7 +9,7 @@ config({
         "..",
         "..",
         "..",
-        process.env.NODE_ENV === "test" ? ".env.test" : ".env",
+        process.env.NODE_ENV === "test" ? ".env" : ".env",
     ),
 });
 
@@ -19,6 +19,7 @@ const envSchema = z.object({
         .default("development"),
     SECRET_KEY: z.string(),
     NEXTAUTH_SECRET_KEY: z.string(),
+    NEXTAUTH_URL: z.string(),
     GITHUB_ID: z.string(),
     GITHUB_SECRET: z.string(),
     GOOGLE_ID: z.string(),

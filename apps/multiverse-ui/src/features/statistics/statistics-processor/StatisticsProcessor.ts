@@ -2,11 +2,13 @@ import type { Event } from "@/features/statistics/statistics-processor/event";
 import type { DailyStatisticsAdd } from "@/lib/mongodb/collections/daily-statistics";
 import { convertToISODate } from "@/lib/mongodb/collections/daily-statistics";
 import { addDailyStatistics } from "@/lib/mongodb/collections/daily-statistics";
-import { getDailyStatistics } from "@/lib/mongodb/collections/daily-statistics";
+import { getDailyStatisticsForDates } from "@/lib/mongodb/collections/daily-statistics";
 import {
     addGeneralDatabaseStatistics,
     getGeneralDatabaseStatistics
 } from "@/lib/mongodb/collections/general-database-statistics";
+import { UTCDate } from "@date-fns/utc";
+import log from "@multiverse/log";
 
 export class StatisticsProcessor {
 
@@ -23,7 +25,7 @@ export class StatisticsProcessor {
 
     private groupByDate(events: Event[]): Map<string, Event[]> {
         return events.reduce((acc, event) => {
-            const date = convertToISODate(new Date(event.timestamp));
+            const date = convertToISODate(new UTCDate(event.timestamp));
             if (!acc.has(date)) {
                 acc.set(date, []);
             }
@@ -35,24 +37,26 @@ export class StatisticsProcessor {
 
     private calculateCost(databaseName: string, date: string): number {
         const dateISO = convertToISODate(date);
-        console.log(`Calculating cost for database ${databaseName} and date ${dateISO}`);
+        log.debug(`Calculating cost for database ${databaseName} and date ${dateISO}`);
 
         //TODO - calculate cost
         return 0;
     }
+
+    VECTOR_SIZE = ((4 * 1536) + 500);
 
     private extractWriteData(event: Event) {
         if (event.type === "add") {
             return {
                 timestamp: event.timestamp,
                 totalVectors: event.totalVectors,
-                dataSize: event.totalVectors * 500, //TODO use returned data when provided
+                dataSize: event.totalVectors * this.VECTOR_SIZE, //TODO use returned data when provided
             };
         } else if (event.type === "remove") {
             return {
                 timestamp: event.timestamp,
                 totalVectors: event.totalVectors,
-                dataSize: event.totalVectors * 500, //TODO use returned data when provided
+                dataSize: event.totalVectors * this.VECTOR_SIZE, //TODO use returned data when provided
             };
         }
 
@@ -65,7 +69,7 @@ export class StatisticsProcessor {
             // filter only write events (query events don't contain total vectors information)
             const writeEvents = events.filter((event) => event.type === "add" || event.type === "remove");
             if (writeEvents.length === 0) {
-                console.log(`No write events for database ${databaseName} received`);
+                log.info(`No write events for database ${databaseName} received`);
 
                 return;
             }
@@ -88,28 +92,28 @@ export class StatisticsProcessor {
             if (!generalStatistics) {
                 await addGeneralDatabaseStatistics({
                     databaseName: databaseName,
-                    updated: new Date(timestamp),
+                    updated: new UTCDate(timestamp),
                     dataSize: dataSize,
                     totalVectors: totalVectors,
                 });
-                console.log(`General statistics for database ${databaseName} created`);
+                log.info(`General statistics for database ${databaseName} created`);
 
                 return;
             }
             // general statistics exist for this database, update if the latest write event is newer
             if (latestWriteEvent.timestamp > generalStatistics.updated.getTime()) {
-                generalStatistics.updated = new Date(timestamp);
+                generalStatistics.updated = new UTCDate(timestamp);
                 generalStatistics.dataSize = dataSize;
                 generalStatistics.totalVectors = totalVectors;
 
                 await addGeneralDatabaseStatistics(generalStatistics);
-                console.log(`General statistics for database ${databaseName} updated`);
+                log.info(`General statistics for database ${databaseName} updated`);
 
                 return;
             }
 
             // don't update otherwise
-            console.log(`General statistics for database ${databaseName} not updated`);
+            log.info(`General statistics for database ${databaseName} not updated`);
         });
     }
 
@@ -133,9 +137,11 @@ export class StatisticsProcessor {
     }
 
     private async processEventsForDatabase(databaseName: string, events: Event[]): Promise<boolean> {
-        console.log(`Processing statistics for database ${databaseName}`);
+        log.info(`Processing statistics for database ${databaseName}`);
         const eventsByDate = this.groupByDate(events);
-        const allStatistics = await getDailyStatistics(Array.from(eventsByDate.keys()).map((e) => convertToISODate(e)), databaseName);
+        const allStatistics = await getDailyStatisticsForDates(Array
+            .from(eventsByDate.keys())
+            .map((e) => convertToISODate(e)), databaseName);
 
         // process events for each date
         eventsByDate.forEach((events, date) => {
@@ -153,7 +159,7 @@ export class StatisticsProcessor {
                 };
                 // apply statistics to the innit object
                 addDailyStatistics(this.applyStatistics(events, innit)).then(() => {
-                    console.log(`Statistics for database ${databaseName} and date ${date} processed`);
+                    log.info(`Statistics for database ${databaseName} and date ${date} processed`);
                 });
 
                 //update general statistics
@@ -172,7 +178,7 @@ export class StatisticsProcessor {
                 };
                 // apply statistics to the innit object constructed from the existing statistics
                 addDailyStatistics(this.applyStatistics(events, innit)).then(() => {
-                    console.log(`Statistics for database ${databaseName} and date ${date} processed`);
+                    log.info(`Statistics for database ${databaseName} and date ${date} processed`);
                 });
 
                 //update general statistics
@@ -181,23 +187,27 @@ export class StatisticsProcessor {
             } else {
                 // if there are multiple statistics for the date, log an error
                 // don't throw an error to not block the processing of other databases
-                console.log(`Multiple statistics for the same date ${date} and database ${databaseName}`);
+                log.error(`Multiple statistics for the same date ${date} and database ${databaseName}`);
             }
         });
-        console.log(`Statistics for database ${databaseName} processed`);
+        log.info(`Statistics for database ${databaseName} processed`);
 
         return true;
     }
 
     public processEvents(events: Event[]): void {
-        console.log("Processing statistics");
+        log.info("Processing statistics");
         const eventsByDbName = this.groupByDbName(events);
 
         // start processing events for each database
         eventsByDbName.forEach((events, dbName) => {
             this.processEventsForDatabase(dbName, events).then((result) => {
                 // done asynchronously to not block the processing of other databases
-                console.log(`Statistics for database ${dbName} ${result ? "processed" : "failed"}`);
+                if (result) {
+                    log.info(`Statistics processing for database ${dbName} processed`);
+                } else {
+                    log.error(`Statistics processing for database ${dbName} failed`);
+                }
             });
         });
     }

@@ -1,43 +1,65 @@
 "use client";
 
+import * as React from "react";
 import GeneralStatistics, { createProps } from "@/features/statistics/GeneralStatistics";
+import useDateInterval from "@/features/statistics/use-date-interval";
 import { Separator } from "@/components/ui/separator";
 import DatabaseList from "@/app/(auth-required)/databases/components/DatabaseList";
 import { trpc } from "@/lib/trpc/client";
 import AddAWSTokenModal from "@/features/account/AddAWSTokenModal";
 import { useMemo } from "react";
+import Loading from "@/features/fetching/Loading";
+import GeneralError from "@/features/fetching/GeneralError";
+import { UTCDate } from "@date-fns/utc";
 
-export default function Databases() {
-    const {
-        data: awsToken, isLoading: awsIsLoading, isSuccess: awsTokenIsSuccess, isError: awsIsError
-    } = trpc.awsToken.get.useQuery();
-
-    const today = useMemo(() => new Date(), []); // memoized to prevent re-creation on every render, therefore infinite rerendering
-    const {
-        data: generalStatistics, isLoading: isStatsLoading, isSuccess: genStatsIsSuccess, isError: genStatsIsError
-    } = trpc.statistics.general.get.useQuery({
-        from: new Date(today.getFullYear(), today.getMonth(), 1).toISOString(),
-        to: today.toISOString(),
+function Statistics() {
+    const today = useMemo(() => new UTCDate(), []);
+    const { dateRange } = useDateInterval({
+        from: new UTCDate(today.getFullYear(), today.getMonth(), 1),
+        to: today,
     });
-    console.log("generalStatistics");
 
-    const isSuccess = awsTokenIsSuccess && genStatsIsSuccess;
-    const isLoading = awsIsLoading || isStatsLoading;
-    const isError = awsIsError || genStatsIsError;
+    const {
+        data: generalStatistics, isLoading, isSuccess, isError
+    } = trpc.statistics.general.get.useQuery({
+        database: undefined,
+        from: dateRange.from.toISOString(),
+        to: dateRange.to.toISOString()
+    });
 
     return (
         <>
-            {isLoading && <div> Loading... </div>}
-            {isError && <div> Error </div>}
+            {isLoading && <Loading/>}
+            {isError && <GeneralError/>}
+            {isSuccess && generalStatistics && (
+                <>
+                    <GeneralStatistics items={createProps(generalStatistics)} />
+                </>
+            )}
+        </>
+    );
+}
+
+export default function Databases() {
+    const {
+        data: awsToken, isLoading, isSuccess, isError
+    } = trpc.awsToken.get.useQuery();
+
+    return (
+        <>
+            {isLoading && <Loading/>}
+            {isError && <GeneralError/>}
             {isSuccess && !awsToken && (
                 <div className="flex flex-col w-full py-16 items-center">
-                    <h3 className="flex w-80 mb-8 text-center">Missing AWS Token. To view your databases, please provide AWS Token.</h3>
+                    <h3 className="flex w-80 mb-8 text-center">
+                        Missing AWS Token. To view your databases, please provide AWS Token.
+                    </h3>
                     <AddAWSTokenModal />
                 </div>
             )}
-            {isSuccess && awsToken && generalStatistics && (
+            {isSuccess && awsToken && (
                 <>
-                    <GeneralStatistics items={createProps(generalStatistics)} />
+                    <Statistics />
                     <Separator className="bg-border m-4" />
                     <DatabaseList />
                 </>

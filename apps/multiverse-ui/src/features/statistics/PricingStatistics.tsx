@@ -6,61 +6,77 @@ import useDateInterval from "@/features/statistics/use-date-interval";
 import StatisticsGraph from "@/features/statistics/StatisticsGraph";
 import * as React from "react";
 import SectionTitle from "@/app/layout/components/SectionTitle";
-import { Separator } from "@/components/ui/separator";
 import { trpc } from "@/lib/trpc/client";
 import AddAWSTokenModal from "@/features/account/AddAWSTokenModal";
+import { useMemo } from "react";
+import Loading from "@/features/fetching/Loading";
+import GeneralError from "@/features/fetching/GeneralError";
+import { UTCDate } from "@date-fns/utc";
 
-export default function PricingStatistics() {
-    const today = new Date();
-    const { date, handleDateIntervalChange } = useDateInterval({
-        from: new Date(today.getFullYear(), today.getMonth(), 1),
+function Statistics() {
+    const today = useMemo(() => new UTCDate(), []);
+    const { dateRange, handleDateIntervalChange } = useDateInterval({
+        from: new UTCDate(today.getFullYear(), today.getMonth(), 1),
         to: today,
     });
 
     const {
-        data: awsToken, isLoading: awsTokenIsLoading, isSuccess: awsTokenIsSuccess, isError: awsTokenIsError
-    } = trpc.awsToken.get.useQuery();
-    const {
         data: generalStatistics, isLoading: genStatsIsLoading, isSuccess: genStatsIsSuccess, isError: genStatsIsError
     } = trpc.statistics.general.get.useQuery({
         database: undefined,
-        from: date.from.toISOString(),
-        to: date.to.toISOString()
+        from: dateRange.from.toISOString(),
+        to: dateRange.to.toISOString()
     });
+
     const {
         data: dailyStatistics, isLoading: costsIsLoading, isSuccess: costsIsSuccess, isError: costsIsError
     } = trpc.statistics.daily.get.useQuery({
-        from: date.from.toISOString(),
-        to: date.to.toISOString()
+        from: dateRange.from.toISOString(),
+        to: dateRange.to.toISOString()
     });
-    const isLoading = awsTokenIsLoading || genStatsIsLoading || costsIsLoading;
-    const isError = awsTokenIsError || genStatsIsError || costsIsError;
-    const isSuccess = awsTokenIsSuccess && genStatsIsSuccess && costsIsSuccess;
+
+    const isSuccess = genStatsIsSuccess && costsIsSuccess;
+    const isLoading = genStatsIsLoading || costsIsLoading;
+    const isError = genStatsIsError || costsIsError;
 
     return (
         <>
-            {isLoading && <div> Loading... </div>}
-            {isError && <div> Error </div>}
-            {isSuccess && !awsToken && (
-                <div className="flex flex-col w-full py-16 items-center">
-                    <h3 className="flex w-80 mb-8 text-center">Missing AWS Token. To see your pricing, please provide AWS Token.</h3>
-                    <AddAWSTokenModal />
-                </div>
-            )}
-            {isSuccess && awsToken && dailyStatistics && generalStatistics && (<div className="flex flex-col w-full">
-                <div className="flex flex-col">
+            {isLoading && <Loading/>}
+            {isError && <GeneralError/>}
+            {isSuccess && dailyStatistics && generalStatistics && (<div className="flex flex-col w-full">
+                <div className="flex flex-col pb-4">
                     <div className="flex flex-row justify-between items-center pb-8">
                         <SectionTitle title={"My plan"} className="flex h-fit" />
                         <DateIntervalPicker
-                            getDate={() => date}
+                            getDate={() => dateRange}
                             setDate={handleDateIntervalChange}
                         />
                     </div>
                     <GeneralStatistics items={createProps(generalStatistics)} className="pb-8" />
                     <StatisticsGraph title="Costs" data={dailyStatistics.costs} unit={"$"} />
-                    <Separator className="my-4" />
                 </div>
             </div>)}
-        </>
+        </>);
+}
+
+export default function PricingStatistics() {
+    const {
+        data: awsToken, isLoading, isSuccess, isError
+    } = trpc.awsToken.get.useQuery();
+
+    return (
+        <div className="flex">
+            {isLoading && <Loading/>}
+            {isError && <GeneralError/>}
+            {isSuccess && !awsToken && (
+                <div className="flex flex-col w-full py-16 items-center">
+                    <h3 className="flex w-80 mb-8 text-center">
+                        Missing AWS Token. To see your pricing, please provide AWS Token.
+                    </h3>
+                    <AddAWSTokenModal />
+                </div>
+            )}
+            {isSuccess && awsToken && <Statistics />}
+        </div>
     );
 }

@@ -8,11 +8,13 @@ export async function POST() {
     const sqsHandler = new SQSHandler();
     let total = 0;
     let received = 0;
+
+    //TODO - optimize this to receive messages in parallel ???
     do {
         const messages = await Promise.all(queuesWithCredentials.map(async(queue) => {
             const queueName = queue.sqs;
             const awsToken = {
-                accessTokenId: queue.accessKeyId,
+                accessKeyId: queue.accessKeyId,
                 secretAccessKey: queue.secretAccessKey
             };
             // receive messages from the queue

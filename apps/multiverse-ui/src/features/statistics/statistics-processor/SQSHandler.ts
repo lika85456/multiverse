@@ -6,8 +6,9 @@ import { ReceiveMessageCommand } from "@aws-sdk/client-sqs";
 import {
     CreateQueueCommand, DeleteQueueCommand, GetQueueUrlCommand, SQSClient
 } from "@aws-sdk/client-sqs";
-import { getAwsTokenByTokenId } from "@/lib/mongodb/collections/aws-token";
+import { getAwsTokenById } from "@/lib/mongodb/collections/aws-token";
 import type { Event } from "@/features/statistics/statistics-processor/event";
+import log from "@multiverse/log";
 
 export interface ISQSHandler {
 
@@ -15,7 +16,7 @@ export interface ISQSHandler {
      * Processes queue messages from SQS queue for all users.
      */
     receiveMessages(queueName: string, awsToken: {
-        accessTokenId: string;
+        accessKeyId: string;
         secretAccessKey: string;
     }): Promise<Event[]>;
 
@@ -41,19 +42,19 @@ export class SQSHandler implements ISQSHandler {
             try {
                 await sqsClient.send(new DeleteMessageCommand(inputDeleteMessage));
             } catch (error) {
-                console.error("Error deleting message: ", error);
+                log.error("Error deleting message: ", error);
             }
         });
     }
 
     async receiveMessages(queueName: string, awsToken: {
-        accessTokenId: string;
+        accessKeyId: string;
         secretAccessKey: string;
     }, maxNumberOfMessages = 10): Promise<Event[]> {
         const sqsClient = new SQSClient({
             region: "eu-central-1",
             credentials: {
-                accessKeyId: awsToken.accessTokenId,
+                accessKeyId: awsToken.accessKeyId,
                 secretAccessKey: awsToken.secretAccessKey
             }
         });
@@ -90,7 +91,7 @@ export class SQSHandler implements ISQSHandler {
                             parsedEvents.set(message.MessageId as string, messageEvents);
                             receiptHandles.push(message.ReceiptHandle as string);
                         } catch (error) {
-                            console.error("Error parsing message: ", error);
+                            log.error("Error parsing message: ", error);
 
                             return;
                         }
@@ -106,7 +107,7 @@ export class SQSHandler implements ISQSHandler {
 
             return Array.from(parsedEvents.values()).flat();
         } catch (error) {
-            console.log("Error sending statistics: ", error);
+            log.error("Error sending statistics: ", error);
         }
 
         return [];
@@ -124,30 +125,36 @@ export class SQSHandler implements ISQSHandler {
             throw new Error("AWS Token not found");
         }
 
-        const awsToken = await getAwsTokenByTokenId(sessionUser.awsToken);
+        const awsToken = await getAwsTokenById(sessionUser.awsToken);
         if (!awsToken) {
             throw new Error("AWS Token not found");
         }
 
-        const queueName = `multiverse-${awsToken._id}-${generateHex(8)}`;
+        const queueName = `multiverse_${awsToken._id}_${generateHex(8)}`;
 
         const sqsClient = new SQSClient({
             region: "eu-central-1",
             credentials: {
-                accessKeyId: awsToken.accessTokenId,
+                accessKeyId: awsToken.accessKeyId,
                 secretAccessKey: awsToken.secretAccessKey
             }
         });
 
-        const createQueueCommand = new CreateQueueCommand({ QueueName: queueName });
-        console.log("Creating queue: ", queueName);
+        const createQueueCommand = new CreateQueueCommand({
+            QueueName: queueName,
+            tags: {
+                multiverse: "multiverse",
+                "multiverse:databaseCodeName": "test"
+            }
+        });
+        log.info("Creating queue: ", queueName);
         try {
             await sqsClient.send(createQueueCommand);
         } catch (error) {
-            console.error("Error creating queue: ", error);
+            log.error("Error creating queue: ", error);
             throw error;
         }
-        console.log("Queue created: ", queueName);
+        log.info("Queue created: ", queueName);
 
         return queueName;
     }
@@ -164,21 +171,23 @@ export class SQSHandler implements ISQSHandler {
             throw new Error("AWS Token not found");
         }
 
-        const awsToken = await getAwsTokenByTokenId(sessionUser.awsToken);
+        const awsToken = await getAwsTokenById(sessionUser.awsToken);
         if (!awsToken) {
             throw new Error("AWS Token not found");
         }
 
+        const sqsQueue = sessionUser.sqsQueue;
+
         const sqsClient = new SQSClient({
             region: "eu-central-1",
             credentials: {
-                accessKeyId: awsToken.accessTokenId,
+                accessKeyId: awsToken.accessKeyId,
                 secretAccessKey: awsToken.secretAccessKey
             }
         });
 
         const getQueueUrlCommand = new GetQueueUrlCommand({ // GetQueueUrlRequest
-            QueueName: sessionUser.sqsQueue, // required
+            QueueName: sqsQueue, // required
         });
         const getQueueUrlCommandOutput = await sqsClient.send(getQueueUrlCommand);
         const queueUrl = getQueueUrlCommandOutput.QueueUrl;
@@ -188,8 +197,9 @@ export class SQSHandler implements ISQSHandler {
         const deleteQueueCommand = new DeleteQueueCommand({ QueueUrl: queueUrl });
         try {
             await sqsClient.send(deleteQueueCommand);
+            log.info("Queue deleted: ", sqsQueue);
         } catch (error) {
-            console.error("Error creating queue: ", error);
+            log.error("Error creating queue: ", error);
             throw error;
         }
     }

@@ -17,8 +17,10 @@ import { Input } from "@/components/ui/input";
 import { useParams, useRouter } from "next/navigation";
 import useModal from "@/features/hooks/use-modal";
 import { trpc } from "@/lib/trpc/client";
-import { toast } from "sonner";
-import { TailSpin } from "react-loader-spinner";
+import Spinner from "@/features/fetching/Spinner";
+import { customToast } from "@/features/fetching/CustomToast";
+import sleep from "@/lib/sleep";
+import log from "@multiverse/log";
 
 export default function DeleteDatabaseModal() {
     const {
@@ -28,17 +30,29 @@ export default function DeleteDatabaseModal() {
     const router = useRouter();
     const codeName = useParams().codeName as string;
     const [typedDatabaseName, setTypedDatabaseName] = useState("");
-    const mutation = trpc.database.delete.useMutation();
+    const mutation = trpc.database.delete.useMutation({
+        onSuccess: async() => {
+            await utils.database.list.invalidate();
+            setIsProcessing(false);
+            customToast.info("Database deleted successfully");
+        },
+        onError: (error) => {
+            log.error(error);
+            setIsProcessing(false);
+            customToast.error("Error deleting database");
+        },
+    });
     const utils = trpc.useUtils();
 
     const handleDeleteDatabase = async() => {
         setIsProcessing(true);
+        sleep(200).then(async() => {
+            await utils.database.list.invalidate();
+            log.debug("Invalidated database list");
+            handleCloseModal();
+            router.push("/databases");
+        });
         await mutation.mutateAsync(codeName);
-        await utils.database.list.invalidate();
-        handleCloseModal();
-        setIsProcessing(false);
-        router.push("/databases");
-        toast.success("Database deleted successfully");
     };
 
     return (
@@ -90,16 +104,7 @@ export default function DeleteDatabaseModal() {
 
                         {!isProcessing && <TrashIcon className="w-6 h-6 mr-2" />}
                         {isProcessing && <div className="mr-2">
-                            <TailSpin
-                                visible={true}
-                                height="24"
-                                width="24"
-                                color="#fff"
-                                ariaLabel="tail-spin-loading"
-                                radius="1"
-                                wrapperStyle={{}}
-                                wrapperClass=""
-                            />
+                            <Spinner />
                         </div>}
             Delete database
                     </Button>

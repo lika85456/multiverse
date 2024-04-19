@@ -24,23 +24,40 @@ import {
 } from "@/components/ui/popover";
 
 import React, { useState } from "react";
-import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import useModal from "@/features/hooks/use-modal";
 import { trpc } from "@/lib/trpc/client";
+import { UTCDate } from "@date-fns/utc";
+import { customToast } from "@/features/fetching/CustomToast";
+import Spinner from "@/features/fetching/Spinner";
 
 export default function CreateConnectionTokenModal({ codeName }: {codeName: string}) {
     const {
         modalOpen, handleOpenModal, handleCloseModal
     } = useModal();
-    const [date, setDate] = React.useState<Date>();
+    const [date, setDate] = React.useState<UTCDate>();
     const [tokenName, setTokenName] = useState("");
     const [focused, setFocused] = useState(false);
-    const disabledSubmit = !(date && date > new Date() && tokenName.length > 0);
-    const mutation = trpc.database.secretToken.post.useMutation();
+    const disabledSubmit = !(date && date > new UTCDate() && tokenName.length > 0);
+    const [isProcessing, setIsProcessing] = useState(false);
+
+    //TODO - fix chosen date
+    const mutation = trpc.database.secretToken.post.useMutation({
+        onSuccess: async() => {
+            await util.database.invalidate();
+            handleCloseModal();
+            setIsProcessing(false);
+            // customToast("Token created");
+        },
+        onError: () => {
+            customToast.error("An error occurred while creating the token.");
+            setIsProcessing(false);
+        }
+    });
     const util = trpc.useUtils();
     const onConfirmCreate = async() => {
+        setIsProcessing(true);
         await mutation.mutateAsync({
             codeName: codeName,
             secretToken: {
@@ -48,9 +65,6 @@ export default function CreateConnectionTokenModal({ codeName }: {codeName: stri
                 validUntil: date?.getTime() ?? 0,
             }
         });
-        await util.database.invalidate();
-        toast("Token created");
-        handleCloseModal();
     };
 
     return (
@@ -90,7 +104,7 @@ export default function CreateConnectionTokenModal({ codeName }: {codeName: stri
                                 "w-full justify-start text-left font-normal bg-inherit hover:bg-primary hover:text-primary-foreground focus:bg-primary",
                                 !date && "text-muted-foreground",
                                 date &&
-                  date < new Date() &&
+                  date < new UTCDate() &&
                   "border-destructive text-destructive",
                             )}
                         >
@@ -102,18 +116,21 @@ export default function CreateConnectionTokenModal({ codeName }: {codeName: stri
                         <Calendar
                             mode="single"
                             selected={date}
-                            onSelect={setDate}
+                            onSelect={(d) => setDate(d ? new UTCDate(d) : undefined)}
                             initialFocus
                         />
                     </PopoverContent>
                 </Popover>
                 <AlertDialogFooter>
                     <Button
-                        disabled={disabledSubmit}
+                        disabled={disabledSubmit || isProcessing}
                         onClick={onConfirmCreate}
                         className="bg-accent hover:bg-accent_light text-accent-foreground"
                     >
-                        <IoAdd className="w-6 h-6 mr-2" />
+                        {!isProcessing && <IoAdd className="w-6 h-6 mr-2" />}
+                        {isProcessing && <div className="mr-2">
+                            <Spinner />
+                        </div>}
             Create
                     </Button>
                 </AlertDialogFooter>

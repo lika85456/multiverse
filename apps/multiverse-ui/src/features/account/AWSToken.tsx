@@ -4,6 +4,8 @@ import { DeleteAWSTokenModal } from "@/features/account/DeleteAWSTokenModal";
 import { trpc } from "@/lib/trpc/client";
 import SectionTitle from "@/app/layout/components/SectionTitle";
 import AddAWSTokenModal from "@/features/account/AddAWSTokenModal";
+import Loading from "@/features/fetching/Loading";
+import GeneralError from "@/features/fetching/GeneralError";
 
 export default function AWSToken() {
     const {
@@ -14,8 +16,8 @@ export default function AWSToken() {
         <>
             <SectionTitle title={"AWS Token"} />
             <div className="flex flex-col w-full space-y-4">
-                {isLoading && <div> Loading... </div>}
-                {isError && <div> Error </div>}
+                {isLoading && <Loading/>}
+                {isError && <GeneralError/>}
                 {isSuccess && !awsToken && (
                     <>
                         <h3 className="self-center text-secondary-foreground">
@@ -29,10 +31,10 @@ export default function AWSToken() {
                         <div className="flex flex-col w-full">
                             <h3 className="text-tertiary-foreground">Access Token Id</h3>
                             <div className="text-primary-foreground py-2">
-                                {awsToken.accessTokenId}
+                                {awsToken.accessKeyId}
                             </div>
                         </div>
-                        <DeleteAWSTokenModal />
+                        <DeleteAWSTokenModal accessKeyId={awsToken.accessKeyId}/>
                     </div>
                 )}
 

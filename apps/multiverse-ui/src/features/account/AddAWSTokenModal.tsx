@@ -3,7 +3,6 @@ import {
     IoAdd, IoCheckmark, IoClose
 } from "react-icons/io5";
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
 import useModal from "@/features/hooks/use-modal";
 import {
     AlertDialog,
@@ -19,9 +18,10 @@ import {
     Form, FormControl, FormField, FormItem, FormLabel, FormMessage
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
+import { customToast } from "@/features/fetching/CustomToast";
 
 const AwsTokenSchema = z.object({
-    accessTokenId: z.string().min(8).max(256),
+    accessKeyId: z.string().min(8).max(256),
     secretAccessKey: z.string().min(16).max(256),
 });
 
@@ -31,9 +31,9 @@ export default function AddAWSTokenModal() {
         onSuccess: async() => {
             try {
                 await refetchToken();
-                toast("AWS Token added");
+                // customToast.success("AWS Token added");
             } catch (error) {
-                toast("Error adding AWS Token");
+                customToast.error("Error adding AWS Token");
             }
         }
     });
@@ -45,14 +45,14 @@ export default function AddAWSTokenModal() {
     const form = useForm<z.infer<typeof AwsTokenSchema>>({
         resolver: zodResolver(AwsTokenSchema),
         defaultValues: {
-            accessTokenId: "",
+            accessKeyId: "",
             secretAccessKey: "",
         }
     });
 
     async function onSubmit(values: z.infer<typeof AwsTokenSchema>) {
         await mutation.mutateAsync({
-            accessTokenId: values.accessTokenId,
+            accessKeyId: values.accessKeyId,
             secretAccessKey: values.secretAccessKey,
         });
     }
@@ -86,7 +86,7 @@ export default function AddAWSTokenModal() {
                     <form onSubmit={form.handleSubmit(onSubmit)}>
                         <FormField
                             control={form.control}
-                            name="accessTokenId"
+                            name="accessKeyId"
                             render={({ field }) => (
 
                                 <FormItem>
