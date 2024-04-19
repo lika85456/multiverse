@@ -3,19 +3,20 @@ import z from "zod";
 import { generateHex } from "@/server/multiverse-interface/MultiverseMock";
 import type { StoredDatabaseConfiguration } from "@multiverse/multiverse/src/core/DatabaseConfiguration";
 import type { DatabaseFindMongoDb, DatabaseGet } from "@/lib/mongodb/collections/database";
-import { EDatabaseState } from "@/lib/mongodb/collections/database";
-import { deleteDatabase } from "@/lib/mongodb/collections/database";
-import { createDatabase } from "@/lib/mongodb/collections/database";
-import { getDatabase } from "@/lib/mongodb/collections/database";
+import {
+    createDatabase, deleteDatabase, EDatabaseState, getDatabase
+} from "@/lib/mongodb/collections/database";
 import { vector } from "@/server/procedures/vector";
 import { secretToken } from "@/server/procedures/secretToken";
 import { TRPCError } from "@trpc/server";
 import type { UserGet } from "@/lib/mongodb/collections/user";
-import { removeDatabaseToBeDeletedFromUser } from "@/lib/mongodb/collections/user";
-import { addDatabaseToBeDeletedToUser } from "@/lib/mongodb/collections/user";
-import { removeDatabaseToBeCreatedFromUser } from "@/lib/mongodb/collections/user";
-import { addDatabaseToBeCreatedToUser } from "@/lib/mongodb/collections/user";
-import { getSessionUser } from "@/lib/mongodb/collections/user";
+import {
+    addDatabaseToBeCreatedToUser,
+    addDatabaseToBeDeletedToUser,
+    getSessionUser,
+    removeDatabaseToBeCreatedFromUser,
+    removeDatabaseToBeDeletedFromUser
+} from "@/lib/mongodb/collections/user";
 import { MultiverseFactory } from "@/server/multiverse-interface/MultiverseFactory";
 import log from "@multiverse/log";
 import { handleError } from "@/server";
@@ -46,7 +47,7 @@ export const normalizeString = (str: string, length = MAX_DB_NAME_LENGTH): strin
 };
 
 /**
- * Convert a string to an alpha-numeric string.
+ * Convert a string to an alphanumeric string.
  * @throws {TRPCError} - if the string is empty
  * @param str
  */
@@ -182,21 +183,20 @@ const storeDatabase = async(configuration: StoredDatabaseConfiguration): Promise
         return resultDatabase;
     }
 
-    let records = 0;
-    const generalDatabaseStatistics = await getGeneralDatabaseStatistics(configuration.name);
-    if (generalDatabaseStatistics) {
-        records = generalDatabaseStatistics.totalVectors;
-    }
+    const records = (await getGeneralDatabaseStatistics(configuration.name))?.totalVectors ?? 0 ;
+
+    // log.debug("Database found", JSON.stringify({
+    //         ...configuration,
+    //         ...mongodbDatabase,
+    //         records
+    //     }, null, 2));
+
     // guaranteed that the database is stored in the mongodb, return the database combined with the configuration
-    const resultDatabase = {
+    return {
         ...configuration,
         ...mongodbDatabase,
         records
     };
-
-    log.debug("Database found", JSON.stringify(resultDatabase, null, 2));
-
-    return resultDatabase;
 };
 
 export const database = router({

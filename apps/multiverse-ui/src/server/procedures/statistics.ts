@@ -9,6 +9,7 @@ import { eachDayOfInterval, isAfter } from "date-fns";
 import { UTCDate } from "@date-fns/utc";
 import log from "@multiverse/log";
 import { handleError } from "@/server";
+import type { Cost } from "@/features/statistics/statistics-processor/CostsProcessor";
 import { CostsProcessor } from "@/features/statistics/statistics-processor/CostsProcessor";
 import type { ObjectId } from "mongodb";
 
@@ -193,7 +194,28 @@ const constructInterval = (from: string, to: string): Map<string, DailyStatistic
 
     return emptyInterval;
 };
+/**
+ * Calculate costs for a specific period of time.
+ * Costs are returned in a form of interval containing a date and cost for that date.
+ * @param from - start date
+ * @param to - end date
+ * @param userId - user id, required to obtain credentials
+ * @param databaseCodeName - database code name, optional (if not provided, costs for all multiverse services are calculated)
+ */
+const calculateCosts = async(from: UTCDate, to: UTCDate, userId: ObjectId, databaseCodeName?: string): Promise<Cost[]> => {
+    const costsProcessor = new CostsProcessor();
 
+    return await costsProcessor.getCosts(from, to, userId, databaseCodeName);
+};
+
+/**
+ * Calculate costs for a specific period of time.
+ * Costs in the period are merged into single value.
+ * @param from - start date
+ * @param to - end date
+ * @param userId - user id, required to obtain credentials
+ * @param databaseCodeName - database code name, optional (if not provided, costs for all multiverse services are calculated)
+ */
 const calculateCostsMerged = async(from: UTCDate, to: UTCDate, userId: ObjectId, databaseCodeName?: string): Promise<number> => {
     const costsProcessor = new CostsProcessor();
     const result = await costsProcessor.getCosts(from, to, userId, databaseCodeName);
@@ -201,6 +223,25 @@ const calculateCostsMerged = async(from: UTCDate, to: UTCDate, userId: ObjectId,
     return result.reduce((acc, curr) => {
         return acc + curr.cost;
     }, 0);
+};
+
+/**
+ * Adds costs to daily statistics data.
+ * Costs are added to the daily statistics data based on the date.
+ * @param dailyStatistics - daily statistics data
+ * @param costs - costs data
+ */
+const addCostsToDailyStatistics = (dailyStatistics: DailyStatisticsData[], costs: Cost[]): DailyStatisticsData[] => {
+    const costsMap = costs.reduce((acc, curr) => {
+        acc.set(convertToISODate(curr.date), curr.cost);
+
+        return acc;
+    }, new Map<string, number>);
+    dailyStatistics.forEach((stat) => {
+        stat.costs = costsMap.get(stat.date) ?? 1;
+    });
+
+    return dailyStatistics;
 };
 
 /**
@@ -384,6 +425,8 @@ export const statistics = router({
         })).query(async(opts): Promise<GraphData> => {
             try {
                 const { fromISO, toISO } = dateIntervalISO(opts.input.from, opts.input.to);
+                const fromUTC = new UTCDate(fromISO);
+                const toUTC = new UTCDate(toISO);
 
                 const sessionUser = await getSessionUser();
                 if (!sessionUser) {
@@ -411,7 +454,10 @@ export const statistics = router({
                     log.info("Calculating daily statistics for the database", opts.input.database, "from", fromISO, "to", toISO);
 
                     // calculate daily statistics for a specific database
-                    return extractStatistics(await calculateDailyStatistics(opts.input.database, fromISO, toISO));
+                    const dailyStatistics = await calculateDailyStatistics(opts.input.database, fromISO, toISO);
+                    const dailyCosts = await calculateCosts(fromUTC, toUTC, sessionUser._id, opts.input.database);
+
+                    return extractStatistics(addCostsToDailyStatistics(dailyStatistics, dailyCosts));
                 }
 
                 // calculate daily statistics for all databases sessionUser owns otherwise
@@ -427,15 +473,18 @@ export const statistics = router({
                 }
 
                 // merge daily statistics from all databases to get the final statistics
-                const finalStatistics: DailyStatisticsData[] = dailyDatabaseStatistics[0];
+                const mergedStatistics: DailyStatisticsData[] = dailyDatabaseStatistics[0];
                 for (let i = 1; i < dailyDatabaseStatistics.length; i++) {
-                    finalStatistics.forEach((stat, index) => {
-                        finalStatistics[index] = mergeDailyStatisticsData(stat, dailyDatabaseStatistics[i][index]);
+                    mergedStatistics.forEach((stat, index) => {
+                        mergedStatistics[index] = mergeDailyStatisticsData(stat, dailyDatabaseStatistics[i][index]);
                     });
                 }
+
+                // calculate costs for all databases
+                const dailyCosts = await calculateCosts(fromUTC, toUTC, sessionUser._id);
                 log.info("Returning daily statistics for all databases from", fromISO, "to", toISO, "for user", sessionUser.email);
 
-                return extractStatistics(finalStatistics);
+                return extractStatistics(addCostsToDailyStatistics(mergedStatistics, dailyCosts));
             } catch (error) {
                 throw handleError({
                     error,

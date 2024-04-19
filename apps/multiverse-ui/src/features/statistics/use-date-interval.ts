@@ -1,4 +1,4 @@
-import { isAfter } from "date-fns";
+import { format, isAfter } from "date-fns";
 import * as React from "react";
 import type { DateRange } from "react-day-picker";
 import { UTCDate } from "@date-fns/utc";
@@ -23,8 +23,8 @@ export default function useDateInterval(defaultInterval: DefinedDateRange = {
 
             return;
         }
-        let from = new UTCDate(newDate.from);
-        let to = new UTCDate(newDate.to);
+        let from = new UTCDate(format(newDate.from, "yyyy-MM-dd"));
+        let to = new UTCDate(format(newDate.to, "yyyy-MM-dd"));
 
         // Check flip reversed interval bounds
         if (isAfter(from, to)) {
