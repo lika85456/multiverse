@@ -14,6 +14,7 @@ import { orchestratorEnvSchema } from "./EnvSchema";
 import DynamoInfrastructureStorage from "../InfrastructureStorage/DynamoInfrastructureStorage";
 import LambdaWorker from "../Compute/LambdaWorker";
 import type { OrchestratorEvent } from "./Orchestrator";
+import type { AwsToken } from "..";
 
 const log = logger.getSubLogger({ name: "LambdaOrchestrator" });
 
@@ -24,9 +25,12 @@ export default class LambdaOrchestrator implements Orchestrator {
     constructor(private options: {
         databaseId: DatabaseID;
         secretToken: string;
-
+        awsToken: AwsToken
     }) {
-        this.lambda = new Lambda({ region: options.databaseId.region });
+        this.lambda = new Lambda({
+            region: options.databaseId.region,
+            credentials: options.awsToken
+        });
     }
 
     private async request<T extends keyof Orchestrator>(
