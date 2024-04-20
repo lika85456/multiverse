@@ -218,9 +218,9 @@ const calculateCosts = async(from: UTCDate, to: UTCDate, userId: ObjectId, datab
  */
 const calculateCostsMerged = async(from: UTCDate, to: UTCDate, userId: ObjectId, databaseCodeName?: string): Promise<number> => {
     const costsProcessor = new CostsProcessor();
-    const result = await costsProcessor.getCosts(from, to, userId, databaseCodeName);
+    const costs = await costsProcessor.getCosts(from, to, userId, databaseCodeName);
 
-    return result.reduce((acc, curr) => {
+    return costs.reduce((acc, curr) => {
         return acc + curr.cost;
     }, 0);
 };
@@ -451,7 +451,7 @@ export const statistics = router({
                         });
                     }
 
-                    log.info("Calculating daily statistics for the database", opts.input.database, "from", fromISO, "to", toISO);
+                    log.debug("Calculating daily statistics for the database", opts.input.database, "from", fromISO, "to", toISO);
 
                     // calculate daily statistics for a specific database
                     const dailyStatistics = await calculateDailyStatistics(opts.input.database, fromISO, toISO);

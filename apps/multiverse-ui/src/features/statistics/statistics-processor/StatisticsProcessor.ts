@@ -203,11 +203,7 @@ export class StatisticsProcessor {
         eventsByDbName.forEach((events, dbName) => {
             this.processEventsForDatabase(dbName, events).then((result) => {
                 // done asynchronously to not block the processing of other databases
-                if (result) {
-                    log.info(`Statistics processing for database ${dbName} processed`);
-                } else {
-                    log.error(`Statistics processing for database ${dbName} failed`);
-                }
+                log.info(`Statistics for database ${dbName} ${result ? "processed" : "failed"}`);
             });
         });
     }

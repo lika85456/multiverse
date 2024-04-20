@@ -8,6 +8,7 @@ import { CopyIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import format from "@/features/statistics/format";
 import { customToast } from "@/features/fetching/CustomToast";
+import { IoMdArrowDropdown, IoMdArrowDropup } from "react-icons/io";
 
 function calculateCost({
     writes,
@@ -141,7 +142,8 @@ export default function PriceCalculator() {
     const [reads, setReads] = useState(10_000);
     const [writes, setWrites] = useState(10_000);
 
-    //TODO - move to BE???
+    const [isDetailedResult, setIsDetailedResult] = useState(false);
+
     const costs = calculateCost({
         dimensions,
         reads,
@@ -167,10 +169,9 @@ export default function PriceCalculator() {
     };
 
     return (
-        <div className="flex flex-col pb-16">
+        <div className="flex flex-col pb-8">
             <div className="flex flex-row justify-between items-center">
                 <SectionTitle title={"Price calculator"} className="flex h-fit" />
-
                 <Button
                     onClick={handleCopyCalculatedValues}
                     className="border-0 bg-inherit hover:text-secondary-foreground p-0"
@@ -221,17 +222,45 @@ export default function PriceCalculator() {
                     logarithmic
                 />
             </ul>
-            <div className="flex flex-row h-fit justify-end items-center space-x-4">
+            <div className="flex flex-col h-28 justify-start items-end space-x-4 select-none">
+                <div className="text-sm font-thin text-tertiary">
+                    * this price is a rough estimate and may not reflect the actual costs
+                </div>
                 <div className="flex flex-row space-x-4 items-center">
-                    <div className="text-lg font-thin capitalize">
+                    <div className="text-lg font-light capitalize">
             Expected Total price:
                     </div>
                     <div className="text-lg font-medium">{format(costs.totalCost)} $</div>
+                    {isDetailedResult ? (
+                        <IoMdArrowDropdown className="w-6 h-6" onClick={() => setIsDetailedResult(false)}/>
+                    ) : (
+                        <IoMdArrowDropup className="w-6 h-6" onClick={() => setIsDetailedResult(true)}/>
+                    )}
                 </div>
+                {isDetailedResult && (
+                    <div className="text-md font-light text-tertiary pr-10">
+                        <div className="flex justify-between  flex-row space-x-4 items-center">
+                            <div className="capitalize">
+                                DynamoDB:
+                            </div>
+                            <div className="font-medium">{format(costs.dynamoCost)} $</div>
+                        </div>
+                        <div className="flex justify-between  flex-row space-x-4 items-center">
+                            <div className="capitalize">
+                                Lambda:
+                            </div>
+                            <div className="font-medium">{format(costs.lambdaCost)} $</div>
+                        </div>
+                        <div className="flex justify-between  flex-row space-x-4 items-center">
+                            <div className="capitalize">
+                                S3 Storage:
+                            </div>
+                            <div className="font-medium">{format(costs.s3Cost)} $</div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
 }
-// TODO - collapsible details of the calculation
-// TODO - price disclaimer
 // TODO - dimensions and metadata size as inputs
