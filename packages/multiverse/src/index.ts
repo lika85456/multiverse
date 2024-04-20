@@ -28,7 +28,7 @@ export interface IMultiverseDatabase {
 
     remove(label: string[]): Promise<void>;
 
-    getConfiguration(): Promise<DatabaseConfiguration>;
+    getConfiguration(): Promise<DatabaseConfiguration & DatabaseID>;
 
     addToken(token: Token): Promise<void>;
 
@@ -76,7 +76,11 @@ export class MultiverseDatabase implements IMultiverseDatabase {
     }
 
     public async getConfiguration() {
-        return this.orchestrator.getConfiguration();
+        return {
+            ...await this.orchestrator.getConfiguration(),
+            name: this.options.name,
+            region: this.options.region
+        };
     }
 
     public async addToken(token: Token) {
