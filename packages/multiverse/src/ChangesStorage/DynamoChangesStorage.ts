@@ -7,7 +7,6 @@ import {
     BatchWriteCommand, DynamoDBDocumentClient, QueryCommand
 } from "@aws-sdk/lib-dynamodb";
 import type { StoredVectorChange } from "./StoredVector";
-import { Vector } from "../core/Vector";
 import type { DatabaseID } from "../core/DatabaseConfiguration";
 
 const logger = log.getSubLogger({ name: "DynamoChangesStorageDeployer" });
@@ -179,7 +178,8 @@ export default class DynamoChangesStorage implements ChangesStorage {
                             action: change.action[0],
 
                             ...(change.action === "add" ? {
-                                vector: new Vector(change.vector.vector).toBase64(),
+                                // vector: new Vector(change.vector.vector).toBase64(),
+                                vector: change.vector.vector,
                                 label: change.vector.label,
                                 ...(change.vector.metadata ? { metadata: change.vector.metadata } : {})
                             } : { label: change.label }),
@@ -220,7 +220,8 @@ export default class DynamoChangesStorage implements ChangesStorage {
                     timestamp: Math.floor(item.SK / 1000), // flooring is required because of the index floating point
                     ...(item.action === "a" ? {
                         vector: {
-                            vector: Vector.fromBase64(item.vector).toArray(),
+                            // vector: Vector.fromBase64(item.vector).toArray(),
+                            vector: item.vector,
                             label: item.label,
                             metadata: item.metadata
                         }
@@ -270,8 +271,11 @@ export default class DynamoChangesStorage implements ChangesStorage {
             }));
 
             if (keys) {
-                // eslint-disable-next-line max-len
-                await this.dynamo.send(new BatchWriteCommand({ RequestItems: { [this.options.tableName]: keys.map(key => ({ DeleteRequest: { Key: key } })) } }));
+                // split by batches of 25
+                for (let i = 0; i < keys.length; i += 25) {
+                    // eslint-disable-next-line max-len
+                    await this.dynamo.send(new BatchWriteCommand({ RequestItems: { [this.options.tableName]: keys.slice(i, i + 25).map(key => ({ DeleteRequest: { Key: key } })) } }));
+                }
             }
 
             lastEvaluatedKey = result.LastEvaluatedKey;

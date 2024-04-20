@@ -1,5 +1,8 @@
 import DynamoChangesStorage from "../ChangesStorage/DynamoChangesStorage";
 import type { DatabaseID, StoredDatabaseConfiguration } from "../core/DatabaseConfiguration";
+import { Vector } from "../core/Vector";
+import type { NewVector } from "../core/Vector";
+import MockIndex from "../Index/MockIndex";
 import DynamoInfrastructureStorage from "../InfrastructureStorage/DynamoInfrastructureStorage";
 import S3SnapshotStorage from "../SnapshotStorage/S3SnapshotStorage";
 import LambdaOrchestrator from "./LambdaOrchestrator";
@@ -44,28 +47,6 @@ describe("<Orchestrator - integration>", () => {
             snapshotStorage.deploy()
         ]);
 
-        infrastructureStorage.set(databaseId.name, {
-            configuration: databaseConfiguration,
-            databaseId,
-            partitions: [{
-                lambda: [{
-                    instances: [],
-                    name: "test-worker-0",
-                    region: databaseId.region,
-                    type: "primary",
-                    wakeUpInstances: 1,
-                }],
-                partitionIndex: 0
-            }],
-            scalingTargetConfiguration: {
-                outOfRegionFallbacks: 0,
-                secondaryFallbacks: 0,
-                warmPrimaryInstances: 1,
-                warmRegionalInstances: 0,
-                warmSecondaryInstances: 0
-            }
-        });
-
         await orchestrator.deploy({
             changesTable: databaseId.name + "-changes",
             infrastructureTable: databaseId.name + "-infrastructure",
@@ -91,4 +72,50 @@ describe("<Orchestrator - integration>", () => {
 
         expect(result).toEqual({ result: [] });
     });
+
+    it("should add 10 vectors and return correct result", async() => {
+        const vectors: NewVector[] = Array.from({ length: 10 }, (_, i) => ({
+            label: i + "",
+            vector: Vector.random(3)
+        }));
+
+        await orchestrator.addVectors(vectors);
+
+        const queryVector = Vector.random(3);
+
+        // wait 1s
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        const result = await orchestrator.query({
+            k: 10,
+            vector: queryVector,
+            sendVector: true
+        });
+
+        const mockIndex = new MockIndex({
+            dimensionsCount: 3,
+            spaceType: "l2"
+        });
+
+        mockIndex.add(vectors);
+        const mockResult = await mockIndex.knn({
+            vector: queryVector,
+            k: 10,
+            sendVector: true
+        });
+
+        // there might  be some precision errors in vectors and distances - so we need to compare them separately
+        for (let i = 0; i < result.result.length; i++) {
+            expect(result.result[i].label).toEqual(mockResult[i].label);
+            expect(result.result[i].distance).toBeCloseTo(mockResult[i].distance, 5);
+            // expect(result.result[i].vector).toBeCloseTo(mockResult[i].vector, 5);
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            for (let j = 0; j < result.result[i].vector!.length; j++) {
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                expect(result.result[i].vector![j]).toBeCloseTo(mockResult[i].vector![j], 5);
+            }
+        }
+    });
+
+    // TODO infrastructure not initialized
 });

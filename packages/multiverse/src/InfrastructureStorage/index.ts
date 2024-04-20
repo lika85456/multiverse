@@ -109,13 +109,17 @@ export default abstract class InfrastructureStorage {
             throw new Error(`Partition ${partitionIndex} not found`);
         }
 
-        let oldest = Date.now();
+        let oldest = Infinity;
         for (const lambda of partition.lambda) {
             for (const instance of lambda.instances) {
                 if (instance.lastUpdated < oldest) {
                     oldest = instance.lastUpdated;
                 }
             }
+        }
+
+        if (oldest === Infinity) {
+            return 0;
         }
 
         return oldest;

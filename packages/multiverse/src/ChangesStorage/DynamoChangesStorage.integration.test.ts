@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import DynamoChangesStorage from "./DynamoChangesStorage";
 import type { StoredVectorChange } from "./StoredVector";
 
@@ -110,5 +111,39 @@ describe("<DynamoChangesStorage>", () => {
 
         const readChanges = await storage.getAllChangesAfter(50);
         expect(readChanges).toHaveLength(153);
+    });
+
+    it("should clear all", async() => {
+        await storage.clearBefore(Date.now() + 10000);
+        expect(await storage.count()).toBe(0);
+    });
+
+    it("should properly store and read vectors with floating point", async() => {
+        const vector = {
+            label: "test",
+            metadata: {},
+            vector: [
+                Math.random(),
+                Math.random(),
+                Math.random()
+            ]
+        };
+
+        await storage.add([{
+            action: "add",
+            timestamp: Date.now(),
+            vector
+        }]);
+
+        const readChanges = await readWholeIterator(storage.changesAfter(0));
+
+        expect(readChanges).toEqual([{
+            action: "add",
+            timestamp: expect.any(Number),
+            vector: expect.any(Object)
+        }]);
+
+        // @ts-ignore
+        expect(readChanges[0].vector.vector).toEqual(vector.vector.map((v) => expect.closeTo(v)));
     });
 });

@@ -51,7 +51,7 @@ describe("<Orchestrator>", () => {
             snapshotStorage
         });
 
-        infrastructureStorage.set(databaseId.name, {
+        await infrastructureStorage.set(databaseId.name, {
             configuration: databaseConfiguration,
             databaseId,
             partitions: [{

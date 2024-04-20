@@ -7,10 +7,6 @@ import MemoryInfrastructureStorage from "../InfrastructureStorage/MemoryInfrastr
 import LocalSnapshotStorage from "../SnapshotStorage/LocalSnapshotStorage";
 import PartitionWorker from "./PartitionWorker";
 
-test("zadek", async() => {
-
-});
-
 describe("<PartitionWorker>", () => {
 
     let changesStorage: MemoryChangesStorage;

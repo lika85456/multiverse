@@ -1,7 +1,4 @@
-import type {
-    databaseConfiguration,
-    Region, Token
-} from "./core/DatabaseConfiguration";
+import type { Region, Token } from "./core/DatabaseConfiguration";
 import type { Query, QueryResult } from "./core/Query";
 import type { NewVector } from "./core/Vector";
 import OrchestratorDeployer from "./Orchestrator/OLD/OrchestratorDeployer";

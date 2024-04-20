@@ -11,6 +11,8 @@ import logger from "@multiverse/log";
 import { IAM } from "@aws-sdk/client-iam";
 import type { OrchestratorEnvironment } from "./EnvSchema";
 import { orchestratorEnvSchema } from "./EnvSchema";
+import DynamoInfrastructureStorage from "../InfrastructureStorage/DynamoInfrastructureStorage";
+import LambdaWorker from "../Compute/LambdaWorker";
 
 const log = logger.getSubLogger({ name: "LambdaOrchestrator" });
 
@@ -47,7 +49,11 @@ export default class LambdaOrchestrator implements Orchestrator {
 
         log.debug("Orchestrator invoked", {
             lambdaName: this.lambdaName(),
-            result: parsedPayload
+            request: {
+                event,
+                payload
+            },
+            response: parsedPayload
         });
 
         if (result.FunctionError) {
@@ -127,6 +133,10 @@ export default class LambdaOrchestrator implements Orchestrator {
         return `multiverse-orchestrator-${this.options.databaseId.name}`;
     }
 
+    public lambdaWorkerName(partition: number, type: "primary" | "fallback") {
+        return `multiverse-worker-${this.options.databaseId.name}-${partition}-${type}`;
+    }
+
     private async lambdaRoleARN(): Promise<string> {
         // if doesn't exist, create
         const iam = new IAM({ region: this.options.databaseId.region });
@@ -192,14 +202,13 @@ export default class LambdaOrchestrator implements Orchestrator {
         return roleARN;
     }
 
-    public async deploy({
+    private async deployOrchestratorLambda({
         changesTable, snapshotBucket, infrastructureTable
     }: {
         changesTable: string;
         snapshotBucket: string;
         infrastructureTable: string;
-    }): Promise<string> {
-
+    }) {
         log.debug("Deploying orchestrator lambda function", { configuration: this.options.databaseConfiguration });
 
         const variables: OrchestratorEnvironment = {
@@ -229,9 +238,9 @@ export default class LambdaOrchestrator implements Orchestrator {
             }
         });
 
-        log.debug("Created lambda function", { result });
+        log.debug("Created orchestrator lambda", { result });
 
-        if (!result.FunctionArn) throw new Error("Failed to create lambda function");
+        if (!result.FunctionArn) throw new Error("Failed to create orchestrator lambda");
 
         // wait for lambda to be created
         await waitUntilPublishedVersionActive({
@@ -239,9 +248,112 @@ export default class LambdaOrchestrator implements Orchestrator {
             maxWaitTime: 120,
         }, { FunctionName: this.lambdaName(), });
 
-        log.debug("Lambda function is active");
+        log.debug("Orchestrator lambda is active");
+        // return result.FunctionArn;
+    }
 
-        return result.FunctionArn;
+    private async deployPartition({
+        changesTable, snapshotBucket, env, partition
+    }: {
+        changesTable: string;
+        snapshotBucket: string;
+        env: "development" | "production";
+        partition: number;
+    }) {
+
+        log.info("Deploying partition", {
+            partition,
+            env
+        });
+
+        const lambdaWorker = new LambdaWorker({
+            lambdaName: this.lambdaWorkerName(partition, "primary"),
+            region: this.options.databaseId.region
+        });
+
+        await lambdaWorker.deploy({
+            changesTable,
+            snapshotBucket,
+            configuration: this.options.databaseConfiguration,
+            databaseId: this.options.databaseId,
+            env,
+            partition
+        });
+
+        log.info("Deployed partition", {
+            partition,
+            env
+        });
+    }
+
+    private async destroyPartition({ partition }: {
+        partition: number;
+    }) {
+        log.info("Destroying partition", { partition });
+
+        const lambdaWorker = new LambdaWorker({
+            lambdaName: this.lambdaWorkerName(partition, "primary"),
+            region: this.options.databaseId.region
+        });
+
+        await lambdaWorker.destroy();
+
+        log.info("Destroyed partition", { partition });
+    }
+
+    public async deploy({
+        changesTable, snapshotBucket, infrastructureTable
+    }: {
+        changesTable: string;
+        snapshotBucket: string;
+        infrastructureTable: string;
+    }) {
+        const infrastructureStorage = new DynamoInfrastructureStorage({
+            region: this.options.databaseId.region,
+            tableName: infrastructureTable
+        });
+
+        const infrastructure = await infrastructureStorage.get(this.options.databaseId.name);
+
+        if (infrastructure) {
+            throw new Error("Infrastructure already exists");
+        }
+
+        await infrastructureStorage.set(this.options.databaseId.name, {
+            configuration: this.options.databaseConfiguration,
+            databaseId: this.options.databaseId,
+            partitions: [{
+                lambda: [{
+                    instances: [],
+                    name: this.lambdaWorkerName(0, "primary"),
+                    region: this.options.databaseId.region,
+                    type: "primary",
+                    wakeUpInstances: 1,
+                }],
+                partitionIndex: 0
+            }],
+            scalingTargetConfiguration: {
+                outOfRegionFallbacks: 0,
+                secondaryFallbacks: 0,
+                warmPrimaryInstances: 1,
+                warmRegionalInstances: 0,
+                warmSecondaryInstances: 0
+            }
+        });
+
+        await Promise.all([
+            this.deployOrchestratorLambda({
+                changesTable,
+                snapshotBucket,
+                infrastructureTable
+            }),
+            this.deployPartition({
+                changesTable,
+                snapshotBucket,
+                env: "production",
+                partition: 0
+            })
+        ]);
     }
 
     public async updateCode() {
@@ -267,6 +379,8 @@ export default class LambdaOrchestrator implements Orchestrator {
     public async destroy() {
 
         const result = await this.lambda.deleteFunction({ FunctionName: this.lambdaName(), });
+
+        await this.destroyPartition({ partition: 0 });
 
         log.debug("Deleted lambda function", { result, });
     }

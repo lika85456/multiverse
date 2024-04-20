@@ -105,6 +105,7 @@ export default class PartitionWorker implements Worker {
     ): Promise<ReturnType<Worker[TEvent]>> {
 
         await this.partition;
+        const errors = [];
 
         log.debug("Trying lambdas by priority: ", await this.lambdasByPriority);
 
@@ -123,10 +124,14 @@ export default class PartitionWorker implements Worker {
                 return response as ReturnType<Worker[TEvent]>;
             } catch (e) {
                 log.debug(`Lambda ${lambdaState.name} failed: ${e}`);
+                errors.push({
+                    lambda: lambdaState.name,
+                    error: e
+                });
             }
         }
 
-        throw new Error("All lambdas failed");
+        throw new Error(`All lambdas failed: ${JSON.stringify(errors)}`);
     }
 
     public async requestAll<TEvent extends keyof Worker>(

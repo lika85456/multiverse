@@ -81,6 +81,16 @@ export default class OrchestratorWorker implements Orchestrator {
             updates
         });
 
+        // TODO! merge result with updates!!!!!!§
+
+        log.debug("Querying", {
+            infrastructure,
+            workers,
+            oldestUpdateTimestamp,
+            updates,
+            result
+        });
+
         return result.result;
     }
 
