@@ -238,7 +238,7 @@ const addCostsToDailyStatistics = (dailyStatistics: DailyStatisticsData[], costs
         return acc;
     }, new Map<string, number>);
     dailyStatistics.forEach((stat) => {
-        stat.costs = costsMap.get(stat.date) ?? 1;
+        stat.costs = costsMap.get(stat.date) ?? 0;
     });
 
     return dailyStatistics;
