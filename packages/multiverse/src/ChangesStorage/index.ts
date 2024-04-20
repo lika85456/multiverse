@@ -1,25 +1,11 @@
-import { z } from "zod";
-import { newVectorSchema } from "../core/Vector";
-
-export const storedVectorChangeSchema = z.union([
-    z.object({
-        action: z.literal("add"),
-        timestamp: z.number(),
-        vector: newVectorSchema,
-    }),
-    z.object({
-        action: z.literal("remove"),
-        timestamp: z.number(),
-        label: z.string(),
-    }),
-]);
-
-export type StoredVectorChange = z.infer<typeof storedVectorChangeSchema>;
+import type { StoredVectorChange } from "./StoredVector";
 
 export default interface ChangesStorage {
     add(changes: StoredVectorChange[]): Promise<void>;
     changesAfter(timestamp: number): AsyncGenerator<StoredVectorChange, void, unknown>;
     getAllChangesAfter(timestamp: number): Promise<StoredVectorChange[]>;
+    clearBefore(timestamp: number): Promise<void>;
+    count(): Promise<number>;
 
     deploy(): Promise<void>;
     destroy(): Promise<void>;

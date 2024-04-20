@@ -1,4 +1,4 @@
-import type { StoredVectorChange } from ".";
+import type { StoredVectorChange } from "./StoredVector";
 import MemoryChangesStorage from "./MemoryChangesStorage";
 
 async function readWholeIterator<T>(iterator: AsyncGenerator<T, void, unknown>): Promise<T[]> {
@@ -11,7 +11,7 @@ async function readWholeIterator<T>(iterator: AsyncGenerator<T, void, unknown>):
     return result;
 }
 
-describe("<DynamoChangesStorage>", () => {
+describe("<MemoryChangesStorage>", () => {
 
     const storage = new MemoryChangesStorage();
 
@@ -76,6 +76,11 @@ describe("<DynamoChangesStorage>", () => {
 
         const readChanges = await readWholeIterator(storage.changesAfter(0));
         expect(readChanges).toHaveLength(103);
+    });
+
+    it("should count 103", async() => {
+        const count = await storage.count();
+        expect(count).toBe(103);
     });
 
     it("should read correctly changesAfter", async() => {

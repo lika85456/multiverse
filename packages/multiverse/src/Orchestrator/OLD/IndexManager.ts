@@ -1,12 +1,12 @@
-import type { NewVector } from "../core/Vector";
-import type { Query, QueryResult } from "../core/Query";
-import type ChangesStorage from "../ChangesStorage";
-import type InfrastructureStorage from "../InfrastructureStorage/DynamoInfrastructureStorage";
+import type { NewVector } from "../../core/Vector";
+import type { Query, QueryResult } from "../../core/Query";
+import type ChangesStorage from "../../ChangesStorage";
+import type InfrastructureStorage from "../../InfrastructureStorage/DynamoInfrastructureStorage";
 import log from "@multiverse/log";
-import type { StoredVectorChange } from "../ChangesStorage";
-import mergeResults from "../Index/mergeResults";
-import type { StoredDatabaseConfiguration } from "../core/DatabaseConfiguration";
-import type ComputeWorker from "../Compute/Worker";
+import type { StoredVectorChange } from "../../ChangesStorage";
+import mergeResults from "../../Index/mergeResults";
+import type { storedDatabaseConfiguration } from "../../core/DatabaseConfiguration";
+import type ComputeWorker from "../../Compute/Worker";
 
 export default class IndexManager {
 
