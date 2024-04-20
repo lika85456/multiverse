@@ -54,6 +54,12 @@ export const secretToken = router({
         tokenName: z.string(),
     })).mutation(async(opts): Promise<void> => {
         try {
+            if (opts.input.tokenName === "default") {
+                throw new TRPCError({
+                    code: "BAD_REQUEST",
+                    message: "Cannot remove default token",
+                });
+            }
             const { multiverseDatabase } = await getRelatedDatabase(opts.input.codeName);
             await multiverseDatabase.removeToken(opts.input.tokenName);
         } catch (error) {

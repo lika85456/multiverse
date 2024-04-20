@@ -17,6 +17,7 @@ import fs from "fs";
 import { UTCDate } from "@date-fns/utc";
 import log from "@multiverse/log";
 import { performance } from "node:perf_hooks";
+import { decryptSecretAccessKey, encryptSecretAccessKey } from "@/lib/encryption/aws-token";
 
 type DatabaseWrapper = {
     multiverseDatabase: MultiverseDatabaseMock;
@@ -24,7 +25,7 @@ type DatabaseWrapper = {
 };
 
 const databases = new Map<string, DatabaseWrapper>();
-const file = "./src/server/multiverse-interface/multiverseMock.json";
+const file = "./src/lib/multiverse-interface/multiverseMock.json";
 
 const sleep = (ms: number) => {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -44,10 +45,14 @@ async function loadJsonFile() {
 
         const parsedData = JSON.parse(jsonData);
         for (const database of parsedData) {
+            const secretAccessKet = decryptSecretAccessKey(database.awsToken.accessKeyId, database.awsToken.secretAccessKey);
             databases.set(database.multiverseDatabase.name, {
                 multiverseDatabase: new MultiverseDatabaseMock({
                     config: database.multiverseDatabase,
-                    awsToken: database.awsToken,
+                    awsToken: {
+                        accessKeyId: database.awsToken.accessKeyId,
+                        secretAccessKey: secretAccessKet,
+                    }
                 }),
                 vectors: database.vectors,
             });
@@ -62,10 +67,15 @@ async function saveJsonFile() {
         const databaseConfig = await database.multiverseDatabase.getConfiguration();
         const awsToken = database.multiverseDatabase.getAwsToken();
 
+        const encryptedSecretAccessKey = encryptSecretAccessKey(awsToken.awsToken.accessKeyId, awsToken.awsToken.secretAccessKey,);
+
         return {
             multiverseDatabase: { ...databaseConfig },
             vectors: database.vectors,
-            awsToken: awsToken.awsToken,
+            awsToken: {
+                accessKeyId: awsToken.awsToken.accessKeyId,
+                secretAccessKey: encryptedSecretAccessKey,
+            },
         };
     }));
 
@@ -318,9 +328,7 @@ export class MultiverseMock implements IMultiverse {
     async createDatabase(options: MultiverseDatabaseConfiguration,): Promise<void> {
         await loadJsonFile();
 
-        await sleep(1000 * 20); // 20 seconds, really fast
-        // await sleep(1000 * 30); // 30 seconds, realistic scenario, fast case
-        // await sleep(1000 * 60); // 1 minute, realistic scenario, awaited case
+        await sleep(1000 * 5); // 5 seconds, to simulate fast creation speed
 
         databases.set(options.name, {
             multiverseDatabase: new MultiverseDatabaseMock({
@@ -338,7 +346,7 @@ export class MultiverseMock implements IMultiverse {
     async getDatabase(name: string): Promise<IMultiverseDatabase | undefined> {
         await loadJsonFile();
 
-        await sleep(1000);
+        await sleep(500);
 
         const database = databases.get(name);
         if (!database) {
@@ -356,7 +364,7 @@ export class MultiverseMock implements IMultiverse {
     async listDatabases(): Promise<IMultiverseDatabase[]> {
         await loadJsonFile();
 
-        await sleep(1000);
+        await sleep(500);
 
         return (Array.from(databases.values())
             .map((database) => database.multiverseDatabase))
@@ -374,9 +382,7 @@ export class MultiverseMock implements IMultiverse {
             return Promise.resolve();
         }
         const vectorsLength = database.vectors.length;
-        await sleep(100 * vectorsLength + 1000 * 20); // 5 seconds + 100ms per vector to simulate deletion speed
-        // await sleep(1000 * 30); // 30 seconds, realistic scenario, fast case
-        // await sleep(1000 * 60); // 1 minute, realistic scenario, awaited case
+        await sleep(100 * vectorsLength + 1000 * 5); // 5 seconds + 100ms per vector to simulate fast deletion speed
 
         if (database.multiverseDatabase.getAwsToken().awsToken.accessKeyId !== this.awsToken.accessKeyId) {
             return Promise.resolve();
