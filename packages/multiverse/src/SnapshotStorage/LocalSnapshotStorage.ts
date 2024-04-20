@@ -29,7 +29,7 @@ export default class LocalSnapshotStorage implements SnapshotStorage {
     public async loadLatest(): Promise<Snapshot | undefined> {
 
         try {
-            const files = await readdir(`${this.path}/${this.databaseName}`);
+            const files = await readdir(`${this.path}/${this.databaseName}`).catch(() => []);
 
             if (files.length === 0) {
                 return undefined;

@@ -1,5 +1,6 @@
-import type { StoredVectorChange } from ".";
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import DynamoChangesStorage from "./DynamoChangesStorage";
+import type { StoredVectorChange } from "./StoredVector";
 
 async function readWholeIterator<T>(iterator: AsyncGenerator<T, void, unknown>): Promise<T[]> {
     const result = [];
@@ -15,10 +16,10 @@ describe("<DynamoChangesStorage>", () => {
 
     const storage = new DynamoChangesStorage({
         tableName: "multiverse-test-changes-storage-" + Date.now(),
-        dimensions: 3,
-        name: "dbname",
-        region: "eu-central-1",
-        space: "l2",
+        databaseId: {
+            name: "test",
+            region: "eu-central-1"
+        }
     });
 
     beforeAll(async() => {
@@ -84,6 +85,11 @@ describe("<DynamoChangesStorage>", () => {
         expect(readChanges).toHaveLength(103);
     });
 
+    it("should count 103", async() => {
+        const count = await storage.count();
+        expect(count).toBe(103);
+    });
+
     it("should read correctly changesAfter", async() => {
         const changes: StoredVectorChange[] = Array.from({ length: 100 }, (_, i) => ({
             action: "add",
@@ -105,5 +111,39 @@ describe("<DynamoChangesStorage>", () => {
 
         const readChanges = await storage.getAllChangesAfter(50);
         expect(readChanges).toHaveLength(153);
+    });
+
+    it("should clear all", async() => {
+        await storage.clearBefore(Date.now() + 10000);
+        expect(await storage.count()).toBe(0);
+    });
+
+    it("should properly store and read vectors with floating point", async() => {
+        const vector = {
+            label: "test",
+            metadata: {},
+            vector: [
+                Math.random(),
+                Math.random(),
+                Math.random()
+            ]
+        };
+
+        await storage.add([{
+            action: "add",
+            timestamp: Date.now(),
+            vector
+        }]);
+
+        const readChanges = await readWholeIterator(storage.changesAfter(0));
+
+        expect(readChanges).toEqual([{
+            action: "add",
+            timestamp: expect.any(Number),
+            vector: expect.any(Object)
+        }]);
+
+        // @ts-ignore
+        expect(readChanges[0].vector.vector).toEqual(vector.vector.map((v) => expect.closeTo(v)));
     });
 });

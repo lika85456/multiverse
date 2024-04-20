@@ -6,9 +6,8 @@ import type ChangesStorage from ".";
 import {
     BatchWriteCommand, DynamoDBDocumentClient, QueryCommand
 } from "@aws-sdk/lib-dynamodb";
-import type { StoredVectorChange } from ".";
-import { Vector } from "../core/Vector";
-import type { DatabaseConfiguration } from "../core/DatabaseConfiguration";
+import type { StoredVectorChange } from "./StoredVector";
+import type { DatabaseID } from "../core/DatabaseConfiguration";
 
 const logger = log.getSubLogger({ name: "DynamoChangesStorageDeployer" });
 
@@ -132,13 +131,14 @@ export default class DynamoChangesStorage implements ChangesStorage {
     private dynamo: DynamoDBDocumentClient;
     private TTL = 60 * 60 * 24 * 2; // 2 days
 
-    constructor(private options: DatabaseConfiguration & {
+    constructor(private options: {
+        databaseId: DatabaseID;
         tableName: string;
     }) {
-        const db = new DynamoDB({ region: options.region });
+        const db = new DynamoDB({ region: options.databaseId.region });
         this.dynamo = DynamoDBDocumentClient.from(db);
         this.deployer = new DynamoChangesStorageDeployer({
-            region: this.options.region,
+            region: this.options.databaseId.region,
             tableName: this.options.tableName
         });
     }
@@ -172,13 +172,14 @@ export default class DynamoChangesStorage implements ChangesStorage {
                 [this.options.tableName]: changes.map((change, index) => ({
                     PutRequest: {
                         Item: {
-                            PK: `${this.options.name}`,
+                            PK: `${this.options.databaseId.name}`,
                             SK: change.timestamp * 1000 + index + batchIndexOffset,
                             // shortened to save space
                             action: change.action[0],
 
                             ...(change.action === "add" ? {
-                                vector: new Vector(change.vector.vector).toBase64(),
+                                // vector: new Vector(change.vector.vector).toBase64(),
+                                vector: change.vector.vector,
                                 label: change.vector.label,
                                 ...(change.vector.metadata ? { metadata: change.vector.metadata } : {})
                             } : { label: change.label }),
@@ -205,7 +206,7 @@ export default class DynamoChangesStorage implements ChangesStorage {
                 TableName: this.options.tableName,
                 KeyConditionExpression: "PK = :pk AND SK >= :sk",
                 ExpressionAttributeValues: {
-                    ":pk": this.options.name,
+                    ":pk": this.options.databaseId.name,
                     ":sk": timestamp * 1000
                 },
                 ExclusiveStartKey: lastEvaluatedKey,
@@ -219,7 +220,8 @@ export default class DynamoChangesStorage implements ChangesStorage {
                     timestamp: Math.floor(item.SK / 1000), // flooring is required because of the index floating point
                     ...(item.action === "a" ? {
                         vector: {
-                            vector: Vector.fromBase64(item.vector).toArray(),
+                            // vector: Vector.fromBase64(item.vector).toArray(),
+                            vector: item.vector,
                             label: item.label,
                             metadata: item.metadata
                         }
@@ -231,6 +233,53 @@ export default class DynamoChangesStorage implements ChangesStorage {
         } while (lastEvaluatedKey);
 
         return;
+    }
+
+    public async count(): Promise<number> {
+        const result = await this.dynamo.send(new QueryCommand({
+            TableName: this.options.tableName,
+            KeyConditionExpression: "PK = :pk",
+            ExpressionAttributeValues: { ":pk": this.options.databaseId.name },
+            Select: "COUNT"
+        }));
+
+        return result.Count ?? 0;
+    }
+
+    /**
+     * removes all changes before the given timestamp
+     * @param timestamp
+     */
+    public async clearBefore(timestamp: number): Promise<void> {
+        let lastEvaluatedKey: any = undefined;
+
+        do {
+            const result = await this.dynamo.send(new QueryCommand({
+                TableName: this.options.tableName,
+                KeyConditionExpression: "PK = :pk AND SK < :sk",
+                ExpressionAttributeValues: {
+                    ":pk": this.options.databaseId.name,
+                    ":sk": timestamp * 1000
+                },
+                ExclusiveStartKey: lastEvaluatedKey,
+                ScanIndexForward: true
+            }));
+
+            const keys = result.Items?.map(item => ({
+                PK: item.PK,
+                SK: item.SK
+            }));
+
+            if (keys) {
+                // split by batches of 25
+                for (let i = 0; i < keys.length; i += 25) {
+                    // eslint-disable-next-line max-len
+                    await this.dynamo.send(new BatchWriteCommand({ RequestItems: { [this.options.tableName]: keys.slice(i, i + 25).map(key => ({ DeleteRequest: { Key: key } })) } }));
+                }
+            }
+
+            lastEvaluatedKey = result.LastEvaluatedKey;
+        } while (lastEvaluatedKey);
     }
 
     public async getAllChangesAfter(timestamp: number): Promise<StoredVectorChange[]> {
