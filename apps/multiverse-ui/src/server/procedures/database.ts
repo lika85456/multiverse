@@ -242,7 +242,7 @@ export const database = router({
                 if (configuration.statisticsQueueName === undefined) {
                     log.info(`Setting queue ${sessionUser.sqsQueue} to the existing database ${configuration.name}`);
                     configuration.statisticsQueueName = sessionUser.sqsQueue;
-                    // TODO - set the queue to the multiverseDB
+                    await database.updateConfiguration(configuration);
                 }
 
                 // guaranteed that the database is stored in the mongodb
@@ -305,7 +305,7 @@ export const database = router({
                 if (configuration.statisticsQueueName === undefined) {
                     log.info(`Setting queue ${sessionUser.sqsQueue} to the existing database ${configuration.name}`);
                     configuration.statisticsQueueName = sessionUser.sqsQueue;
-                    // TODO - set the queue to the multiverseDB
+                    await multiverseDatabase?.updateConfiguration(configuration);
                 }
 
                 const storedDatabase = await storeDatabase(configuration);

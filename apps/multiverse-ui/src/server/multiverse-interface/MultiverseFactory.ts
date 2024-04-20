@@ -27,15 +27,15 @@ export class MultiverseFactory {
             throw new Error("No AWS Token to create the multiverse");
         }
 
-        // if (ENV.NODE_ENV === "development") {
-        //     return Promise.resolve(new MultiverseMock({
-        //         awsToken: {
-        //             accessKeyId: awsToken.accessKeyId,
-        //             secretAccessKey: awsToken.secretAccessKey,
-        //         },
-        //         region: "eu-central-1",
-        //     }));
-        // }
+        if (ENV.NODE_ENV === "development") {
+            return Promise.resolve(new MultiverseMock({
+                awsToken: {
+                    accessKeyId: awsToken.accessKeyId,
+                    secretAccessKey: awsToken.secretAccessKey,
+                },
+                region: "eu-central-1",
+            }));
+        }
 
         return Promise.resolve(new Multiverse({
             awsToken: {
