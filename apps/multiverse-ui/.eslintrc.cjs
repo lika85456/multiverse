@@ -5,6 +5,10 @@ const config = {
     "custom/base",
     "custom/react",
   ],
+
+  ignorePatterns: [
+      "src/components"
+  ]
 };
 
 module.exports = config;

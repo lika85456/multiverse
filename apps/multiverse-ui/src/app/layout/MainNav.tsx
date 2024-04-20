@@ -6,7 +6,7 @@ import NavigationOptions from "@/app/layout/NavigationOptions";
 import ThemePicker from "@/app/layout/ThemePicker";
 import LoginOptions from "@/app/layout/LoginOptions";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth/auth";
 
 export default async function MainNav() {
     const session = await getServerSession(authOptions);

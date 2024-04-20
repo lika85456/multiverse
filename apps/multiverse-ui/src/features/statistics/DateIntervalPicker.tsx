@@ -164,6 +164,7 @@ export function DateIntervalPicker({
                             PredefinedOptions.CUSTOM,
                         ].map((option) => {
                             return (
+                                // eslint-disable-next-line jsx-a11y/click-events-have-key-events,jsx-a11y/no-noninteractive-element-interactions
                                 <li
                                     key={option}
                                     onClick={handlePredefinedOptionChoice.bind(null, option)}
