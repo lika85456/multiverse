@@ -71,7 +71,7 @@ const stringToAlphaNumeric = (str: string): string => {
 const generateDatabaseCodeName = (name: string): string => {
     const slicedAlphanumericalName = stringToAlphaNumeric(name).slice(0, 12);
 
-    return `${slicedAlphanumericalName}_${generateHex(MAX_DB_CODE_NAME_LENGTH - slicedAlphanumericalName.length - 1)}`;
+    return `${slicedAlphanumericalName}-${generateHex(MAX_DB_CODE_NAME_LENGTH - slicedAlphanumericalName.length - 1)}`;
 };
 
 /**
@@ -224,9 +224,10 @@ export const database = router({
             const dbsToBeCreated = sessionUser.dbsToBeCreated || [];
             const dbsToBeDeleted = sessionUser.dbsToBeDeleted || [];
 
+            log.debug("Listing databases");
             const multiverse = await (new MultiverseFactory()).getMultiverse();
             const listedDatabases = await multiverse.listDatabases();
-
+            log.debug("Listed databases", JSON.stringify(listedDatabases, null, 2));
             const databases = (await Promise.all(listedDatabases.map(async(database): Promise<(DatabaseGet | undefined)> => {
                 const configuration = await database.getConfiguration();
 
@@ -351,6 +352,14 @@ export const database = router({
             codeName = generateDatabaseCodeName(opts.input.name);
             const name = opts.input.name;
 
+            const secretTokenList = [
+                {
+                    name: "default",
+                    secret: "1234567890",
+                    validUntil: Date.now() + 1000 * 60 * 60 * 24 * 365
+                }
+            ];
+
             // add the database to the user's list of databases to be created
             await addDatabaseToBeCreatedToUser(sessionUser._id, codeName);
 
@@ -359,7 +368,7 @@ export const database = router({
             // create the database in the multiverse
             const database: MultiverseDatabaseConfiguration = {
                 name: codeName,
-                secretTokens: opts.input.secretTokens,
+                secretTokens: secretTokenList, //opts.input.secretTokens,
                 dimensions: opts.input.dimensions,
                 region: opts.input.region as "eu-central-1",
                 space: opts.input.space as "l2" | "cosine" | "ip",
