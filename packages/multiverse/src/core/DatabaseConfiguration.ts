@@ -5,7 +5,7 @@ export type Region = "eu-central-1";
 
 export const databaseId = z.object({
     name: z.string(),
-    region: z.string(), // main region, compute lambdas can be in different regions
+    region: z.enum(["eu-central-1"]) as z.ZodType<Region>,
 });
 
 export type DatabaseID = z.infer<typeof databaseId>;

@@ -106,6 +106,8 @@ export default class PartitionWorker implements Worker {
 
         await this.partition;
 
+        log.debug("Trying lambdas by priority: ", await this.lambdasByPriority);
+
         for (const lambdaState of await this.lambdasByPriority) {
             try {
                 const worker = this.lambdaFactory(lambdaState.name, lambdaState.region, 0);

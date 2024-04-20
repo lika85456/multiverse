@@ -1,5 +1,5 @@
 import DynamoChangesStorage from "../ChangesStorage/DynamoChangesStorage";
-import type { DatabaseConfiguration } from "../core/DatabaseConfiguration";
+import type { DatabaseConfiguration, DatabaseID } from "../core/DatabaseConfiguration";
 import S3SnapshotStorage from "../SnapshotStorage/S3SnapshotStorage";
 import LambdaWorker from "./LambdaWorker";
 
@@ -8,7 +8,7 @@ import LambdaWorker from "./LambdaWorker";
  */
 describe("<LambdaWorker>", () => {
 
-    const databaseId = {
+    const databaseId: DatabaseID = {
         name: "lambda_worker_test_db",
         region: "eu-central-1",
     };

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 /**
  * This is the entry point for Orchestrator lambda.
  */
@@ -6,48 +7,33 @@ import log from "@multiverse/log";
 import type {
     APIGatewayProxyEvent, APIGatewayProxyResult, Context
 } from "aws-lambda";
-import IndexManager from "./OLD/IndexManager";
-import InfrastructureManager from "./OLD/InfrastructureManager";
 import { ORCHESTRATOR_ENV } from "./env";
 import DynamoChangesStorage from "../ChangesStorage/DynamoChangesStorage";
 import InfrastructureStorage from "../InfrastructureStorage/DynamoInfrastructureStorage";
-import lambdaDatabaseClientFactory from "../Compute/LambdaWorker";
-import type Orchestrator from "./Orchestrator";
+import Orchestrator from "./OrchestratorWorker";
 
 type OrchestratorEvent = {
     event: keyof Orchestrator,
     payload: Parameters<Orchestrator[keyof Orchestrator]>
 };
 
-const indexConfiguration = ORCHESTRATOR_ENV.DATABASE_CONFIG;
+const databaseConfiguration = ORCHESTRATOR_ENV.DATABASE_CONFIG;
 
 const changesStorage = new DynamoChangesStorage({
     tableName: ORCHESTRATOR_ENV.CHANGES_TABLE,
-    databaseId: 
+    databaseId: ORCHESTRATOR_ENV.DATABASE_IDENTIFIER
 });
 
 const infrastructureStorage = new InfrastructureStorage({
-    region: indexConfiguration.region,
-    tableName: ORCHESTRATOR_ENV.INFRASTRUCTURE_TABLE
+    tableName: ORCHESTRATOR_ENV.INFRASTRUCTURE_TABLE,
+    region: ORCHESTRATOR_ENV.DATABASE_IDENTIFIER.region,
 });
 
-const indexManager = new IndexManager({
+const orchestrator = new Orchestrator({
     changesStorage,
-    databasePartitionFactory: lambdaDatabaseClientFactory,
-    indexConfiguration,
+    databaseConfiguration,
+    databaseId: ORCHESTRATOR_ENV.DATABASE_IDENTIFIER,
     infrastructureStorage
-});
-
-const infrastructureManager = new InfrastructureManager({
-    changesTable: ORCHESTRATOR_ENV.CHANGES_TABLE,
-    indexConfiguration,
-    infrastructureStorage,
-    snapshotBucket: ORCHESTRATOR_ENV.SNAPSHOT_BUCKET,
-});
-
-const orchestratorWorker = new OrchestratorWorker({
-    indexManager,
-    infrastructureManager
 });
 
 export async function handler(
@@ -70,7 +56,7 @@ export async function handler(
     const e = JSON.parse(event.body) as OrchestratorEvent;
 
     // @ts-ignore
-    const result = await orchestratorWorker[e.event](...e.payload);
+    const result = await orchestrator[e.event](...e.payload);
 
     return {
         statusCode: 200,

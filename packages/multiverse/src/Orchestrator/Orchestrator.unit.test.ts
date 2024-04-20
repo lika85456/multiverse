@@ -8,7 +8,7 @@ import type { Query } from "../core/Query";
 import MockIndex from "../Index/MockIndex";
 import MemoryInfrastructureStorage from "../InfrastructureStorage/MemoryInfrastructureStorage";
 import LocalSnapshotStorage from "../SnapshotStorage/LocalSnapshotStorage";
-import Orchestrator from "./Orchestrator";
+import Orchestrator from "./OrchestratorWorker";
 
 describe("<Orchestrator>", () => {
 
@@ -176,4 +176,5 @@ describe("<Orchestrator>", () => {
             expect(result.result.length).toBe(15);
         }
     });
+
 });

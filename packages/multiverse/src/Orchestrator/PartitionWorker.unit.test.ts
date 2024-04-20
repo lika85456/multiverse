@@ -7,6 +7,10 @@ import MemoryInfrastructureStorage from "../InfrastructureStorage/MemoryInfrastr
 import LocalSnapshotStorage from "../SnapshotStorage/LocalSnapshotStorage";
 import PartitionWorker from "./PartitionWorker";
 
+test("zadek", async() => {
+
+});
+
 describe("<PartitionWorker>", () => {
 
     let changesStorage: MemoryChangesStorage;
@@ -56,7 +60,7 @@ describe("<PartitionWorker>", () => {
     beforeEach(async() => {
 
         changesStorage = new MemoryChangesStorage();
-        snapshotStorage = new LocalSnapshotStorage("test");
+        snapshotStorage = new LocalSnapshotStorage(Math.random() + "");
         config = {
             secretTokens: [],
             dimensions: 3,
