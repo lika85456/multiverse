@@ -10,8 +10,8 @@ import {
 } from "@/lib/mongodb/collections/aws-token";
 import { deleteAllDatabases } from "@/lib/mongodb/collections/database";
 import { TRPCError } from "@trpc/server";
-import { MultiverseFactory } from "@/server/multiverse-interface/MultiverseFactory";
-import { SQSHandler } from "@/features/statistics/statistics-processor/SQSHandler";
+import { MultiverseFactory } from "@/lib/multiverse-interface/MultiverseFactory";
+import { SQSHandler } from "@/lib/statistics-processor/SQSHandler";
 import { GetCallerIdentityCommand, STSClient } from "@aws-sdk/client-sts";
 import log from "@multiverse/log";
 import { handleError } from "@/server";

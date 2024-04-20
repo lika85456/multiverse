@@ -4,7 +4,7 @@ import { getRelatedDatabase, normalizeString } from "@/server/procedures/databas
 import { TRPCError } from "@trpc/server";
 import log from "@multiverse/log";
 import { handleError } from "@/server";
-import { generateHex } from "@/server/multiverse-interface/MultiverseMock";
+import { generateHex } from "@/lib/multiverse-interface/MultiverseMock";
 
 const MAX_TOKEN_NAME_LENGTH = 16;
 

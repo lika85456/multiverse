@@ -1,4 +1,4 @@
-import type { Event } from "@/features/statistics/statistics-processor/event";
+import type { Event } from "@/lib/statistics-processor/event";
 import type { DailyStatisticsAdd } from "@/lib/mongodb/collections/daily-statistics";
 import { convertToISODate } from "@/lib/mongodb/collections/daily-statistics";
 import { addDailyStatistics } from "@/lib/mongodb/collections/daily-statistics";

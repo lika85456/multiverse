@@ -1,7 +1,7 @@
 import { ENV } from "@/lib/env";
-import type { IMultiverse } from "@multiverse/multiverse/src";
-import Multiverse from "@multiverse/multiverse/src";
-import { MultiverseMock } from "@/server/multiverse-interface/MultiverseMock";
+import type { IMultiverse } from "@multiverse/multiverse";
+import Multiverse from "@multiverse/multiverse";
+import { MultiverseMock } from "@/lib/multiverse-interface/MultiverseMock";
 import type { UserGet } from "@/lib/mongodb/collections/user";
 import { getSessionUser } from "@/lib/mongodb/collections/user";
 import { getAwsTokenByOwner } from "@/lib/mongodb/collections/aws-token";

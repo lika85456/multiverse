@@ -1,6 +1,6 @@
-import { SQSHandler } from "@/features/statistics/statistics-processor/SQSHandler";
+import { SQSHandler } from "@/lib/statistics-processor/SQSHandler";
 import { getAllQueuesWithCredentials } from "@/lib/mongodb/collections/user";
-import { StatisticsProcessor } from "@/features/statistics/statistics-processor/StatisticsProcessor";
+import { StatisticsProcessor } from "@/lib/statistics-processor/StatisticsProcessor";
 
 export async function POST() {
     const queuesWithCredentials = await getAllQueuesWithCredentials();

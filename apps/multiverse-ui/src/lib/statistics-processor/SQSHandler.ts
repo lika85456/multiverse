@@ -1,5 +1,5 @@
 import { getSessionUser } from "@/lib/mongodb/collections/user";
-import { generateHex } from "@/server/multiverse-interface/MultiverseMock";
+import { generateHex } from "@/lib/multiverse-interface/MultiverseMock";
 import type { ReceiveMessageCommandInput } from "@aws-sdk/client-sqs";
 import { DeleteMessageCommand } from "@aws-sdk/client-sqs";
 import { ReceiveMessageCommand } from "@aws-sdk/client-sqs";
@@ -7,7 +7,7 @@ import {
     CreateQueueCommand, DeleteQueueCommand, GetQueueUrlCommand, SQSClient
 } from "@aws-sdk/client-sqs";
 import { getAwsTokenById } from "@/lib/mongodb/collections/aws-token";
-import type { Event } from "@/features/statistics/statistics-processor/event";
+import type { Event } from "@/lib/statistics-processor/event";
 import log from "@multiverse/log";
 
 export interface ISQSHandler {

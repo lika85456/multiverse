@@ -1,15 +1,15 @@
 import type {
     IMultiverse, IMultiverseDatabase, MultiverseDatabaseConfiguration
-} from "@multiverse/multiverse/src";
+} from "@multiverse/multiverse";
 
-import type { Token } from "@multiverse/multiverse/src/core/DatabaseConfiguration";
+import type { Token } from "../../../../../packages/multiverse/src/core/DatabaseConfiguration";
 import type {
     Query, QueryResult, SearchResultVector
-} from "@multiverse/multiverse/src/core/Query";
-import type { NewVector } from "@multiverse/multiverse/src/core/Vector";
+} from "../../../../../packages/multiverse/src/core/Query";
+import type { NewVector } from "../../../../../packages/multiverse/src/core/Vector";
 import type {
     AddEvent, Event, QueryEvent, RemoveEvent
-} from "@/features/statistics/statistics-processor/event";
+} from "@/lib/statistics-processor/event";
 import {
     GetQueueUrlCommand, SendMessageCommand, SQSClient
 } from "@aws-sdk/client-sqs";
