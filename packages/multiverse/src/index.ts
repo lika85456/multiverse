@@ -12,13 +12,11 @@ import LambdaOrchestrator from "./Orchestrator/LambdaOrchestrator";
 import logger from "@multiverse/log";
 import DynamoChangesStorage from "./ChangesStorage/DynamoChangesStorage";
 import S3SnapshotStorage from "./SnapshotStorage/S3SnapshotStorage";
+import type { AwsToken } from "./core/AwsToken";
 
 const log = logger.getSubLogger({ name: "Multiverse" });
 
-export type AwsToken = {
-    accessKeyId: string;
-    secretAccessKey: string;
-};
+export type { AwsToken } from "./core/AwsToken";
 
 export type MultiverseDatabaseConfiguration = StoredDatabaseConfiguration & DatabaseID;
 
@@ -57,7 +55,7 @@ export class MultiverseDatabase implements IMultiverseDatabase {
         name: string,
         region: Region,
         secretToken: string,
-        awsToken: AwsToken
+        awsToken?: AwsToken
     }) {
         this.orchestrator = new LambdaOrchestrator({
             databaseId: {
@@ -136,7 +134,8 @@ export default class Multiverse implements IMultiverse {
 
         this.infrastructureStorage = new DynamoInfrastructureStorage({
             region: options.region,
-            tableName: this.INFRASTRUCTURE_TABLE_NAME
+            tableName: this.INFRASTRUCTURE_TABLE_NAME,
+            awsToken: this.awsToken
         });
     }
 
@@ -186,12 +185,14 @@ export default class Multiverse implements IMultiverse {
 
         const changesStorage = new DynamoChangesStorage({
             databaseId,
-            tableName: `multiverse-changes-${options.name}`
+            tableName: `multiverse-changes-${options.name}`,
+            awsToken: this.awsToken
         });
 
         const snapshotStorage = new S3SnapshotStorage({
             bucketName: `multiverse-snapshot-${options.name}`,
-            databaseId
+            databaseId,
+            awsToken: this.awsToken
         });
 
         const orchestrator = new LambdaOrchestrator({

@@ -14,8 +14,8 @@ import { orchestratorEnvSchema } from "./EnvSchema";
 import DynamoInfrastructureStorage from "../InfrastructureStorage/DynamoInfrastructureStorage";
 import LambdaWorker from "../Compute/LambdaWorker";
 import type { OrchestratorEvent } from "./Orchestrator";
-import type { AwsToken } from "..";
 import fs from "fs/promises";
+import type { AwsToken } from "../core/AwsToken";
 
 const log = logger.getSubLogger({ name: "LambdaOrchestrator" });
 
