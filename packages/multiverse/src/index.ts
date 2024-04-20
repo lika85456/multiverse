@@ -1,18 +1,26 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import type {
-    DatabaseConfiguration,
-    Region, StoredDatabaseConfiguration, Token
+    DatabaseID, Region, StoredDatabaseConfiguration, Token
 } from "./core/DatabaseConfiguration";
 import type { Query, QueryResult } from "./core/Query";
 import type { NewVector } from "./core/Vector";
-import OrchestratorDeployer from "./Orchestrator/OrchestratorDeployer";
 import { ENV } from "./env";
 import type InfrastructureStorage from "./InfrastructureStorage";
 import DynamoInfrastructureStorage from "./InfrastructureStorage/DynamoInfrastructureStorage";
+import type Orchestrator from "./Orchestrator/Orchestrator";
+import LambdaOrchestrator from "./Orchestrator/LambdaOrchestrator";
+import logger from "@multiverse/log";
+import DynamoChangesStorage from "./ChangesStorage/DynamoChangesStorage";
+import S3SnapshotStorage from "./SnapshotStorage/S3SnapshotStorage";
+
+const log = logger.getSubLogger({ name: "Multiverse" });
 
 export type AwsToken = {
     accessKeyId: string;
     secretAccessKey: string;
 };
+
+export type MultiverseDatabaseConfiguration = StoredDatabaseConfiguration & DatabaseID;
 
 export interface IMultiverseDatabase {
     query(query: Query): Promise<QueryResult>;
@@ -21,7 +29,8 @@ export interface IMultiverseDatabase {
 
     remove(label: string[]): Promise<void>;
 
-    getConfiguration(): Promise<StoredDatabaseConfiguration>;
+    getConfiguration(): Promise<MultiverseDatabaseConfiguration>;
+    updateConfiguration(configuration: MultiverseDatabaseConfiguration): Promise<void>;
 
     addToken(token: Token): Promise<void>;
 
@@ -29,46 +38,67 @@ export interface IMultiverseDatabase {
 }
 
 export interface IMultiverse {
-    createDatabase(options: Omit<StoredDatabaseConfiguration, "region">): Promise<void>;
+    createDatabase(options: MultiverseDatabaseConfiguration): Promise<void>;
 
     removeDatabase(name: string): Promise<void>;
 
     getDatabase(name: string): Promise<IMultiverseDatabase | undefined>
 
     listDatabases(): Promise<IMultiverseDatabase[]>;
+
+    removeSharedInfrastructure(): Promise<void>;
 }
 
 export class MultiverseDatabase implements IMultiverseDatabase {
+
+    private orchestrator: Orchestrator;
+
     constructor(private options: {
         name: string,
         region: Region,
         secretToken: string,
+        awsToken: AwsToken
     }) {
+        this.orchestrator = new LambdaOrchestrator({
+            databaseId: {
+                name: options.name,
+                region: options.region
+            },
+            secretToken: options.secretToken,
+            awsToken: this.options.awsToken
+        });
     }
 
     public async query(query: Query): Promise<QueryResult> {
-
+        return this.orchestrator.query(query);
     }
 
     public async add(vector: NewVector[]) {
-
+        await this.orchestrator.addVectors(vector);
     }
 
     public async remove(label: string[]) {
-
+        await this.orchestrator.removeVectors(label);
     }
 
-    public async getConfiguration() {
-        // TODO read it from db
-        return this.configuration;
+    public async getConfiguration(): Promise<MultiverseDatabaseConfiguration> {
+        return {
+            ...await this.orchestrator.getConfiguration(),
+            name: this.options.name,
+            region: this.options.region
+        };
+    }
+
+    public async updateConfiguration(_configuration: MultiverseDatabaseConfiguration): Promise<void> {
+        // noop
     }
 
     public async addToken(token: Token) {
-
+        await this.orchestrator.addToken(token);
     }
 
     public async removeToken(tokenName: string) {
-
+        await this.orchestrator.removeToken(tokenName);
     }
 }
 
@@ -79,6 +109,8 @@ export class MultiverseDatabase implements IMultiverseDatabase {
  * From here you can manipulate databases. It needs to be initialized with the region and secret token.
  */
 export default class Multiverse implements IMultiverse {
+
+    private INFRASTRUCTURE_TABLE_NAME = "multiverse-infrastructure-storage";
 
     private awsToken: AwsToken;
 
@@ -91,10 +123,6 @@ export default class Multiverse implements IMultiverse {
     constructor(private options: {
         region: Region,
         awsToken?: AwsToken,
-
-        customChangesStorageName?: string,
-        customSnapshotStorageName?: string,
-        customInfrastructureStorageName?: string,
     }) {
 
         if (!options.awsToken && (!ENV.AWS_ACCESS_KEY_ID || !ENV.AWS_SECRET_ACCESS_KEY)) {
@@ -102,16 +130,34 @@ export default class Multiverse implements IMultiverse {
         }
 
         this.awsToken = options.awsToken ?? {
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             accessKeyId: ENV.AWS_ACCESS_KEY_ID!,
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             secretAccessKey: ENV.AWS_SECRET_ACCESS_KEY!
         };
 
         this.infrastructureStorage = new DynamoInfrastructureStorage({
             region: options.region,
-            tableName: options.customInfrastructureStorageName ?? "multiverse-infrastructure-storage"
+            tableName: this.INFRASTRUCTURE_TABLE_NAME
         });
+    }
+
+    private async deploySharedInfrastructure() {
+        if (await this.infrastructureStorage.exists()) {
+            return;
+        }
+
+        log.info("Deploying shared infrastructure");
+
+        await this.infrastructureStorage.deploy();
+    }
+
+    public async removeSharedInfrastructure() {
+        if (!(await this.infrastructureStorage.exists())) {
+            return;
+        }
+
+        log.info("Removing shared infrastructure");
+
+        await this.infrastructureStorage.destroy();
     }
 
     /**
@@ -124,24 +170,48 @@ export default class Multiverse implements IMultiverse {
      *
      * @param options
      */
-    public async createDatabase(options: Omit<DatabaseConfiguration, "region">) {
+    public async createDatabase(options: MultiverseDatabaseConfiguration) {
         if (options.secretTokens.length === 0) {
             throw new Error("At least one secret token is required");
         }
 
-        // TODO: create infrastructure if doesnt exist
+        // TODO If fails remove the rest
 
-        const orchestratorDeployer = new OrchestratorDeployer({
-            databaseConfiguration: {
-                ...options,
-                region: this.options.region
-            },
-            changesTable: this.options.customChangesStorageName ?? "multiverse-changes-storage",
-            snapshotBucket: this.options.customSnapshotStorageName ?? "multiverse-snapshot-storage",
-            infrastructureTable: this.options.customInfrastructureStorageName ?? "multiverse-infrastructure-storage",
+        await this.deploySharedInfrastructure();
+
+        const databaseId = {
+            name: options.name,
+            region: options.region
+        };
+
+        const changesStorage = new DynamoChangesStorage({
+            databaseId,
+            tableName: `multiverse-changes-${options.name}`
         });
 
-        await orchestratorDeployer.deploy();
+        const snapshotStorage = new S3SnapshotStorage({
+            bucketName: `multiverse-snapshot-${options.name}`,
+            databaseId
+        });
+
+        const orchestrator = new LambdaOrchestrator({
+            databaseId,
+            secretToken: options.secretTokens[0].secret,
+            awsToken: this.awsToken
+        });
+
+        log.info(`Creating database ${options.name}`);
+
+        await Promise.all([
+            changesStorage.deploy(),
+            snapshotStorage.deploy(),
+            orchestrator.deploy({
+                changesTable: `multiverse-changes-${options.name}`,
+                snapshotBucket: `multiverse-snapshot-${options.name}`,
+                databaseConfiguration: options,
+                infrastructureTable: this.INFRASTRUCTURE_TABLE_NAME
+            })
+        ]);
     }
 
     /**
@@ -150,7 +220,34 @@ export default class Multiverse implements IMultiverse {
      * @param name
      */
     public async removeDatabase(name: string) {
+        const databaseId = {
+            name: name,
+            region: this.options.region
+        };
 
+        const changesStorage = new DynamoChangesStorage({
+            databaseId,
+            tableName: `multiverse-changes-${name}`
+        });
+
+        const snapshotStorage = new S3SnapshotStorage({
+            bucketName: `multiverse-snapshot-${name}`,
+            databaseId
+        });
+
+        const orchestrator = new LambdaOrchestrator({
+            databaseId,
+            secretToken: "not needed",
+            awsToken: this.awsToken
+        });
+
+        log.info(`Removing database ${name}`);
+
+        await Promise.all([
+            changesStorage.destroy(),
+            snapshotStorage.destroy(),
+            orchestrator.destroy()
+        ]);
     }
 
     /**
@@ -159,22 +256,33 @@ export default class Multiverse implements IMultiverse {
      * @returns Database or undefined if it doesn't exist
      */
     public async getDatabase(name: string): Promise<MultiverseDatabase | undefined> {
+        await this.deploySharedInfrastructure();
+
         const databaseConfiguration = await this.infrastructureStorage.get(name);
 
         if (!databaseConfiguration) {
             return undefined;
         }
 
-        return new MultiverseDatabase(databaseConfiguration.configuration);
+        return new MultiverseDatabase({
+            name,
+            region: this.options.region,
+            // TODO: find better way to obtain a token?
+            secretToken: databaseConfiguration.configuration.secretTokens[0].secret,
+            awsToken: this.awsToken
+        });
     }
 
     public async listDatabases(): Promise<MultiverseDatabase[]> {
+        await this.deploySharedInfrastructure();
+
         const databases = await this.infrastructureStorage.list();
 
-        return databases.map(d => new MultiverseDatabase(d.configuration));
-    }
-
-    public async removeSharedInfrastructure() {
-
+        return databases.map(database => new MultiverseDatabase({
+            name: database.databaseId.name,
+            region: this.options.region,
+            secretToken: database.configuration.secretTokens[0].secret,
+            awsToken: this.awsToken
+        }));
     }
 }

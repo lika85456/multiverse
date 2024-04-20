@@ -1,24 +1,12 @@
-import z from "zod";
+/* eslint-disable turbo/no-undeclared-env-vars */
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { prettifyIssues } from "@multiverse/env";
-import { config } from "dotenv";
-import path from "path";
-import log from "@multiverse/log";
-import type { DatabaseConfiguration } from "../core/DatabaseConfiguration";
-
-config({ path: path.join(__dirname, "..", "..", "..", process.env.NODE_ENV === "test" ? ".env.test" : ".env"), });
-
-export const databaseEnvSchema = z.object({
-    NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
-    CHANGES_TABLE: z.string(),
-    SNAPSHOT_BUCKET: z.string(),
-    DATABASE_CONFIG: z.string().transform<DatabaseConfiguration>(value => JSON.parse(value)),
-    PARTITION: z.string().transform<number>(value => parseInt(value)),
-});
-
-export type DatabaseEnvironment = z.infer<typeof databaseEnvSchema>;
+import { databaseEnvSchema } from "./EnvSchema";
+import type { z } from "zod";
+// import log from "@multiverse/log";
 
 export const getEnvIssues = (): z.ZodIssue[] => {
-    const result = databaseEnvSchema.safeParse(process.env);
+    const result = databaseEnvSchema.safeParse(JSON.parse(process.env.VARIABLES!));
     if (!result.success) return result.error.issues;
 
     return [];
@@ -27,23 +15,6 @@ export const getEnvIssues = (): z.ZodIssue[] => {
 const issues = getEnvIssues();
 prettifyIssues(issues);
 
-let env: DatabaseEnvironment;
-if (process.env.NODE_ENV === "development") {
-    log.info("Hard coded development environment loaded.");
-    env = {
-        NODE_ENV: "development",
-        CHANGES_TABLE: "multiverse-changes-dev",
-        SNAPSHOT_BUCKET: "multiverse-snapshots-dev",
-        DATABASE_CONFIG: {
-            region: "eu-central-1",
-            dimensions: 1536,
-            space: "cosine",
-            name: "multiverse-index-dev",
-        },
-        PARTITION: 0,
-    };
-} else {
-    env = databaseEnvSchema.parse(process.env);
-}
+const env = databaseEnvSchema.parse(JSON.parse(process.env.VARIABLES!));
 
 export const DATABASE_ENV = env;

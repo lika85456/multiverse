@@ -1,12 +1,9 @@
 import type { Infrastructure } from ".";
 import type { WorkerState } from "../Compute/Worker";
-import DynamoInfrastructureStorage from "./DynamoInfrastructureStorage";
+import MemoryInfrastructureStorage from "./MemoryInfrastructureStorage";
 
-describe("<DynamoInfrastructureStorage>", () => {
-    const storage = new DynamoInfrastructureStorage({
-        region: "eu-central-1",
-        tableName: "multiverse-test-infrastructure-storage-" + Date.now()
-    });
+describe("<MemoryInfrastructureStorage>", () => {
+    const storage = new MemoryInfrastructureStorage();
 
     beforeAll(async() => {
         await storage.deploy();

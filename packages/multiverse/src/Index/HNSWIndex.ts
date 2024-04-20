@@ -1,4 +1,4 @@
-import { HierarchicalNSW, } from "hnswlib-node";
+import { HierarchicalNSW } from "hnswlib-node";
 import type Index from ".";
 import type { Query, SearchResultVector } from "../core/Query";
 import crypto from "crypto";

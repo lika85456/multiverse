@@ -1,14 +1,16 @@
-import type { Environment } from "@aws-sdk/client-lambda";
 import { Lambda, waitUntilFunctionActiveV2 } from "@aws-sdk/client-lambda";
 import log from "@multiverse/log";
 import type {
-    Worker, WorkerQuery, WorkerQueryResult,
-    WorkerState
+    StatefulResponse,
+    Worker, WorkerQuery, WorkerQueryResult
 } from "./Worker";
-import type { DatabaseEnvironment } from "./env";
-import type { DatabaseConfiguration } from "../core/DatabaseConfiguration";
+import type {
+    DatabaseConfiguration, DatabaseID, Region
+} from "../core/DatabaseConfiguration";
 import { IAM } from "@aws-sdk/client-iam";
-import type { NewVector } from "../core/Vector";
+import type { StoredVectorChange } from "../ChangesStorage/StoredVector";
+import type { DatabaseEnvironment } from "./EnvSchema";
+import { databaseEnvSchema } from "./EnvSchema";
 
 const logger = log.getSubLogger({ name: "LambdaWorker" });
 
@@ -16,82 +18,65 @@ export default class LambdaWorker implements Worker {
 
     private lambda: Lambda;
 
-    constructor(private lambdaName: string, private configuration: DatabaseConfiguration) {
-        this.lambda = new Lambda({ region: configuration.region });
+    constructor(private options: {
+        lambdaName: string;
+        region: Region;
+        waitTime?: number
+    }) {
+        this.lambda = new Lambda({ region: options.region });
     }
 
-    public async state(): Promise<WorkerState> {
-        const result = await this.invoke({
+    public async state(): Promise<StatefulResponse<void>> {
+        return await this.invoke({
             event: "state",
             payload: []
         });
-
-        return {
-            instanceId: result.instanceId,
-            lastUpdate: result.lastUpdate,
-            memoryUsed: result.memoryUsed,
-            memoryLimit: result.memoryLimit,
-            ephemeralUsed: result.ephemeralUsed,
-            ephemeralLimit: result.ephemeralLimit
-        };
     }
 
-    public async query(query: WorkerQuery): Promise<WorkerQueryResult> {
+    public async query(query: WorkerQuery): Promise<StatefulResponse<WorkerQueryResult>> {
         return await this.invoke({
             event: "query",
             payload: [query]
         });
     }
 
-    public async add(vectors: NewVector[]): Promise<void> {
-        await this.invoke({
-            event: "add",
-            payload: [vectors]
+    public async update(updates: StoredVectorChange[]): Promise<StatefulResponse<void>> {
+        return await this.invoke({
+            event: "update",
+            payload: [updates]
         });
     }
 
-    public async remove(labels: string[]): Promise<void> {
-        await this.invoke({
-            event: "remove",
-            payload: [labels]
-        });
-    }
-
-    public async wake(wait: number): Promise<void> {
-        await this.invoke({
-            event: "wake",
-            payload: [wait]
-        });
-    }
-
-    public async saveSnapshot(): Promise<void> {
-        await this.invoke({
+    public async saveSnapshot(): Promise<StatefulResponse<void>> {
+        return await this.invoke({
             event: "saveSnapshot",
             payload: []
         });
     }
 
-    public async loadLatestSnapshot(): Promise<void> {
-        await this.invoke({
+    public async saveSnapshotWithUpdates(updates: StoredVectorChange[]): Promise<StatefulResponse<void>> {
+        return await this.invoke({
+            event: "saveSnapshotWithUpdates",
+            payload: [updates]
+        });
+    }
+
+    public async loadLatestSnapshot(): Promise<StatefulResponse<void>> {
+        return await this.invoke({
             event: "loadLatestSnapshot",
             payload: []
         });
     }
 
-    public async count(): Promise<{ vectors: number; vectorDimensions: number; }> {
-        const result = await this.invoke({
+    public async count(): Promise<StatefulResponse<{ vectors: number; vectorDimensions: number; }>> {
+        return await this.invoke({
             event: "count",
             payload: []
         });
-
-        return {
-            vectors: result.vectors,
-            vectorDimensions: result.vectorDimensions
-        };
     }
 
     private async lambdaRoleARN(): Promise<string> {
-        const iam = new IAM({ region: this.configuration.region });
+        const iam = new IAM({ region: this.options.region });
 
         const roleName = "multiverse-database-role";
 
@@ -159,12 +144,24 @@ export default class LambdaWorker implements Worker {
         partition: number,
         changesTable: string,
         snapshotBucket: string,
-        env: "development" | "production"
+        env: "development" | "production",
+        configuration: DatabaseConfiguration,
+        databaseId: DatabaseID
     }) {
-        const lambda = new Lambda({ region: this.configuration.region });
 
-        const result = await lambda.createFunction({
-            FunctionName: this.lambdaName,
+        const variables: DatabaseEnvironment = {
+            DATABASE_CONFIG: options.configuration,
+            DATABASE_IDENTIFIER: options.databaseId,
+            PARTITION: options.partition,
+            CHANGES_TABLE: options.changesTable,
+            SNAPSHOT_BUCKET: options.snapshotBucket,
+            NODE_ENV: options.env,
+        };
+
+        databaseEnvSchema.parse(variables);
+
+        const result = await this.lambda.createFunction({
+            FunctionName: this.options.lambdaName,
             Code: { ImageUri: "529734186765.dkr.ecr.eu-central-1.amazonaws.com/multiverse:latest" },
             Role: await this.lambdaRoleARN(),
             PackageType: "Image",
@@ -173,41 +170,41 @@ export default class LambdaWorker implements Worker {
             EphemeralStorage: { Size: 1024 },
             Environment: {
                 Variables: {
-                    DATABASE_CONFIG: JSON.stringify(this.configuration) as unknown,
-                    PARTITION: options.partition + "" as unknown,
-                    CHANGES_TABLE: options.changesTable,
-                    SNAPSHOT_BUCKET: options.snapshotBucket,
+                    VARIABLES: JSON.stringify(variables),
                     NODE_ENV: options.env,
-                } as DatabaseEnvironment & Environment["Variables"]
+                }
             }
         });
 
-        logger.debug("Created database lambda", { result });
+        logger.debug("Created compute lambda", { result });
 
         await waitUntilFunctionActiveV2({
-            client: lambda,
+            client: this.lambda,
             maxWaitTime: 600,
         }, { FunctionName: result.FunctionName ?? "undefined" });
     }
 
     public async destroy() {
-        const lambda = new Lambda({ region: this.configuration.region });
+        await this.lambda.deleteFunction({ FunctionName: this.options.lambdaName });
 
-        await lambda.deleteFunction({ FunctionName: this.lambdaName });
-
-        logger.debug("Deleted database lambda", { lambdaName: this.lambdaName });
+        logger.debug("Deleted compute lambda", { lambdaName: this.options.lambdaName });
     }
 
     private async invoke(payload: any): Promise<any> {
 
+        const payloadWithMetadata = {
+            ...payload,
+            waitTime: this.options.waitTime
+        };
+
         log.debug("Invoking lambda", {
-            lambdaName: this.lambdaName,
-            payload
+            lambdaName: this.options.lambdaName,
+            payload: payloadWithMetadata
         });
 
         const result = await this.lambda.invoke({
-            FunctionName: this.lambdaName,
-            Payload: JSON.stringify({ body: JSON.stringify(payload) })
+            FunctionName: this.options.lambdaName,
+            Payload: JSON.stringify({ body: JSON.stringify(payloadWithMetadata) })
         });
 
         const uintPayload = new Uint8Array(result.Payload as ArrayBuffer);
@@ -215,7 +212,7 @@ export default class LambdaWorker implements Worker {
         const parsedPayload = JSON.parse(payloadString);
 
         log.debug("Lambda invoked", {
-            lambdaName: this.lambdaName,
+            lambdaName: this.options.lambdaName,
             result: parsedPayload
         });
 

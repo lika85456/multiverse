@@ -3,11 +3,11 @@ import type { Environment } from "@aws-sdk/client-lambda";
 import {
     Lambda, PackageType, waitUntilFunctionActive
 } from "@aws-sdk/client-lambda";
-import type { StoredDatabaseConfiguration } from "../core/DatabaseConfiguration";
-import type InfrastructureStorage from "../InfrastructureStorage/DynamoInfrastructureStorage";
-import type { DatabaseInfrastructure } from "../InfrastructureStorage/DynamoInfrastructureStorage";
+import type { storedDatabaseConfiguration } from "../../core/DatabaseConfiguration";
+import type InfrastructureStorage from "../../InfrastructureStorage/DynamoInfrastructureStorage";
+import type { DatabaseInfrastructure } from "../../InfrastructureStorage/DynamoInfrastructureStorage";
 import log from "@multiverse/log";
-import type { DatabaseEnvironment } from "../Compute/env";
+import type { DatabaseEnvironment } from "../../Compute/env";
 import OrchestratorDeployer from "./OrchestratorDeployer";
 
 export default class InfrastructureManager {

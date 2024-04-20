@@ -8,7 +8,6 @@ import { CopyIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import format from "@/features/statistics/format";
 import { customToast } from "@/features/fetching/CustomToast";
-import { IoMdArrowDropdown, IoMdArrowDropup } from "react-icons/io";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 
@@ -145,8 +144,6 @@ export default function PriceCalculator() {
     const [reads, setReads] = useState(10_000);
     const [writes, setWrites] = useState(10_000);
 
-    const [isDetailedResult, setIsDetailedResult] = useState(false);
-
     const costs = calculateCost({
         dimensions,
         reads,
@@ -250,7 +247,6 @@ export default function PriceCalculator() {
                         <div className="flex flex-col w-32">
                             <Label className="text-lg mb-4">Dimensions</Label>
                             <Input
-                                defaultValue={1536}
                                 type={"number"}
                                 value={dimensions}
                                 onChange={(e) => {
@@ -261,7 +257,6 @@ export default function PriceCalculator() {
                         <div className="flex flex-col w-64">
                             <Label className="text-lg mb-4">Metadata per vector (B)</Label>
                             <Input
-                                defaultValue={500}
                                 type={"number"}
                                 value={metadataPerVector}
                                 onChange={(e) => {

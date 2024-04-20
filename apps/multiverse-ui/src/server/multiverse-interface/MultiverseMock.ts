@@ -1,6 +1,8 @@
-import type { IMultiverse, IMultiverseDatabase } from "@multiverse/multiverse/src";
+import type {
+    IMultiverse, IMultiverseDatabase, MultiverseDatabaseConfiguration
+} from "@multiverse/multiverse/src";
 
-import type { StoredDatabaseConfiguration, Token } from "@multiverse/multiverse/src/core/DatabaseConfiguration";
+import type { Token } from "@multiverse/multiverse/src/core/DatabaseConfiguration";
 import type {
     Query, QueryResult, SearchResultVector
 } from "@multiverse/multiverse/src/core/Query";
@@ -14,6 +16,7 @@ import {
 import fs from "fs";
 import { UTCDate } from "@date-fns/utc";
 import log from "@multiverse/log";
+import { performance } from "node:perf_hooks";
 
 type DatabaseWrapper = {
     multiverseDatabase: MultiverseDatabaseMock;
@@ -91,14 +94,14 @@ async function refresh() {
 }
 
 class MultiverseDatabaseMock implements IMultiverseDatabase {
-    private readonly databaseConfiguration: StoredDatabaseConfiguration;
+    private databaseConfiguration: MultiverseDatabaseConfiguration;
     private readonly awsToken: {
         accessKeyId: string;
         secretAccessKey: string;
     };
 
     constructor(options: {
-        config: StoredDatabaseConfiguration,
+        config: MultiverseDatabaseConfiguration,
         awsToken: {
             accessKeyId: string;
             secretAccessKey: string;
@@ -119,7 +122,7 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
 
     private async sendStatistics(event: Event): Promise<void> {
         if (!this.databaseConfiguration.statisticsQueueName) {
-            return Promise.resolve(undefined);
+            return;
         }
         const sqsClient = new SQSClient({
             region: "eu-central-1",
@@ -147,13 +150,18 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
         } catch (error) {
             log.error("Error sending statistics: ", error);
         }
-
-        return Promise.resolve(undefined);
     };
 
-    async getConfiguration(): Promise<StoredDatabaseConfiguration> {
+    async getConfiguration(): Promise<MultiverseDatabaseConfiguration> {
 
         return Promise.resolve(this.databaseConfiguration);
+    }
+
+    async updateConfiguration(configuration: MultiverseDatabaseConfiguration): Promise<void> {
+        this.databaseConfiguration = configuration;
+        await refresh();
+
+        return Promise.resolve();
     }
 
     async add(vector: NewVector[]): Promise<void> {
@@ -186,9 +194,7 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
             totalVectors: newValue.vectors.length,
         };
 
-        await this.sendStatistics(event);
-
-        return Promise.resolve(undefined);
+        await this.sendStatistics(event);;
     }
 
     async remove(label: string[]): Promise<void> {
@@ -266,12 +272,10 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
 
         this.databaseConfiguration.secretTokens.push({
             name: token.name,
-            secret: generateHex(16),
+            secret: token.secret,
             validUntil: token.validUntil
         });
         await refresh();
-
-        return Promise.resolve(undefined);
     }
 
     async removeToken(tokenName: string): Promise<void> {
@@ -290,8 +294,6 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
         });
 
         await refresh();
-
-        return Promise.resolve();
     }
 }
 
@@ -313,7 +315,7 @@ export class MultiverseMock implements IMultiverse {
         loadJsonFile();
     }
 
-    async createDatabase(options: Omit<StoredDatabaseConfiguration, "region">,): Promise<void> {
+    async createDatabase(options: MultiverseDatabaseConfiguration,): Promise<void> {
         await loadJsonFile();
 
         await sleep(1000 * 20); // 20 seconds, really fast
@@ -331,8 +333,6 @@ export class MultiverseMock implements IMultiverse {
             vectors: []
         });
         await refresh();
-
-        return Promise.resolve();
     }
 
     async getDatabase(name: string): Promise<IMultiverseDatabase | undefined> {
@@ -342,12 +342,12 @@ export class MultiverseMock implements IMultiverse {
 
         const database = databases.get(name);
         if (!database) {
-            return Promise.resolve(undefined);
+            return;
         }
 
         // Check if the database belongs to the authenticated user
         if (database.multiverseDatabase.getAwsToken().awsToken.accessKeyId !== this.awsToken.accessKeyId) {
-            return Promise.resolve(undefined);
+            return;
         }
 
         return Promise.resolve(database.multiverseDatabase);
@@ -386,5 +386,12 @@ export class MultiverseMock implements IMultiverse {
         await refresh();
 
         return Promise.resolve();
+    }
+
+    async removeSharedInfrastructure(): Promise<void> {
+        const databases = await this.listDatabases();
+        await Promise.all(databases.map(async(database) => {
+            await this.removeDatabase((await database.getConfiguration()).name);
+        }));
     }
 }

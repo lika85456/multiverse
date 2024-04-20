@@ -1,9 +1,9 @@
 import { Lambda } from "@aws-sdk/client-lambda";
 import InfrastructureManager from "./InfrastructureManager";
-import InfrastructureStorage, { InfrastructureStorageDeployer } from "../InfrastructureStorage/DynamoInfrastructureStorage";
+import InfrastructureStorage, { InfrastructureStorageDeployer } from "../../InfrastructureStorage/DynamoInfrastructureStorage";
 import log from "@multiverse/log";
-import { DynamoChangesStorageDeployer } from "../ChangesStorage/DynamoChangesStorage";
-import { S3SnapshotStorageDeployer } from "../SnapshotStorage/S3SnapshotStorage";
+import { DynamoChangesStorageDeployer } from "../../ChangesStorage/DynamoChangesStorage";
+import { S3SnapshotStorageDeployer } from "../../SnapshotStorage/S3SnapshotStorage";
 
 describe("<InfrastructureManager>", () => {
 

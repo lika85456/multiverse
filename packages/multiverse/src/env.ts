@@ -1,9 +1,5 @@
 import z from "zod";
 import { prettifyIssues } from "@multiverse/env";
-import { config } from "dotenv";
-import path from "path";
-
-config({ path: path.join(__dirname, "..", "..", "..", process.env.NODE_ENV === "test" ? ".env.test" : ".env"), });
 
 const envSchema = z.object({
     NODE_ENV: z.enum(["development", "test", "production"]).default("development"),

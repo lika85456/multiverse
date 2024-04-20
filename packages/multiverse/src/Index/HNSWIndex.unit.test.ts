@@ -1,14 +1,17 @@
+import type { DatabaseConfiguration } from "../core/DatabaseConfiguration";
+import { Vector } from "../core/Vector";
 import HNSWIndex from "./HNSWIndex";
 import { execSync } from "child_process";
 
 describe("<HNSWIndex>", () => {
+
+    const config: DatabaseConfiguration = {
+        dimensions: 3,
+        space: "l2",
+    };
+
     describe("Basic functions", () => {
-        const index = new HNSWIndex({
-            dimensions: 3,
-            space: "l2",
-            name: "test",
-            region: "eu-central-1",
-        });
+        const index = new HNSWIndex(config);
 
         it("should be empty", async() => {
             expect(index.physicalSize()).toBe(0);
@@ -50,12 +53,7 @@ describe("<HNSWIndex>", () => {
     });
 
     describe("Query with thousand vectors", () => {
-        const index = new HNSWIndex({
-            dimensions: 3,
-            space: "l2",
-            name: "test",
-            region: "eu-central-1",
-        });
+        const index = new HNSWIndex(config);
 
         beforeAll(async() => {
             const vectors = Array.from({ length: 1000 }, (_, i) => ({
@@ -82,12 +80,7 @@ describe("<HNSWIndex>", () => {
 
     describe("Edge cases", () => {
 
-        const index = new HNSWIndex({
-            dimensions: 3,
-            space: "l2",
-            name: "test",
-            region: "eu-central-1",
-        });
+        const index = new HNSWIndex(config);
 
         it("should fail on wrong query", async() => {
             // wrong amount of dimensions
@@ -116,24 +109,9 @@ describe("<HNSWIndex>", () => {
 
         it("should work with multiple index instances", async() => {
             const instances = [
-                new HNSWIndex({
-                    dimensions: 3,
-                    space: "l2",
-                    name: "test",
-                    region: "eu-central-1",
-                }),
-                new HNSWIndex({
-                    dimensions: 3,
-                    space: "l2",
-                    name: "test",
-                    region: "eu-central-1",
-                }),
-                new HNSWIndex({
-                    dimensions: 3,
-                    space: "l2",
-                    name: "test",
-                    region: "eu-central-1",
-                })
+                new HNSWIndex(config),
+                new HNSWIndex(config),
+                new HNSWIndex(config),
             ];
 
             for (let i = 0; i < 200; i++) {
@@ -155,24 +133,25 @@ describe("<HNSWIndex>", () => {
 
     describe("Saving & Loading", () => {
         const index = new HNSWIndex({
-            dimensions: 3,
+            dimensions: 1536,
             space: "l2",
-            name: "test",
-            region: "eu-central-1",
         });
 
         const path = "/tmp/multiverse-test-index";
+
+        const firstVector = Vector.random(1536);
+        const secondVector = Vector.random(1536);
 
         beforeAll(async() => {
             await index.add([
                 {
                     label: "test label 1",
-                    vector: [1, 2, 3],
+                    vector: firstVector,
                     metadata: { somsing: "smoozie" }
                 },
                 {
                     label: "test label 2",
-                    vector: [4, 5, 6]
+                    vector: secondVector,
                 }
             ]);
         });
@@ -187,20 +166,18 @@ describe("<HNSWIndex>", () => {
 
         it("should load", async() => {
             const newIndex = new HNSWIndex({
-                dimensions: 3,
+                dimensions: 1536,
                 space: "l2",
-                name: "test",
-                region: "eu-central-1",
             });
 
             await newIndex.load(path);
 
             expect(newIndex.physicalSize()).toBe(2);
-            expect(await newIndex.dimensions()).toBe(3);
+            expect(await newIndex.dimensions()).toBe(1536);
 
             const query = {
                 k: 10,
-                vector: [3, 3, 3]
+                vector: firstVector,
             };
 
             const newQueryResult = await newIndex.knn(query);
