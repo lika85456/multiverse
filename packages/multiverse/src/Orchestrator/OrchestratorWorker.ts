@@ -196,7 +196,7 @@ export default class OrchestratorWorker implements Orchestrator {
         });
     }
 
-    public async auth(token: Token): Promise<boolean> {
+    public async auth(secret: string): Promise<boolean> {
         const infrastructure = await this.options.infrastructureStorage.get(this.options.databaseId.name);
 
         if (!infrastructure) {
@@ -204,8 +204,7 @@ export default class OrchestratorWorker implements Orchestrator {
         }
 
         return infrastructure.configuration.secretTokens.some(t =>
-            t.name === token.name
-            && t.secret === token.secret
+            t.secret === secret
             && t.validUntil > Date.now());
     }
 }

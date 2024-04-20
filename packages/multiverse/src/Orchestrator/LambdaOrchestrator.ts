@@ -13,6 +13,7 @@ import type { OrchestratorEnvironment } from "./EnvSchema";
 import { orchestratorEnvSchema } from "./EnvSchema";
 import DynamoInfrastructureStorage from "../InfrastructureStorage/DynamoInfrastructureStorage";
 import LambdaWorker from "../Compute/LambdaWorker";
+import type { OrchestratorEvent } from "./Orchestrator";
 
 const log = logger.getSubLogger({ name: "LambdaOrchestrator" });
 
@@ -22,7 +23,7 @@ export default class LambdaOrchestrator implements Orchestrator {
 
     constructor(private options: {
         databaseId: DatabaseID;
-        databaseConfiguration: StoredDatabaseConfiguration;
+        secretToken: string;
 
     }) {
         this.lambda = new Lambda({ region: options.databaseId.region });
@@ -33,14 +34,15 @@ export default class LambdaOrchestrator implements Orchestrator {
         payload: Parameters<Orchestrator[T]>
     ): Promise<ReturnType<Orchestrator[T]>> {
 
+        const eventPayload: OrchestratorEvent = {
+            event,
+            payload,
+            secretToken: this.options.secretToken
+        };
+
         const result = await this.lambda.invoke({
             FunctionName: this.lambdaName(),
-            Payload: JSON.stringify({
-                body: JSON.stringify({
-                    event,
-                    payload
-                })
-            })
+            Payload: JSON.stringify({ body: JSON.stringify(eventPayload) })
         });
 
         const uintPayload = new Uint8Array(result.Payload as ArrayBuffer);
@@ -49,10 +51,7 @@ export default class LambdaOrchestrator implements Orchestrator {
 
         log.debug("Orchestrator invoked", {
             lambdaName: this.lambdaName(),
-            request: {
-                event,
-                payload
-            },
+            request: eventPayload,
             response: parsedPayload
         });
 
@@ -88,8 +87,8 @@ export default class LambdaOrchestrator implements Orchestrator {
         return this.request("removeToken", [tokenName]);
     }
 
-    public async auth(token: Token): Promise<boolean> {
-        return this.request("auth", [token]);
+    public async auth(secret: string): Promise<boolean> {
+        return this.request("auth", [secret]);
     }
 
     /**
@@ -203,17 +202,18 @@ export default class LambdaOrchestrator implements Orchestrator {
     }
 
     private async deployOrchestratorLambda({
-        changesTable, snapshotBucket, infrastructureTable
+        changesTable, snapshotBucket, infrastructureTable, databaseConfiguration
     }: {
         changesTable: string;
         snapshotBucket: string;
         infrastructureTable: string;
+        databaseConfiguration: StoredDatabaseConfiguration;
     }) {
-        log.debug("Deploying orchestrator lambda function", { configuration: this.options.databaseConfiguration });
+        log.debug("Deploying orchestrator lambda function", { configuration: databaseConfiguration });
 
         const variables: OrchestratorEnvironment = {
             CHANGES_TABLE: changesTable,
-            DATABASE_CONFIG: this.options.databaseConfiguration,
+            DATABASE_CONFIG: databaseConfiguration,
             SNAPSHOT_BUCKET: snapshotBucket,
             INFRASTRUCTURE_TABLE: infrastructureTable,
             DATABASE_IDENTIFIER: this.options.databaseId,
@@ -253,12 +253,13 @@ export default class LambdaOrchestrator implements Orchestrator {
     }
 
     private async deployPartition({
-        changesTable, snapshotBucket, env, partition
+        changesTable, snapshotBucket, env, partition, databaseConfiguration
     }: {
         changesTable: string;
         snapshotBucket: string;
         env: "development" | "production";
         partition: number;
+        databaseConfiguration: StoredDatabaseConfiguration;
     }) {
 
         log.info("Deploying partition", {
@@ -274,7 +275,7 @@ export default class LambdaOrchestrator implements Orchestrator {
         await lambdaWorker.deploy({
             changesTable,
             snapshotBucket,
-            configuration: this.options.databaseConfiguration,
+            configuration: databaseConfiguration,
             databaseId: this.options.databaseId,
             env,
             partition
@@ -302,11 +303,12 @@ export default class LambdaOrchestrator implements Orchestrator {
     }
 
     public async deploy({
-        changesTable, snapshotBucket, infrastructureTable
+        changesTable, snapshotBucket, infrastructureTable, databaseConfiguration
     }: {
         changesTable: string;
         snapshotBucket: string;
         infrastructureTable: string;
+        databaseConfiguration: StoredDatabaseConfiguration;
     }) {
         const infrastructureStorage = new DynamoInfrastructureStorage({
             region: this.options.databaseId.region,
@@ -320,7 +322,7 @@ export default class LambdaOrchestrator implements Orchestrator {
         }
 
         await infrastructureStorage.set(this.options.databaseId.name, {
-            configuration: this.options.databaseConfiguration,
+            configuration: databaseConfiguration,
             databaseId: this.options.databaseId,
             partitions: [{
                 lambda: [{
@@ -345,13 +347,15 @@ export default class LambdaOrchestrator implements Orchestrator {
             this.deployOrchestratorLambda({
                 changesTable,
                 snapshotBucket,
-                infrastructureTable
+                infrastructureTable,
+                databaseConfiguration
             }),
             this.deployPartition({
                 changesTable,
                 snapshotBucket,
                 env: "production",
-                partition: 0
+                partition: 0,
+                databaseConfiguration
             })
         ]);
     }

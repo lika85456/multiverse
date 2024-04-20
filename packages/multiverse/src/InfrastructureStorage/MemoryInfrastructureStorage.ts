@@ -45,4 +45,8 @@ export default class MemoryInfrastructureStorage extends InfrastructureStorage {
     public async destroy() {
         this.storage.clear();
     }
+
+    public async exists() {
+        return true;
+    }
 }

@@ -181,4 +181,8 @@ export default class DynamoInfrastructureStorage extends InfrastructureStorage {
     public async destroy() {
         await this.deployer.destroy();
     }
+
+    public async exists() {
+        return this.deployer.exists();
+    }
 }

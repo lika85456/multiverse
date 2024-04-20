@@ -11,11 +11,7 @@ import { ORCHESTRATOR_ENV } from "./env";
 import DynamoChangesStorage from "../ChangesStorage/DynamoChangesStorage";
 import InfrastructureStorage from "../InfrastructureStorage/DynamoInfrastructureStorage";
 import Orchestrator from "./OrchestratorWorker";
-
-type OrchestratorEvent = {
-    event: keyof Orchestrator,
-    payload: Parameters<Orchestrator[keyof Orchestrator]>
-};
+import type { OrchestratorEvent } from "./Orchestrator";
 
 const databaseConfiguration = ORCHESTRATOR_ENV.DATABASE_CONFIG;
 
@@ -54,6 +50,16 @@ export async function handler(
     }
 
     const e = JSON.parse(event.body) as OrchestratorEvent;
+
+    const authorized = await orchestrator.auth(e.secretToken);
+
+    if (!authorized) {
+        return {
+            statusCode: 403,
+            body: "Unauthorized"
+        };
+
+    }
 
     // @ts-ignore
     const result = await orchestrator[e.event](...e.payload);

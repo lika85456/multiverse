@@ -17,7 +17,11 @@ describe("<Orchestrator - integration>", () => {
     const databaseConfiguration: StoredDatabaseConfiguration = {
         dimensions: 3,
         space: "l2",
-        secretTokens: []
+        secretTokens: [{
+            name: "hovnokleslo",
+            secret: "hovnokleslo",
+            validUntil: Date.now() + 1000 * 60 * 60
+        }]
     };
 
     const changesStorage = new DynamoChangesStorage({
@@ -36,8 +40,8 @@ describe("<Orchestrator - integration>", () => {
     });
 
     const orchestrator = new LambdaOrchestrator({
-        databaseConfiguration,
-        databaseId
+        databaseId,
+        secretToken: "hovnokleslo"
     });
 
     beforeAll(async() => {
@@ -50,7 +54,8 @@ describe("<Orchestrator - integration>", () => {
         await orchestrator.deploy({
             changesTable: databaseId.name + "-changes",
             infrastructureTable: databaseId.name + "-infrastructure",
-            snapshotBucket: databaseId.name + "-snapshot"
+            snapshotBucket: databaseId.name + "-snapshot",
+            databaseConfiguration,
         });
     });
 

@@ -55,6 +55,7 @@ export default abstract class InfrastructureStorage {
 
     abstract deploy(): Promise<void>;
     abstract destroy(): Promise<void>;
+    abstract exists(): Promise<boolean>;
 
     private trimOldInstances(infrastructure: Infrastructure) {
         const now = Date.now();
