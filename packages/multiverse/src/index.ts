@@ -54,13 +54,15 @@ export class MultiverseDatabase implements IMultiverseDatabase {
         name: string,
         region: Region,
         secretToken: string,
+        awsToken: AwsToken
     }) {
         this.orchestrator = new LambdaOrchestrator({
             databaseId: {
                 name: options.name,
                 region: options.region
             },
-            secretToken: options.secretToken
+            secretToken: options.secretToken,
+            awsToken: this.options.awsToken
         });
     }
 
@@ -185,7 +187,8 @@ export default class Multiverse implements IMultiverse {
 
         const orchestrator = new LambdaOrchestrator({
             databaseId,
-            secretToken: options.secretTokens[0].secret
+            secretToken: options.secretTokens[0].secret,
+            awsToken: this.awsToken
         });
 
         log.info(`Creating database ${options.name}`);
@@ -225,7 +228,8 @@ export default class Multiverse implements IMultiverse {
 
         const orchestrator = new LambdaOrchestrator({
             databaseId,
-            secretToken: "not needed"
+            secretToken: "not needed",
+            awsToken: this.awsToken
         });
 
         log.info(`Removing database ${name}`);
@@ -243,6 +247,8 @@ export default class Multiverse implements IMultiverse {
      * @returns Database or undefined if it doesn't exist
      */
     public async getDatabase(name: string): Promise<MultiverseDatabase | undefined> {
+        await this.deploySharedInfrastructure();
+
         const databaseConfiguration = await this.infrastructureStorage.get(name);
 
         if (!databaseConfiguration) {
@@ -253,17 +259,21 @@ export default class Multiverse implements IMultiverse {
             name,
             region: this.options.region,
             // TODO: find better way to obtain a token?
-            secretToken: databaseConfiguration.configuration.secretTokens[0].secret
+            secretToken: databaseConfiguration.configuration.secretTokens[0].secret,
+            awsToken: this.awsToken
         });
     }
 
     public async listDatabases(): Promise<MultiverseDatabase[]> {
+        await this.deploySharedInfrastructure();
+
         const databases = await this.infrastructureStorage.list();
 
         return databases.map(database => new MultiverseDatabase({
             name: database.databaseId.name,
             region: this.options.region,
-            secretToken: database.configuration.secretTokens[0].secret
+            secretToken: database.configuration.secretTokens[0].secret,
+            awsToken: this.awsToken
         }));
     }
 }
