@@ -4,6 +4,7 @@ import { getRelatedDatabase, normalizeString } from "@/server/procedures/databas
 import { TRPCError } from "@trpc/server";
 import log from "@multiverse/log";
 import { handleError } from "@/server";
+import { generateHex } from "@/server/multiverse-interface/MultiverseMock";
 
 const MAX_TOKEN_NAME_LENGTH = 16;
 
@@ -33,6 +34,7 @@ export const secretToken = router({
             }
             await multiverseDatabase.addToken({
                 name: normalizeString(opts.input.secretToken.name, MAX_TOKEN_NAME_LENGTH),
+                secret: generateHex(16),
                 validUntil: opts.input.secretToken.validUntil,
             });
         } catch (error) {

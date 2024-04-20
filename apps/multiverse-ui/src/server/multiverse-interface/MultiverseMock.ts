@@ -1,6 +1,8 @@
-import type { IMultiverse, IMultiverseDatabase } from "@multiverse/multiverse/src";
+import type {
+    IMultiverse, IMultiverseDatabase, MultiverseDatabaseConfiguration
+} from "@multiverse/multiverse/src";
 
-import type { StoredDatabaseConfiguration, Token } from "@multiverse/multiverse/src/core/DatabaseConfiguration";
+import type { Token } from "@multiverse/multiverse/src/core/DatabaseConfiguration";
 import type {
     Query, QueryResult, SearchResultVector
 } from "@multiverse/multiverse/src/core/Query";
@@ -91,14 +93,14 @@ async function refresh() {
 }
 
 class MultiverseDatabaseMock implements IMultiverseDatabase {
-    private readonly databaseConfiguration: StoredDatabaseConfiguration;
+    private readonly databaseConfiguration: MultiverseDatabaseConfiguration;
     private readonly awsToken: {
         accessKeyId: string;
         secretAccessKey: string;
     };
 
     constructor(options: {
-        config: StoredDatabaseConfiguration,
+        config: MultiverseDatabaseConfiguration,
         awsToken: {
             accessKeyId: string;
             secretAccessKey: string;
@@ -151,7 +153,7 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
         return Promise.resolve(undefined);
     };
 
-    async getConfiguration(): Promise<StoredDatabaseConfiguration> {
+    async getConfiguration(): Promise<MultiverseDatabaseConfiguration> {
 
         return Promise.resolve(this.databaseConfiguration);
     }
@@ -266,7 +268,7 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
 
         this.databaseConfiguration.secretTokens.push({
             name: token.name,
-            secret: generateHex(16),
+            secret: token.secret,
             validUntil: token.validUntil
         });
         await refresh();
@@ -313,7 +315,7 @@ export class MultiverseMock implements IMultiverse {
         loadJsonFile();
     }
 
-    async createDatabase(options: Omit<StoredDatabaseConfiguration, "region">,): Promise<void> {
+    async createDatabase(options: MultiverseDatabaseConfiguration,): Promise<void> {
         await loadJsonFile();
 
         await sleep(1000 * 20); // 20 seconds, really fast
