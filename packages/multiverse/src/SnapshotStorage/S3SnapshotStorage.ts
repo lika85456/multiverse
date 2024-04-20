@@ -21,6 +21,8 @@ export class S3SnapshotStorageDeployer {
     }
 
     public async deploy(): Promise<void> {
+        logger.debug(`Creating bucket ${this.options.bucketName}`);
+
         await this.s3.createBucket({
             Bucket: this.options.bucketName,
             // CreateBucketConfiguration: { LocationConstraint: this.options.region },
@@ -28,6 +30,8 @@ export class S3SnapshotStorageDeployer {
     }
 
     public async destroy(): Promise<void> {
+        logger.debug(`Deleting bucket ${this.options.bucketName}`);
+
         try {
             await this.s3.deleteBucket({ Bucket: this.options.bucketName });
         } catch (e) {

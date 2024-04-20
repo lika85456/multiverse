@@ -47,7 +47,7 @@ export default defineWorkspace([
     test: {
       include: ['./**/*.e2e.test.ts'],
       exclude: ['**/node_modules/**', "**/cdk.out/**", "**/dist/**"],
-      name: 'Integration tests',
+      name: 'E2E tests',
       environment: 'node',
       globals: true,
       ...(process.env.CI && {

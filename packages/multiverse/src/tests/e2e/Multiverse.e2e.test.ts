@@ -1,7 +1,7 @@
 import Multiverse from "../..";
 import type { Region } from "../../core/DatabaseConfiguration";
 
-describe.only("Multiverse", () => {
+describe("<Multiverse E2E>", () => {
 
     const region = "eu-central-1" as Region;
 

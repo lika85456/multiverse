@@ -15,6 +15,7 @@ import DynamoInfrastructureStorage from "../InfrastructureStorage/DynamoInfrastr
 import LambdaWorker from "../Compute/LambdaWorker";
 import type { OrchestratorEvent } from "./Orchestrator";
 import type { AwsToken } from "..";
+import fs from "fs/promises";
 
 const log = logger.getSubLogger({ name: "LambdaOrchestrator" });
 
@@ -96,34 +97,36 @@ export default class LambdaOrchestrator implements Orchestrator {
     }
 
     /**
+     * TODO! change name. this doesnt make sense
      * Builds the orchestrator lambda function and zips it.
      */
     public async build(): Promise<Uint8Array> {
-        const { exec } = await import("child_process");
-
-        // build with no splitting, minifed and no sourcemaps from packages/multiverse/src/Orchestrator/Orchestrator.ts
-        const build = exec("pnpm build:orchestrator");
-
-        build.stdout?.pipe(process.stdout);
-        build.stderr?.pipe(process.stderr);
-
-        await new Promise((resolve, reject) => {
-            build.on("exit", (code) => {
-                if (code === 0) {
-                    resolve(null);
-                } else {
-                    reject(new Error(`Build failed with exit code ${code}`));
-                }
-            });
-        });
-
-        log.debug("Build finished");
-
         // 2. zip the build folder using adm
         const { default: AdmZip } = await import("adm-zip");
         const zip = new AdmZip();
 
-        zip.addLocalFolder("packages/multiverse/src/Orchestrator/dist");
+        const buildFolderPaths = [
+            "../../packages/multiverse/src/Orchestrator/dist",
+            "packages/multiverse/src/Orchestrator/dist",
+        ];
+
+        // check which build folder path contains the build (contains index.js file)
+        let buildFolderPath: string | undefined = undefined;
+        for (const path of buildFolderPaths) {
+            try {
+                await fs.access(path);
+                buildFolderPath = path;
+                break;
+            } catch (e) {
+                // ignore
+            }
+        }
+
+        if (!buildFolderPath) {
+            throw new Error("Build folder not found. Did you build orchestrator?");
+        }
+
+        zip.addLocalFolder(buildFolderPath);
 
         const buffer = zip.toBuffer();
 
@@ -347,21 +350,27 @@ export default class LambdaOrchestrator implements Orchestrator {
             }
         });
 
+        const errors: Error[] = [];
+
         await Promise.all([
             this.deployOrchestratorLambda({
                 changesTable,
                 snapshotBucket,
                 infrastructureTable,
                 databaseConfiguration
-            }),
+            }).catch(e => errors.push(e)),
             this.deployPartition({
                 changesTable,
                 snapshotBucket,
                 env: "production",
                 partition: 0,
                 databaseConfiguration
-            })
+            }).catch(e => errors.push(e)),
         ]);
+
+        if (errors.length > 0) {
+            throw new Error(`Failed to deploy orchestrator: ${errors.map(e => e.message).join(", ")}`);
+        }
     }
 
     public async updateCode() {

@@ -202,7 +202,7 @@ export default class Multiverse implements IMultiverse {
 
         log.info(`Creating database ${options.name}`);
 
-        await Promise.all([
+        const promises = [
             changesStorage.deploy(),
             snapshotStorage.deploy(),
             orchestrator.deploy({
@@ -211,7 +211,22 @@ export default class Multiverse implements IMultiverse {
                 databaseConfiguration: options,
                 infrastructureTable: this.INFRASTRUCTURE_TABLE_NAME
             })
-        ]);
+        ];
+
+        try {
+            await Promise.all(promises);
+        } catch (e) {
+            // wait untill all finished but catch
+            await Promise.all(promises.map(p => p.catch(() => null)));
+
+            await Promise.all([
+                changesStorage.destroy().catch(() => null),
+                snapshotStorage.destroy().catch(() => null),
+                orchestrator.destroy().catch(() => null)
+            ]);
+
+            throw e;
+        }
     }
 
     /**
@@ -248,6 +263,8 @@ export default class Multiverse implements IMultiverse {
             snapshotStorage.destroy(),
             orchestrator.destroy()
         ]);
+
+        await this.infrastructureStorage.remove(name);
     }
 
     /**
