@@ -25,7 +25,7 @@ export default class LambdaOrchestrator implements Orchestrator {
     constructor(private options: {
         databaseId: DatabaseID;
         secretToken: string;
-        awsToken: AwsToken
+        awsToken?: AwsToken
     }) {
         this.lambda = new Lambda({
             region: options.databaseId.region,

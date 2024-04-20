@@ -41,7 +41,7 @@ describe("<Orchestrator - integration>", () => {
 
     const orchestrator = new LambdaOrchestrator({
         databaseId,
-        secretToken: "hovnokleslo"
+        secretToken: "hovnokleslo",
     });
 
     beforeAll(async() => {

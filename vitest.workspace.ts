@@ -45,6 +45,21 @@ export default defineWorkspace([
   },
   {
     test: {
+      include: ['./**/*.e2e.test.ts'],
+      exclude: ['**/node_modules/**', "**/cdk.out/**", "**/dist/**"],
+      name: 'Integration tests',
+      environment: 'node',
+      globals: true,
+      ...(process.env.CI && {
+        minThreads: 4,
+        maxThreads: 4
+      }),
+      hookTimeout: 180000,
+      testTimeout: 180000
+    }
+  },
+  {
+    test: {
       include: ['./**/*.single-thread.test.ts'],
       exclude: ['**/node_modules/**', "**/cdk.out/**", "**/dist/**"],
       name: 'Single threaded tests',
