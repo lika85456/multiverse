@@ -2,7 +2,7 @@ import type ChangesStorage from "../ChangesStorage";
 import LambdaWorker from "../Compute/LambdaWorker";
 import type { Worker } from "../Compute/Worker";
 import type {
-    DatabaseConfiguration, DatabaseID, Region, Token
+    DatabaseConfiguration, DatabaseID, Region, StoredDatabaseConfiguration, Token
 } from "../core/DatabaseConfiguration";
 import type { Query, QueryResult } from "../core/Query";
 import type { NewVector } from "../core/Vector";
@@ -148,8 +148,14 @@ export default class OrchestratorWorker implements Orchestrator {
         }
     }
 
-    public async getConfiguration(): Promise<DatabaseConfiguration> {
-        return this.options.databaseConfiguration;
+    public async getConfiguration(): Promise<StoredDatabaseConfiguration> {
+        const infrastructure = await this.options.infrastructureStorage.get(this.options.databaseId.name);
+
+        if (!infrastructure) {
+            throw new Error(`Database ${this.options.databaseId.name} not found`);
+        }
+
+        return infrastructure?.configuration;
     }
 
     public async addToken(token: Token): Promise<void> {

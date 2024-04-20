@@ -21,6 +21,8 @@ export type AwsToken = {
     secretAccessKey: string;
 };
 
+export type MultiverseDatabaseConfiguration = StoredDatabaseConfiguration & DatabaseID;
+
 export interface IMultiverseDatabase {
     query(query: Query): Promise<QueryResult>;
 
@@ -28,7 +30,7 @@ export interface IMultiverseDatabase {
 
     remove(label: string[]): Promise<void>;
 
-    getConfiguration(): Promise<DatabaseConfiguration & DatabaseID>;
+    getConfiguration(): Promise<MultiverseDatabaseConfiguration>;
 
     addToken(token: Token): Promise<void>;
 
@@ -75,7 +77,7 @@ export class MultiverseDatabase implements IMultiverseDatabase {
         await this.orchestrator.removeVectors(label);
     }
 
-    public async getConfiguration() {
+    public async getConfiguration(): Promise<MultiverseDatabaseConfiguration> {
         return {
             ...await this.orchestrator.getConfiguration(),
             name: this.options.name,
