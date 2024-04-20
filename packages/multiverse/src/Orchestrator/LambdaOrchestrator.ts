@@ -2,7 +2,7 @@ import {
     Architecture, Lambda, Runtime, waitUntilPublishedVersionActive
 } from "@aws-sdk/client-lambda";
 import type {
-    DatabaseConfiguration, DatabaseID, StoredDatabaseConfiguration, Token
+    DatabaseID, StoredDatabaseConfiguration, Token
 } from "../core/DatabaseConfiguration";
 import type { Query, QueryResult } from "../core/Query";
 import type { NewVector } from "../core/Vector";
@@ -75,7 +75,7 @@ export default class LambdaOrchestrator implements Orchestrator {
         return this.request("removeVectors", [labels]);
     }
 
-    public async getConfiguration(): Promise<DatabaseConfiguration> {
+    public async getConfiguration(): Promise<StoredDatabaseConfiguration> {
         return this.request("getConfiguration", []);
     }
 
