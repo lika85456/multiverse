@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import type {
-    DatabaseConfiguration,
     DatabaseID, Region, StoredDatabaseConfiguration, Token
 } from "./core/DatabaseConfiguration";
 import type { Query, QueryResult } from "./core/Query";
@@ -38,7 +37,7 @@ export interface IMultiverseDatabase {
 }
 
 export interface IMultiverse {
-    createDatabase(options: DatabaseConfiguration): Promise<void>;
+    createDatabase(options: MultiverseDatabaseConfiguration): Promise<void>;
 
     removeDatabase(name: string): Promise<void>;
 
@@ -162,7 +161,7 @@ export default class Multiverse implements IMultiverse {
      *
      * @param options
      */
-    public async createDatabase(options: StoredDatabaseConfiguration & DatabaseID) {
+    public async createDatabase(options: MultiverseDatabaseConfiguration) {
         if (options.secretTokens.length === 0) {
             throw new Error("At least one secret token is required");
         }
