@@ -30,6 +30,7 @@ export interface IMultiverseDatabase {
     remove(label: string[]): Promise<void>;
 
     getConfiguration(): Promise<MultiverseDatabaseConfiguration>;
+    updateConfiguration(configuration: MultiverseDatabaseConfiguration): Promise<void>;
 
     addToken(token: Token): Promise<void>;
 
@@ -44,6 +45,8 @@ export interface IMultiverse {
     getDatabase(name: string): Promise<IMultiverseDatabase | undefined>
 
     listDatabases(): Promise<IMultiverseDatabase[]>;
+
+    removeSharedInfrastructure(): Promise<void>;
 }
 
 export class MultiverseDatabase implements IMultiverseDatabase {
@@ -84,6 +87,10 @@ export class MultiverseDatabase implements IMultiverseDatabase {
             name: this.options.name,
             region: this.options.region
         };
+    }
+
+    public async updateConfiguration(_configuration: MultiverseDatabaseConfiguration): Promise<void> {
+        // noop
     }
 
     public async addToken(token: Token) {
@@ -167,6 +174,8 @@ export default class Multiverse implements IMultiverse {
         if (options.secretTokens.length === 0) {
             throw new Error("At least one secret token is required");
         }
+
+        // TODO If fails remove the rest
 
         await this.deploySharedInfrastructure();
 
