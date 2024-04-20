@@ -35,14 +35,6 @@ export class StatisticsProcessor {
         }, new Map<string, Event[]>());
     }
 
-    private calculateCost(databaseName: string, date: string): number {
-        const dateISO = convertToISODate(date);
-        log.debug(`Calculating cost for database ${databaseName} and date ${dateISO}`);
-
-        //TODO - calculate cost
-        return 0;
-    }
-
     VECTOR_SIZE = ((4 * 1536) + 500);
 
     private extractWriteData(event: Event) {
@@ -131,7 +123,7 @@ export class StatisticsProcessor {
 
             return acc;
         }, innit);
-        result.totalCost = result.totalCost += this.calculateCost(innit.databaseName, innit.date);
+        result.totalCost = 0; // costs are calculated separately, keeping for later optimizations
 
         return result;
     }
@@ -203,11 +195,7 @@ export class StatisticsProcessor {
         eventsByDbName.forEach((events, dbName) => {
             this.processEventsForDatabase(dbName, events).then((result) => {
                 // done asynchronously to not block the processing of other databases
-                if (result) {
-                    log.info(`Statistics processing for database ${dbName} processed`);
-                } else {
-                    log.error(`Statistics processing for database ${dbName} failed`);
-                }
+                log.info(`Statistics for database ${dbName} ${result ? "processed" : "failed"}`);
             });
         });
     }

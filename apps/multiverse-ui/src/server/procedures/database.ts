@@ -1,7 +1,6 @@
 import { publicProcedure, router } from "@/server/trpc";
 import z from "zod";
 import { generateHex } from "@/server/multiverse-interface/MultiverseMock";
-import type { StoredDatabaseConfiguration } from "@multiverse/multiverse/src/core/DatabaseConfiguration";
 import type { DatabaseFindMongoDb, DatabaseGet } from "@/lib/mongodb/collections/database";
 import {
     createDatabase, deleteDatabase, EDatabaseState, getDatabase
@@ -22,6 +21,7 @@ import log from "@multiverse/log";
 import { handleError } from "@/server";
 import type { ObjectId } from "mongodb";
 import { getGeneralDatabaseStatistics } from "@/lib/mongodb/collections/general-database-statistics";
+import type { MultiverseDatabaseConfiguration } from "@multiverse/multiverse/src";
 
 export const MAX_DB_CODE_NAME_LENGTH = 24;
 export const MAX_DB_NAME_LENGTH = 64;
@@ -71,7 +71,7 @@ const stringToAlphaNumeric = (str: string): string => {
 const generateDatabaseCodeName = (name: string): string => {
     const slicedAlphanumericalName = stringToAlphaNumeric(name).slice(0, 12);
 
-    return `${slicedAlphanumericalName}_${generateHex(MAX_DB_CODE_NAME_LENGTH - slicedAlphanumericalName.length - 1)}`;
+    return `${slicedAlphanumericalName}-${generateHex(MAX_DB_CODE_NAME_LENGTH - slicedAlphanumericalName.length - 1)}`;
 };
 
 /**
@@ -142,7 +142,7 @@ export const getRelatedDatabase = async(codeName: string) => {
  * @throws {TRPCError} - if the user is not found or the database could not be created
  * @param configuration
  */
-const storeDatabase = async(configuration: StoredDatabaseConfiguration): Promise<DatabaseGet> => {
+const storeDatabase = async(configuration: MultiverseDatabaseConfiguration): Promise<DatabaseGet> => {
     const sessionUser = await getSessionUser();
     if (!sessionUser) {
         log.error("User is not authenticated");
@@ -224,9 +224,10 @@ export const database = router({
             const dbsToBeCreated = sessionUser.dbsToBeCreated || [];
             const dbsToBeDeleted = sessionUser.dbsToBeDeleted || [];
 
+            log.debug("Listing databases");
             const multiverse = await (new MultiverseFactory()).getMultiverse();
             const listedDatabases = await multiverse.listDatabases();
-
+            log.debug("Listed databases", JSON.stringify(listedDatabases, null, 2));
             const databases = (await Promise.all(listedDatabases.map(async(database): Promise<(DatabaseGet | undefined)> => {
                 const configuration = await database.getConfiguration();
 
@@ -351,15 +352,23 @@ export const database = router({
             codeName = generateDatabaseCodeName(opts.input.name);
             const name = opts.input.name;
 
+            const secretTokenList = [
+                {
+                    name: "default",
+                    secret: "1234567890",
+                    validUntil: Date.now() + 1000 * 60 * 60 * 24 * 365
+                }
+            ];
+
             // add the database to the user's list of databases to be created
             await addDatabaseToBeCreatedToUser(sessionUser._id, codeName);
 
             const multiverse = await (new MultiverseFactory()).getMultiverse();
 
             // create the database in the multiverse
-            const database: StoredDatabaseConfiguration = {
+            const database: MultiverseDatabaseConfiguration = {
                 name: codeName,
-                secretTokens: opts.input.secretTokens,
+                secretTokens: secretTokenList, //opts.input.secretTokens,
                 dimensions: opts.input.dimensions,
                 region: opts.input.region as "eu-central-1",
                 space: opts.input.space as "l2" | "cosine" | "ip",

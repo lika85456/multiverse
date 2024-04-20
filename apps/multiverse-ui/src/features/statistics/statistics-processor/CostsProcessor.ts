@@ -6,6 +6,7 @@ import {
 import log from "@multiverse/log";
 import type { ObjectId } from "mongodb";
 import { getAwsTokenByOwner } from "@/lib/mongodb/collections/aws-token";
+import { ENV } from "@/lib/env";
 
 export type Cost = {
     date: UTCDate;
@@ -58,6 +59,12 @@ export class CostsProcessor {
         const awsToken = await getAwsTokenByOwner(userId);
         if (!awsToken) {
             throw Error(`No AWS token found for user ${userId}, cannot get costs.`);
+        }
+
+        if (ENV.NODE_ENV === "development") {
+            log.debug("Development mode, returning empty costs");
+
+            return []; // request costs 0.01$ per request, return empty costs in development mode
         }
 
         try {

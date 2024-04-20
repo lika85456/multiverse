@@ -8,6 +8,8 @@ import { CopyIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import format from "@/features/statistics/format";
 import { customToast } from "@/features/fetching/CustomToast";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
 
 function calculateCost({
     writes,
@@ -138,25 +140,27 @@ function CalculatorSlider({
 export default function PriceCalculator() {
     const [storedVectors, setStoredVectors] = useState(100_000);
     const [dimensions, setDimensions] = useState(1536);
+    const [metadataPerVector, setMetadataPerVector] = useState(500);
     const [reads, setReads] = useState(10_000);
     const [writes, setWrites] = useState(10_000);
 
-    //TODO - move to BE???
     const costs = calculateCost({
         dimensions,
         reads,
         writes,
         storedVectors,
+        metadataPerVector,
     });
 
     const handleCopyCalculatedValues = async() => {
         try {
             const data = {
-                storedVectors: storedVectors,
-                reads: reads,
-                writes: writes,
-                dimensions: dimensions,
-                costs: costs,
+                storedVectors,
+                reads,
+                writes,
+                dimensions,
+                metadataPerVector,
+                costs,
             };
 
             await navigator.clipboard.writeText(`${JSON.stringify(data)}`);
@@ -166,11 +170,38 @@ export default function PriceCalculator() {
         }
     };
 
+    const onDimensionsChange = (d: number | undefined) => {
+        if (d === undefined) {
+            setDimensions(1);
+
+            return;
+        }
+        if (d <= 0) {
+            d = 1;
+        } else if (d > 10_000) {
+            d = 10_000;
+        }
+        setDimensions(d);
+    };
+
+    const onMetadataChange = (m: number | undefined) => {
+        if (m === undefined) {
+            setMetadataPerVector(0);
+
+            return;
+        }
+        if (m < 0) {
+            m = 0;
+        } else if (m > 1_000_000) {
+            m = 1_000_000;
+        }
+        setMetadataPerVector(m);
+    };
+
     return (
-        <div className="flex flex-col pb-16">
+        <div className="flex flex-col pb-8">
             <div className="flex flex-row justify-between items-center">
                 <SectionTitle title={"Price calculator"} className="flex h-fit" />
-
                 <Button
                     onClick={handleCopyCalculatedValues}
                     className="border-0 bg-inherit hover:text-secondary-foreground p-0"
@@ -209,29 +240,65 @@ export default function PriceCalculator() {
                     formatValue={(v) => format(v, "compact")}
                     logarithmic
                 />
-                <CalculatorSlider
-                    label="Dimensions"
-                    min={0}
-                    max={Math.log(10_000)}
-                    value={dimensions}
-                    onChange={(value) =>
-                        setDimensions(Math.ceil(Math.pow(Math.E, value)))
-                    }
-                    formatValue={(v) => format(v)}
-                    logarithmic
-                />
             </ul>
-            <div className="flex flex-row h-fit justify-end items-center space-x-4">
-                <div className="flex flex-row space-x-4 items-center">
-                    <div className="text-lg font-thin capitalize">
-            Expected Total price:
+            <div className="flex flex-row h-32 justify-between items-start space-x-4 select-none">
+                <div>
+                    <div className="flex flex-row justify-end space-x-4">
+                        <div className="flex flex-col w-32">
+                            <Label className="text-lg mb-4">Dimensions</Label>
+                            <Input
+                                type={"number"}
+                                value={dimensions}
+                                onChange={(e) => {
+                                    onDimensionsChange(parseInt(e.target.value));
+                                }}
+                            />
+                        </div>
+                        <div className="flex flex-col w-64">
+                            <Label className="text-lg mb-4">Metadata per vector (B)</Label>
+                            <Input
+                                type={"number"}
+                                value={metadataPerVector}
+                                onChange={(e) => {
+                                    onMetadataChange(parseInt(e.target.value));
+                                }}
+                            />
+                        </div>
                     </div>
-                    <div className="text-lg font-medium">{format(costs.totalCost)} $</div>
+                </div>
+                <div className="flex flex-col justify-end items-end text-end">
+                    <div className="flex flex-row justify-end">
+                        <div className="text-lg font-light capitalize">
+                            Expected Total price:
+                        </div>
+                        <div className="ml-2 w-40 text-lg font-bold">{format(costs.totalCost)} $</div>
+                    </div>
+                    <Separator/>
+                    <div className="text-md font-light text-tertiary">
+                        <div className="flex flex-row justify-end">
+                            <div className="capitalize">
+                                DynamoDB:
+                            </div>
+                            <div className="ml-2 w-40 font-medium">{format(costs.dynamoCost)} $</div>
+                        </div>
+                        <div className="flex flex-row justify-end">
+                            <div className="capitalize">
+                                Lambda:
+                            </div>
+                            <div className="ml-2 w-40 font-medium">{format(costs.lambdaCost)} $</div>
+                        </div>
+                        <div className="flex flex-row justify-end">
+                            <div className="capitalize">
+                                S3 Storage:
+                            </div>
+                            <div className="ml-2 w-40 font-medium">{format(costs.s3Cost)} $</div>
+                        </div>
+                    </div>
+                    <div className="text-sm font-thin text-tertiary">
+                        * this price is a rough estimate and may not reflect the actual costs
+                    </div>
                 </div>
             </div>
         </div>
     );
 }
-// TODO - collapsible details of the calculation
-// TODO - price disclaimer
-// TODO - dimensions and metadata size as inputs
