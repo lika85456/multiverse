@@ -1,34 +1,31 @@
 import { SQSHandler } from "@/lib/statistics-processor/SQSHandler";
 import { getAllQueuesWithCredentials } from "@/lib/mongodb/collections/user";
-import { StatisticsProcessor } from "@/lib/statistics-processor/StatisticsProcessor";
+import log from "@multiverse/log";
 
 export async function POST() {
+    const startTime = performance.now(); // start timer for processing
     const queuesWithCredentials = await getAllQueuesWithCredentials();
 
-    const sqsHandler = new SQSHandler();
-    let total = 0;
-    let received = 0;
+    let numberOfQueuesBeingProcessed = 0;
+    queuesWithCredentials.forEach((queue) => {
+        // extract queue name and AWS token
+        const queueName = queue.sqs;
+        const awsToken = {
+            accessKeyId: queue.accessKeyId,
+            secretAccessKey: queue.secretAccessKey
+        };
 
-    //TODO - optimize this to receive messages in parallel ???
-    do {
-        const messages = await Promise.all(queuesWithCredentials.map(async(queue) => {
-            const queueName = queue.sqs;
-            const awsToken = {
-                accessKeyId: queue.accessKeyId,
-                secretAccessKey: queue.secretAccessKey
-            };
-            // receive messages from the queue
-            const messages = await sqsHandler.receiveMessages(queueName, awsToken);
+        // start message processing for queue
+        const sqsHandler = new SQSHandler(startTime, queueName, awsToken);
+        sqsHandler.processQueue().then(() => {
+            log.info(`Messages in SQS queue ${queueName} processed`);
+        }).catch((error) => {
+            log.error(`Error processing messages in SQS queue ${queueName}: ${error}`);
+        });
 
-            // process the events synchronously (not awaiting processing result)
-            const statisticsProcessor = new StatisticsProcessor();
-            statisticsProcessor.processEvents(messages);
+        // increment the number of queues to be processed
+        numberOfQueuesBeingProcessed++;
+    });
 
-            return messages.length;
-        }));
-        received = messages.reduce((acc, val) => acc + val, 0);
-        total += received;
-    } while (received > 0);
-
-    return new Response(`Total received: ${total}`);
+    return new Response(`Total queues being processed: ${numberOfQueuesBeingProcessed}`);
 }

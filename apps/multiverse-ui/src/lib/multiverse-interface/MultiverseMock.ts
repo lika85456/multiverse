@@ -263,7 +263,10 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
             timestamp: UTCDate.now(),
             dbName: this.databaseConfiguration.name,
             type: "query",
-            query: JSON.stringify(query),
+            query: JSON.stringify({
+                vector: query.vector.toString().slice(0, 16),
+                k: query.k
+            }),
             duration: duration,
         };
 

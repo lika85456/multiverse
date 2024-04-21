@@ -126,8 +126,7 @@ export const awsToken = router({
                 });
 
                 // create a queue for the user
-                const statisticsProcessor = new SQSHandler();
-                const queueName = await statisticsProcessor.createQueue();
+                const queueName = await SQSHandler.createQueue();
 
                 // store queue in mongodb
                 await addQueueToUser(sessionUser._id, queueName);
@@ -157,8 +156,7 @@ export const awsToken = router({
             log.debug(`Deleting AWS token for user ${sessionUser.email}`);
 
             // delete queue from AWS and mongodb
-            const statisticsProcessor = new SQSHandler();
-            await statisticsProcessor.deleteQueue();
+            await SQSHandler.deleteQueue();
             await removeQueueFromUser(sessionUser._id);
 
             // delete all databases in the mongodb
