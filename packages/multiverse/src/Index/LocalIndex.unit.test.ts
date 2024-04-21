@@ -1,8 +1,8 @@
 import type { NewVector } from "../core/Vector";
 import HNSWIndex from "./HNSWIndex";
-import MockIndex from "./MockIndex";
+import LocalIndex from "./LocalIndex";
 
-describe("<MockIndex>", () => {
+describe("<LocalIndex>", () => {
 
     const query = {
         vector: [1, 2, 3],
@@ -26,9 +26,9 @@ describe("<MockIndex>", () => {
     ];
 
     it("should support ip", async() => {
-        const mockIndex = new MockIndex({
-            dimensionsCount: 3,
-            spaceType: "ip"
+        const mockIndex = new LocalIndex({
+            dimensions: 3,
+            space: "ip"
         });
         const realIndex = new HNSWIndex({
             dimensions: 3,
@@ -45,9 +45,9 @@ describe("<MockIndex>", () => {
     });
 
     it("should support i2", async() => {
-        const mockIndex = new MockIndex({
-            dimensionsCount: 3,
-            spaceType: "l2"
+        const mockIndex = new LocalIndex({
+            dimensions: 3,
+            space: "l2"
         });
         const realIndex = new HNSWIndex({
             dimensions: 3,
@@ -64,9 +64,9 @@ describe("<MockIndex>", () => {
     });
 
     it("should support cosine", async() => {
-        const mockIndex = new MockIndex({
-            dimensionsCount: 3,
-            spaceType: "cosine"
+        const mockIndex = new LocalIndex({
+            dimensions: 3,
+            space: "cosine"
         });
         const realIndex = new HNSWIndex({
             dimensions: 3,
@@ -75,6 +75,45 @@ describe("<MockIndex>", () => {
 
         await realIndex.add(vectors);
         await mockIndex.add(vectors);
+
+        const mockResult = await mockIndex.knn(query);
+        const realResult = await realIndex.knn(query);
+
+        const MAX_DIFF = 0.0001;
+        mockResult.forEach((mock, index) => {
+            const real = realResult[index];
+            expect(mock.label).toEqual(real.label);
+            expect(mock.metadata).toEqual(real.metadata);
+            // expect(mock.vector).toEqual(real.vector);
+            expect(Math.abs(mock.distance - real.distance)).toBeLessThan(MAX_DIFF);
+        });
+    });
+
+    it("should support 1536 dimensions and query 1000 vectors", async() => {
+        const dimensions = 1536;
+        const vectors = Array.from({ length: 1000 }, (_, i) => ({
+            label: i + "",
+            vector: Array.from({ length: dimensions }, () => i)
+        }));
+
+        const mockIndex = new LocalIndex({
+            dimensions,
+            space: "l2"
+        });
+        const realIndex = new HNSWIndex({
+            dimensions,
+            space: "l2",
+        });
+
+        await mockIndex.add(vectors);
+        await realIndex.add(vectors);
+
+        const queryVector = Array.from({ length: dimensions }, () => 0);
+        const query = {
+            vector: queryVector,
+            k: 10,
+            sendVector: true
+        };
 
         const mockResult = await mockIndex.knn(query);
         const realResult = await realIndex.knn(query);

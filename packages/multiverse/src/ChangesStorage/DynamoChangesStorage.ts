@@ -8,6 +8,7 @@ import {
 } from "@aws-sdk/lib-dynamodb";
 import type { StoredVectorChange } from "./StoredVector";
 import type { DatabaseID } from "../core/DatabaseConfiguration";
+import type { AwsToken } from "../core/AwsToken";
 
 const logger = log.getSubLogger({ name: "DynamoChangesStorageDeployer" });
 
@@ -33,8 +34,12 @@ export class DynamoChangesStorageDeployer {
     constructor(private options: {
         region: string;
         tableName: string;
+        awsToken?: AwsToken
     }) {
-        this.dynamo = new DynamoDB({ region: options.region });
+        this.dynamo = new DynamoDB({
+            region: options.region,
+            credentials: options.awsToken
+        });
     }
 
     public async deploy() {
@@ -134,12 +139,17 @@ export default class DynamoChangesStorage implements ChangesStorage {
     constructor(private options: {
         databaseId: DatabaseID;
         tableName: string;
+        awsToken?: AwsToken;
     }) {
-        const db = new DynamoDB({ region: options.databaseId.region });
+        const db = new DynamoDB({
+            region: options.databaseId.region,
+            credentials: options.awsToken
+        });
         this.dynamo = DynamoDBDocumentClient.from(db);
         this.deployer = new DynamoChangesStorageDeployer({
             region: this.options.databaseId.region,
-            tableName: this.options.tableName
+            tableName: this.options.tableName,
+            awsToken: options.awsToken
         });
     }
 

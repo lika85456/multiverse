@@ -11,6 +11,7 @@ import { IAM } from "@aws-sdk/client-iam";
 import type { StoredVectorChange } from "../ChangesStorage/StoredVector";
 import type { DatabaseEnvironment } from "./EnvSchema";
 import { databaseEnvSchema } from "./EnvSchema";
+import type { AwsToken } from "../core/AwsToken";
 
 const logger = log.getSubLogger({ name: "LambdaWorker" });
 
@@ -21,9 +22,13 @@ export default class LambdaWorker implements Worker {
     constructor(private options: {
         lambdaName: string;
         region: Region;
-        waitTime?: number
+        waitTime?: number;
+        awsToken?: AwsToken
     }) {
-        this.lambda = new Lambda({ region: options.region });
+        this.lambda = new Lambda({
+            region: options.region,
+            credentials: options.awsToken
+        });
     }
 
     public async state(): Promise<StatefulResponse<void>> {
@@ -76,7 +81,10 @@ export default class LambdaWorker implements Worker {
     }
 
     private async lambdaRoleARN(): Promise<string> {
-        const iam = new IAM({ region: this.options.region });
+        const iam = new IAM({
+            region: this.options.region,
+            credentials: this.options.awsToken
+        });
 
         const roleName = "multiverse-database-role";
 

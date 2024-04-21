@@ -9,7 +9,6 @@ export type BaseEvent = {
 
 export type QueryEvent = BaseEvent & {
     type: "query";
-    query: string;
     duration: number;
 
     // instances involved ?
@@ -17,12 +16,14 @@ export type QueryEvent = BaseEvent & {
 
 export type AddEvent = BaseEvent & {
     type: "add";
-    totalVectors: number;
+    vectorsAfter: number;
+    count: number;
 };
 
 export type RemoveEvent = BaseEvent & {
     type: "remove";
-    totalVectors: number;
+    vectorsAfter: number;
+    count: number;
 };
 
-export type Event = QueryEvent | AddEvent | RemoveEvent;
+export type StatisticsEvent = QueryEvent | AddEvent | RemoveEvent;
