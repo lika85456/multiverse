@@ -12,7 +12,6 @@ import { useMemo } from "react";
 import Loading from "@/features/fetching/Loading";
 import GeneralError from "@/features/fetching/GeneralError";
 import { UTCDate } from "@date-fns/utc";
-import { IoIosWarning } from "react-icons/io";
 import { Warning } from "@/features/fetching/Warning";
 
 function Statistics() {

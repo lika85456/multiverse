@@ -49,7 +49,7 @@ export function GeneralStatisticsItem({
 }: GeneralStatisticsItemProps) {
     const handleCopy = async() => {
         try {
-            await navigator.clipboard.writeText(`${title}: ${value}`);
+            await navigator.clipboard.writeText(`${title}: ${enabled ? value : "N/A"}`);
             customToast("Data have been copied into your clipboard.");
         } catch (error) {
             customToast.error("Data could not be copied.");
