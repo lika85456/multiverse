@@ -22,14 +22,16 @@ describe("SQS Queue", () => {
                 count: 20,
                 dbName: "test",
                 timestamp: Date.now() - 1000,
-                vectorsAfter: 20
+                vectorsAfter: 20,
+                dataSize: 100
             },
             {
                 type: "remove",
                 count: 10,
                 dbName: "test",
                 timestamp: Date.now(),
-                vectorsAfter: 10
+                vectorsAfter: 10,
+                dataSize: 90
             }
         ];
 
@@ -51,7 +53,12 @@ describe("SQS Queue", () => {
             MessageId: result[1].MessageId
         });
 
-        await q.removeMessages(result.map(r => r.MessageId));
+        await q.removeMessages(result.map(r => {
+            return {
+                messageId: r.MessageId,
+                receiptHandle: r.ReceiptHandle
+            };
+        }));
     });
 
     it("should push 1000 items and get them all", async() => {
@@ -60,7 +67,8 @@ describe("SQS Queue", () => {
             count: i,
             dbName: "test",
             timestamp: Date.now() - 1000,
-            vectorsAfter: i
+            vectorsAfter: i,
+            dataSize: i
         }));
 
         await Promise.all(events.map(event => q.push(event)));
@@ -74,6 +82,11 @@ describe("SQS Queue", () => {
 
         expect(result.length).toBe(1000);
 
-        await q.removeMessages(result.map(r => r.MessageId));
+        await q.removeMessages(result.map(r => {
+            return {
+                messageId: r.MessageId,
+                receiptHandle: r.ReceiptHandle
+            };
+        }));
     });
 });

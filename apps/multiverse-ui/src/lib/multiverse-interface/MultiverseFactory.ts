@@ -1,7 +1,7 @@
-import { ENV } from "@/lib/env";
-import type { IMultiverse } from "@multiverse/multiverse/src";
-import Multiverse from "@multiverse/multiverse/src";
-import { MultiverseMock } from "@/server/multiverse-interface/MultiverseMock";
+// import { ENV } from "@/lib/env";
+import type { IMultiverse } from "@multiverse/multiverse";
+// import Multiverse from "@multiverse/multiverse";
+import { MultiverseMock } from "@/lib/multiverse-interface/MultiverseMock";
 import type { UserGet } from "@/lib/mongodb/collections/user";
 import { getSessionUser } from "@/lib/mongodb/collections/user";
 import { getAwsTokenByOwner } from "@/lib/mongodb/collections/aws-token";
@@ -27,6 +27,14 @@ export class MultiverseFactory {
             throw new Error("No AWS Token to create the multiverse");
         }
 
+        return Promise.resolve(new MultiverseMock({
+            awsToken: {
+                accessKeyId: awsToken.accessKeyId,
+                secretAccessKey: awsToken.secretAccessKey,
+            },
+            region: "eu-central-1",
+        }));
+
         // if (ENV.NODE_ENV === "development") {
         //     return Promise.resolve(new MultiverseMock({
         //         awsToken: {
@@ -36,14 +44,14 @@ export class MultiverseFactory {
         //         region: "eu-central-1",
         //     }));
         // }
-
-        return Promise.resolve(new Multiverse({
-            awsToken: {
-                accessKeyId: awsToken.accessKeyId,
-                secretAccessKey: awsToken.secretAccessKey,
-            },
-            region: "eu-central-1",
-        }));
+        //
+        // return Promise.resolve(new Multiverse({
+        //     awsToken: {
+        //         accessKeyId: awsToken.accessKeyId,
+        //         secretAccessKey: awsToken.secretAccessKey,
+        //     },
+        //     region: "eu-central-1",
+        // }));
     }
 
     public async getMultiverse(): Promise<IMultiverse> {

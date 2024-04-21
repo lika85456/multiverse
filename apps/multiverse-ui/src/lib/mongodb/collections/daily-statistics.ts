@@ -43,7 +43,7 @@ export const getDailyStatisticsForDates = async(dates: string[], databaseName: s
     const client = await clientPromise;
     const db = client.db();
 
-    log.debug(`Getting daily statistics for dates ${JSON.stringify(dates, null, 2)} for ${databaseName} `);
+    // log.debug(`Getting daily statistics for dates ${JSON.stringify(dates, null, 2)} for ${databaseName} `);
     try {
         const result = await db.collection(collectionName).find({
             date: dates.map((date) => convertToISODate(date)),

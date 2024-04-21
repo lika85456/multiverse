@@ -66,6 +66,7 @@ export class CostsProcessor {
 
             return []; // request costs 0.01$ per request, return empty costs in development mode
         }
+        log.warn("Production mode, requesting costs from AWS. Prepare your wallet! (0.01$ per request)");
 
         try {
             log.debug(`Getting costs${databaseCodeName ? ` for database ${databaseCodeName}` : ""} from ${format(from, "yyyy-MM-dd")} to ${format(addDays(to, 1), "yyyy-MM-dd")}`);

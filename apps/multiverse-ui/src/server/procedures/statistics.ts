@@ -9,8 +9,8 @@ import { eachDayOfInterval, isAfter } from "date-fns";
 import { UTCDate } from "@date-fns/utc";
 import log from "@multiverse/log";
 import { handleError } from "@/server";
-import type { Cost } from "@/features/statistics/statistics-processor/CostsProcessor";
-import { CostsProcessor } from "@/features/statistics/statistics-processor/CostsProcessor";
+import type { Cost } from "@/lib/statistics-processor/CostsProcessor";
+import { CostsProcessor } from "@/lib/statistics-processor/CostsProcessor";
 import type { ObjectId } from "mongodb";
 
 export interface GeneralStatisticsData {

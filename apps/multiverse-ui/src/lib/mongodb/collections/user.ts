@@ -1,9 +1,9 @@
 import type { ObjectId } from "mongodb";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import clientPromise from "@/lib/mongodb/mongodb";
 import { getAwsTokenById } from "@/lib/mongodb/collections/aws-token";
 import log from "@multiverse/log";
+import { authOptions } from "@/lib/auth/auth";
 
 export interface UserGet {
     _id: ObjectId;

@@ -1,7 +1,7 @@
 import { getServerSession } from "next-auth";
-import { authOptions } from "./api/auth/[...nextauth]/route";
 import * as React from "react";
 import { DbsToCreate, DbsToDelete } from "@/app/(auth-required)/databases/components/DatabaseList";
+import { authOptions } from "@/lib/auth/auth";
 
 export default async function Home() {
 

@@ -10,11 +10,11 @@ import {
 } from "@/lib/mongodb/collections/aws-token";
 import { deleteAllDatabases } from "@/lib/mongodb/collections/database";
 import { TRPCError } from "@trpc/server";
-import { MultiverseFactory } from "@/server/multiverse-interface/MultiverseFactory";
-import { SQSHandler } from "@/features/statistics/statistics-processor/SQSHandler";
+import { MultiverseFactory } from "@/lib/multiverse-interface/MultiverseFactory";
 import { GetCallerIdentityCommand, STSClient } from "@aws-sdk/client-sts";
 import log from "@multiverse/log";
-import { handleError } from "@/server";
+import { generateHex, handleError } from "@/server";
+import SQSSStatisticsQueue from "@multiverse/multiverse/src/StatisticsQueue/SQSStatisticsQueue";
 
 /**
  * Check if the AWS credentials are valid by calling the STS service
@@ -119,15 +119,23 @@ export const awsToken = router({
                 await checkAwsCredentials(opts.input.accessKeyId, opts.input.secretAccessKey);
 
                 // store token in mongodb
-                await addAwsToken({
+                const awsTokenResult = await addAwsToken({
                     accessKeyId: opts.input.accessKeyId,
                     secretAccessKey: opts.input.secretAccessKey,
                     ownerId: sessionUser._id,
                 });
 
+                const queueName = `multiverse-${awsTokenResult._id}-${generateHex(8)}`;
                 // create a queue for the user
-                const statisticsProcessor = new SQSHandler();
-                const queueName = await statisticsProcessor.createQueue();
+                const sqs = new SQSSStatisticsQueue({
+                    region: "eu-central-1",
+                    queueName: sessionUser.sqsQueue,
+                    awsToken: {
+                        accessKeyId: opts.input.accessKeyId,
+                        secretAccessKey: opts.input.secretAccessKey
+                    }
+                });
+                await sqs.deploy({ queueName: queueName });
 
                 // store queue in mongodb
                 await addQueueToUser(sessionUser._id, queueName);
@@ -154,22 +162,39 @@ export const awsToken = router({
                     message: "Cannot delete AWS Token, user not found",
                 });
             }
-            log.debug(`Deleting AWS token for user ${sessionUser.email}`);
 
-            // delete queue from AWS and mongodb
-            const statisticsProcessor = new SQSHandler();
-            await statisticsProcessor.deleteQueue();
-            await removeQueueFromUser(sessionUser._id);
+            const awsToken = await getAwsTokenByOwner(sessionUser._id);
+            if (!awsToken) {
+                throw new TRPCError({
+                    code: "FORBIDDEN",
+                    message: "AWS Token not found",
+                });
+            }
+
+            // delete queue from AWS and mongodb (user with aws token should have a queue)
+            if (sessionUser.sqsQueue) {
+                log.debug(`Deleting AWS token for user ${sessionUser.email}`);
+                const sqs = new SQSSStatisticsQueue({
+                    region: "eu-central-1",
+                    queueName: sessionUser.sqsQueue,
+                    awsToken: {
+                        accessKeyId: awsToken.accessKeyId,
+                        secretAccessKey: awsToken.secretAccessKey
+                    }
+                });
+                await sqs.destroy();
+
+                await removeQueueFromUser(sessionUser._id);
+            } else {
+                log.warn(`No SQS queue found for user ${sessionUser.email} at deletion of AWS token.`);
+            }
 
             // delete all databases in the mongodb
             await deleteAllDatabases(sessionUser._id);
 
             // delete all databases in the multiverse
             const multiverse = await (new MultiverseFactory()).getMultiverse();
-            const databases = await multiverse.listDatabases();
-            await Promise.all(databases.map(async(database) => {
-                await multiverse.removeDatabase((await database.getConfiguration()).name);
-            }));
+            await multiverse.removeSharedInfrastructure();
 
             // delete aws token from mongodb
             await removeAwsToken(sessionUser._id);

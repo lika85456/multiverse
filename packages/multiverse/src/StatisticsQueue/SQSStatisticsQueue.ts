@@ -44,12 +44,16 @@ export default class SQSSStatisticsQueue implements StatisticsQueue {
     }
 
     public async receiveMessages(stopAtTimestamp: number, eventsLimit: number): Promise<(StatisticsEvent & {
-        MessageId: string
+        MessageId: string,
+        ReceiptHandle: string
     })[]> {
 
         const queueUrl = await this.getQueueUrl();
 
-        const events: (StatisticsEvent & { MessageId: string })[] = [];
+        const events: (StatisticsEvent & {
+            MessageId: string,
+            ReceiptHandle: string
+        })[] = [];
 
         const app = Consumer.create({
             queueUrl,
@@ -62,7 +66,8 @@ export default class SQSSStatisticsQueue implements StatisticsQueue {
 
                 events.push({
                     ...event,
-                    MessageId: message.MessageId
+                    MessageId: message.MessageId,
+                    ReceiptHandle: message.ReceiptHandle ?? ""
                 });
 
                 if (events.length >= eventsLimit) {
@@ -91,13 +96,13 @@ export default class SQSSStatisticsQueue implements StatisticsQueue {
         });
     }
 
-    public async removeMessages(messageIds: string[]): Promise<void> {
-        await Promise.all(Array.from({ length: Math.ceil(messageIds.length / 10) }, (_, i) => {
+    public async removeMessages(messagesToDelete: {messageId: string, receiptHandle: string}[]): Promise<void> {
+        await Promise.all(Array.from({ length: Math.ceil(messagesToDelete.length / 10) }, (_, i) => {
             return this.sqs.deleteMessageBatch({
                 QueueUrl: this.options.queueUrl,
-                Entries: messageIds.slice(i * 10, (i + 1) * 10).map(id => ({
-                    Id: id,
-                    ReceiptHandle: id
+                Entries: messagesToDelete.slice(i * 10, (i + 1) * 10).map(id => ({
+                    Id: id.messageId,
+                    ReceiptHandle: id.receiptHandle
                 }))
             });
         }));
