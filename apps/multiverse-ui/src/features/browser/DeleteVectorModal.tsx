@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { CopyIcon, TrashIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import useModal from "@/features/hooks/use-modal";
+import useModal from "@/features/modal/use-modal";
 import { IoClose } from "react-icons/io5";
 import React, { useState } from "react";
 import { trpc } from "@/lib/trpc/client";

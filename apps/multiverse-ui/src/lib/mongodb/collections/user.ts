@@ -15,6 +15,7 @@ export interface UserGet {
     databases: string[];
     dbsToBeDeleted: string[];
     dbsToBeCreated: string[];
+    acceptedCostsGeneration: boolean;
 }
 
 export interface UserInsert {
@@ -26,6 +27,7 @@ export interface UserInsert {
     databases: string[];
     dbsToBeDeleted: string[];
     dbsToBeCreated: string[];
+    acceptedCostsGeneration: boolean;
 }
 
 /**
@@ -52,6 +54,7 @@ export const getUserByEmail = async(email: string,): Promise<UserGet | undefined
             sqsQueue: result.sqsQueue,
             dbsToBeDeleted: result.dbsToBeDeleted ?? [],
             dbsToBeCreated: result.dbsToBeCreated ?? [],
+            acceptedCostsGeneration: result.acceptedCostsGeneration ?? false,
         };
     } catch (error) {
         log.error(error);
@@ -83,6 +86,7 @@ export const getUserById = async(userId: ObjectId): Promise<UserGet | undefined>
             sqsQueue: result.sqsQueue,
             dbsToBeDeleted: result.dbsToBeDeleted ?? [],
             dbsToBeCreated: result.dbsToBeCreated ?? [],
+            acceptedCostsGeneration: result.acceptedCostsGeneration ?? false,
         };
     } catch (error) {
         log.error(error);
@@ -124,6 +128,32 @@ export const updateUser = async(
     } catch (error) {
         log.error(error);
         throw new Error(`Error updating user ${userData.email}`);
+    }
+};
+
+export const changeUserAcceptedCostsGeneration = async(userId: ObjectId, acceptedCostsGeneration: boolean): Promise<boolean> => {
+    try {
+        const db = (await clientPromise).db();
+        const result = await db.collection("users").findOne({ _id: userId });
+        if (!result) {
+            throw new Error("User not found");
+        }
+
+        const updatedUserResult = await db
+            .collection("users")
+            .updateOne(
+                { _id: userId },
+                { $set: { acceptedCostsGeneration } }
+            );
+
+        if (!updatedUserResult.acknowledged) {
+            throw new Error("Update not acknowledged");
+        }
+
+        return acceptedCostsGeneration;
+    } catch (error) {
+        log.error(error);
+        throw new Error(`Error updating user ${userId} accepted costs generation`);
     }
 };
 
@@ -219,21 +249,20 @@ export const addDatabaseToBeDeletedToUser = async(ownerId: ObjectId, codeName: s
     }
 };
 
-export const getDatabasesToBeDeletedFromUser = async(ownerId: ObjectId): Promise<string[]> => {
-    try {
-        const db = (await clientPromise).db();
-        const result = await db.collection("users").findOne({ _id: ownerId });
-        if (!result) {
-            throw new Error("User not found");
-        }
-
-        return result.dbsToBeDeleted ?? [];
-    } catch (error) {
-        log.error(error);
-        throw new Error(`Error getting databases to be deleted from owner ${ownerId}`);
-    }
-
-};
+// export const getDatabasesToBeDeletedFromUser = async(ownerId: ObjectId): Promise<string[]> => {
+//     try {
+//         const db = (await clientPromise).db();
+//         const result = await db.collection("users").findOne({ _id: ownerId });
+//         if (!result) {
+//             throw new Error("User not found");
+//         }
+//
+//         return result.dbsToBeDeleted ?? [];
+//     } catch (error) {
+//         log.error(error);
+//         throw new Error(`Error getting databases to be deleted from owner ${ownerId}`);
+//     }
+// };
 
 export const removeDatabaseToBeDeletedFromUser = async(ownerId: ObjectId, codeName: string): Promise<void> => {
     try {
@@ -287,20 +316,20 @@ export const addDatabaseToBeCreatedToUser = async(ownerId: ObjectId, codeName: s
     }
 };
 
-export const getDatabasesToBeCreatedFromUser = async(ownerId: ObjectId): Promise<string[]> => {
-    try {
-        const db = (await clientPromise).db();
-        const result = await db.collection("users").findOne({ _id: ownerId });
-        if (!result) {
-            throw new Error("User not found");
-        }
-
-        return result.dbsToBeCreated ?? [];
-    } catch (error) {
-        log.error(error);
-        throw new Error(`Error getting databases to be created from owner ${ownerId}`);
-    }
-};
+// export const getDatabasesToBeCreatedFromUser = async(ownerId: ObjectId): Promise<string[]> => {
+//     try {
+//         const db = (await clientPromise).db();
+//         const result = await db.collection("users").findOne({ _id: ownerId });
+//         if (!result) {
+//             throw new Error("User not found");
+//         }
+//
+//         return result.dbsToBeCreated ?? [];
+//     } catch (error) {
+//         log.error(error);
+//         throw new Error(`Error getting databases to be created from owner ${ownerId}`);
+//     }
+// };
 
 export const removeDatabaseToBeCreatedFromUser = async(ownerId: ObjectId, codeName: string): Promise<void> => {
     try {

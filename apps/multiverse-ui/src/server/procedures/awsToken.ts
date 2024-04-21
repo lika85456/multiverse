@@ -1,7 +1,7 @@
 import { publicProcedure, router } from "@/server/trpc";
 import z from "zod";
 import {
-    addQueueToUser, getSessionUser, removeQueueFromUser
+    addQueueToUser, changeUserAcceptedCostsGeneration, getSessionUser, removeQueueFromUser
 } from "@/lib/mongodb/collections/user";
 import {
     addAwsToken, getAwsTokenByAccessKeyId,
@@ -139,6 +139,9 @@ export const awsToken = router({
 
                 // store queue in mongodb
                 await addQueueToUser(sessionUser._id, queueName);
+
+                // disable cost generation by default
+                await changeUserAcceptedCostsGeneration(sessionUser._id, false);
                 log.info("Created SQS Queue with name: ", queueName);
             } catch (error) {
                 throw handleError({
@@ -198,6 +201,9 @@ export const awsToken = router({
 
             // delete aws token from mongodb
             await removeAwsToken(sessionUser._id);
+
+            // disable cost generation
+            await changeUserAcceptedCostsGeneration(sessionUser._id, false);
             log.info(`AWS token deleted for user ${sessionUser.email}`);
         } catch (error) {
             throw handleError({

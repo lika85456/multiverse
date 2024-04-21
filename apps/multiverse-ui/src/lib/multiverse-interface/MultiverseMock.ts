@@ -86,7 +86,7 @@ async function saveJsonFile() {
 
 export function generateHex(length: number): string {
     let result = "";
-    const hexCharacters = "0123456789abcdef";
+    const hexCharacters = "0123456789ABCDEF";
 
     for (let i = 0; i < length; i++) {
         const randomIndex = Math.floor(Math.random() * hexCharacters.length);
@@ -303,7 +303,7 @@ export class MultiverseMock implements IMultiverse {
     }) {
         this.awsToken = options.awsToken;
         this.region = options.region;
-        loadJsonFile();
+        loadJsonFile().then();
     }
 
     async createDatabase(options: MultiverseDatabaseConfiguration,): Promise<void> {

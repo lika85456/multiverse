@@ -8,6 +8,7 @@ import { customToast } from "@/features/fetching/CustomToast";
 export interface GeneralStatisticsItemProps {
   title: string;
   value: string;
+  enabled: boolean;
 }
 
 export interface GeneralStatisticsProps {
@@ -19,20 +20,24 @@ export const createProps = (data: GeneralStatisticsData) => {
     return [
         {
             title: "Total Cost",
-            value: `${data.costs.currency} ${data.costs.value}`
+            value: `${data.costs.currency} ${data.costs.value}`,
+            enabled: data.costs.enabled,
         },
         {
             title: "Total Vectors",
             value: `${format(data.totalVectors.count, "compact")} 
-                    (${format(data.totalVectors.bytes, "bytes")})`
+                    (${format(data.totalVectors.bytes, "bytes")})`,
+            enabled: true,
         },
         {
             title: "Queries",
-            value: `${format(data.reads, "compact")}`
+            value: `${format(data.reads, "compact")}`,
+            enabled: true,
         },
         {
             title: "Writes",
-            value: `${format(data.writes, "compact")}`
+            value: `${format(data.writes, "compact")}`,
+            enabled: true,
         },
     ];
 };
@@ -40,6 +45,7 @@ export const createProps = (data: GeneralStatisticsData) => {
 export function GeneralStatisticsItem({
     title,
     value,
+    enabled,
 }: GeneralStatisticsItemProps) {
     const handleCopy = async() => {
         try {
@@ -60,7 +66,8 @@ export function GeneralStatisticsItem({
             <span className={"text-primary-foreground dark:text-contrast_secondary text-sm uppercase font-light tracking-[0.3rem]"}>
                 {title}
             </span>
-            <span className="text-contrast_primary text-xl font-bold">{value}</span>
+            {enabled && <span className="text-contrast_primary text-xl font-bold">{value}</span>}
+            {!enabled && <span className="text-contrast_primary text-xl font-bold">N/A</span>}
         </li>
     );
 }
@@ -82,6 +89,7 @@ export default function GeneralStatistics({
                         key={item.title}
                         title={item.title}
                         value={item.value}
+                        enabled={item.enabled}
                     />
                 );
             })}

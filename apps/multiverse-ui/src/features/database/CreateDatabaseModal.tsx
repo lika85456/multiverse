@@ -21,7 +21,7 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import useModal from "@/features/hooks/use-modal";
+import useModal from "@/features/modal/use-modal";
 import { trpc } from "@/lib/trpc/client";
 import z from "zod";
 import { useForm } from "react-hook-form";

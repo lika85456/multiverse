@@ -4,6 +4,7 @@ import { statistics, } from "@/server/procedures/statistics";
 import { awsToken } from "@/server/procedures/awsToken";
 import log from "@multiverse/log";
 import { TRPCError } from "@trpc/server";
+import { costGenerator } from "@/server/procedures/costGenerator";
 
 /**
  * Generate a random hex string of a given length
@@ -72,7 +73,8 @@ export const handleError = ({
 export const appRouter = router({
     database,
     statistics,
-    awsToken
+    awsToken,
+    costGenerator
 });
 
 export type AppRouter = typeof appRouter;

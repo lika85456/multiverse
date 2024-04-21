@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { useParams, useRouter } from "next/navigation";
-import useModal from "@/features/hooks/use-modal";
+import useModal from "@/features/modal/use-modal";
 import { trpc } from "@/lib/trpc/client";
 import Spinner from "@/features/fetching/Spinner";
 import { customToast } from "@/features/fetching/CustomToast";

@@ -12,6 +12,8 @@ import { useMemo } from "react";
 import Loading from "@/features/fetching/Loading";
 import GeneralError from "@/features/fetching/GeneralError";
 import { UTCDate } from "@date-fns/utc";
+import { IoIosWarning } from "react-icons/io";
+import { Warning } from "@/features/fetching/Warning";
 
 function Statistics() {
     const today = useMemo(() => new UTCDate(), []);
@@ -53,7 +55,12 @@ function Statistics() {
                         />
                     </div>
                     <GeneralStatistics items={createProps(generalStatistics)} className="pb-8" />
-                    <StatisticsGraph title="Costs" data={dailyStatistics.costs} unit={"$"} />
+                    {!!dailyStatistics.costsEnabled && <StatisticsGraph title="Costs" data={dailyStatistics.costs} unit={"$"} />}
+                    {dailyStatistics.costsEnabled !== undefined && !dailyStatistics.costsEnabled && (
+                        <Warning>
+                            Costs calculation is turned off.
+                        </Warning>
+                    )}
                 </div>
             </div>)}
         </>);

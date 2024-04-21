@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 
 import type { Vector } from "@/features/browser/UpsertVectorModal";
-import useModal from "@/features/hooks/use-modal";
+import useModal from "@/features/modal/use-modal";
 
 import Editor from "@monaco-editor/react";
 

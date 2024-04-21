@@ -1,6 +1,6 @@
 import { IoAdd, IoClose } from "react-icons/io5";
 import { Button } from "@/components/ui/button";
-import useModal from "@/features/hooks/use-modal";
+import useModal from "@/features/modal/use-modal";
 import {
     AlertDialog,
     AlertDialogCancel,
