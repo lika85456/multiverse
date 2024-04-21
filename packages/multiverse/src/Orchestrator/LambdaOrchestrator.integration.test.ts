@@ -2,12 +2,12 @@ import DynamoChangesStorage from "../ChangesStorage/DynamoChangesStorage";
 import type { DatabaseID, StoredDatabaseConfiguration } from "../core/DatabaseConfiguration";
 import { Vector } from "../core/Vector";
 import type { NewVector } from "../core/Vector";
-import MockIndex from "../Index/MockIndex";
+import LocalIndex from "../Index/LocalIndex";
 import DynamoInfrastructureStorage from "../InfrastructureStorage/DynamoInfrastructureStorage";
 import S3SnapshotStorage from "../SnapshotStorage/S3SnapshotStorage";
 import LambdaOrchestrator from "./LambdaOrchestrator";
 
-describe("<Orchestrator - integration>", () => {
+describe("<LambdaOrchestrator>", () => {
 
     const databaseId: DatabaseID = {
         name: Date.now() + "",
@@ -97,9 +97,9 @@ describe("<Orchestrator - integration>", () => {
             sendVector: true
         });
 
-        const mockIndex = new MockIndex({
-            dimensionsCount: 3,
-            spaceType: "l2"
+        const mockIndex = new LocalIndex({
+            dimensions: 3,
+            space: "l2"
         });
 
         mockIndex.add(vectors);

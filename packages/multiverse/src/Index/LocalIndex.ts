@@ -1,18 +1,15 @@
 /* eslint-disable max-len */
-import type { SpaceName } from "hnswlib-node";
 import type Index from ".";
+import type { DatabaseConfiguration } from "../core/DatabaseConfiguration";
 import type { Query, SearchResultVector } from "../core/Query";
 import type { NewVector } from "../core/Vector";
 import { readFile, writeFile } from "fs/promises";
 
-export default class MockIndex implements Index {
+export default class LocalIndex implements Index {
 
     private storedVectors: NewVector[] = [];
 
-    constructor(private options: {
-        dimensionsCount: number;
-        spaceType: SpaceName;
-    }) {
+    constructor(private options: DatabaseConfiguration) {
     }
 
     //l2: sum((x_i - y_i)^2), ip: 1 - sum(x_i * y_i), cosine: 1 - sum(x_i * y_i) / norm(x) * norm(y)
@@ -21,7 +18,7 @@ export default class MockIndex implements Index {
             return [];
         }
 
-        if (this.options.spaceType === "cosine") {
+        if (this.options.space === "cosine") {
             // @ts-ignore
             return this.storedVectors.map((vector) => {
                 return {
@@ -33,7 +30,7 @@ export default class MockIndex implements Index {
             }).sort((a, b) => a.distance - b.distance).slice(0, query.k);
         }
 
-        if (this.options.spaceType === "ip") {
+        if (this.options.space === "ip") {
             // @ts-ignore
             return this.storedVectors.map((vector) => {
                 return {
@@ -71,7 +68,7 @@ export default class MockIndex implements Index {
     }
 
     public async dimensions(): Promise<number> {
-        return Promise.resolve(this.options.dimensionsCount);
+        return Promise.resolve(this.options.dimensions);
     }
 
     public async save(path: string): Promise<void> {

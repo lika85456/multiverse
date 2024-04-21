@@ -97,7 +97,7 @@ export default class LambdaOrchestrator implements Orchestrator {
     }
 
     /**
-     * TODO! change name. this doesnt make sense
+     * TODO! run build only on test environment.
      * Builds the orchestrator lambda function and zips it.
      */
     public async build(): Promise<Uint8Array> {

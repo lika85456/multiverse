@@ -15,7 +15,7 @@ describe("<Multiverse E2E>", () => {
             secretTokens: [{
                 name: "hovnokleslo",
                 secret: "hovnokleslo",
-                validUntil: Date.now() + 1000 * 60 * 60
+                validUntil: Number.MAX_SAFE_INTEGER
             }],
             space: "l2"
         });

@@ -98,7 +98,7 @@ export default class OrchestratorWorker implements Orchestrator {
         log.debug("Flushing changes storage");
 
         const changes = await this.options.changesStorage.getAllChangesAfter(0);
-        await this.options.changesStorage.clearBefore(Infinity);
+        await this.options.changesStorage.clearBefore(Number.MAX_SAFE_INTEGER);
 
         const infrastructure = await this.options.infrastructureStorage.get(this.options.databaseId.name);
         if (!infrastructure) {

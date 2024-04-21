@@ -1,10 +1,8 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import type {
     DatabaseID, Region, StoredDatabaseConfiguration, Token
 } from "./core/DatabaseConfiguration";
 import type { Query, QueryResult } from "./core/Query";
 import type { NewVector } from "./core/Vector";
-import { ENV } from "./env";
 import type InfrastructureStorage from "./InfrastructureStorage";
 import DynamoInfrastructureStorage from "./InfrastructureStorage/DynamoInfrastructureStorage";
 import type Orchestrator from "./Orchestrator/Orchestrator";
@@ -110,8 +108,6 @@ export default class Multiverse implements IMultiverse {
 
     private INFRASTRUCTURE_TABLE_NAME = "multiverse-infrastructure-storage";
 
-    private awsToken: AwsToken;
-
     private infrastructureStorage: InfrastructureStorage;
 
     /**
@@ -123,19 +119,10 @@ export default class Multiverse implements IMultiverse {
         awsToken?: AwsToken,
     }) {
 
-        if (!options.awsToken && (!ENV.AWS_ACCESS_KEY_ID || !ENV.AWS_SECRET_ACCESS_KEY)) {
-            throw new Error("AWS credentials are required");
-        }
-
-        this.awsToken = options.awsToken ?? {
-            accessKeyId: ENV.AWS_ACCESS_KEY_ID!,
-            secretAccessKey: ENV.AWS_SECRET_ACCESS_KEY!
-        };
-
         this.infrastructureStorage = new DynamoInfrastructureStorage({
             region: options.region,
             tableName: this.INFRASTRUCTURE_TABLE_NAME,
-            awsToken: this.awsToken
+            awsToken: this.options.awsToken
         });
     }
 
@@ -170,6 +157,7 @@ export default class Multiverse implements IMultiverse {
      * @param options
      */
     public async createDatabase(options: MultiverseDatabaseConfiguration) {
+        // TODO!: secret token should not be needed here, because aws token cou
         if (options.secretTokens.length === 0) {
             throw new Error("At least one secret token is required");
         }
@@ -186,19 +174,19 @@ export default class Multiverse implements IMultiverse {
         const changesStorage = new DynamoChangesStorage({
             databaseId,
             tableName: `multiverse-changes-${options.name}`,
-            awsToken: this.awsToken
+            awsToken: this.options.awsToken
         });
 
         const snapshotStorage = new S3SnapshotStorage({
             bucketName: `multiverse-snapshot-${options.name}`,
             databaseId,
-            awsToken: this.awsToken
+            awsToken: this.options.awsToken
         });
 
         const orchestrator = new LambdaOrchestrator({
             databaseId,
             secretToken: options.secretTokens[0].secret,
-            awsToken: this.awsToken
+            awsToken: this.options.awsToken
         });
 
         log.info(`Creating database ${options.name}`);
@@ -254,7 +242,7 @@ export default class Multiverse implements IMultiverse {
         const orchestrator = new LambdaOrchestrator({
             databaseId,
             secretToken: "not needed",
-            awsToken: this.awsToken
+            awsToken: this.options.awsToken
         });
 
         log.info(`Removing database ${name}`);
@@ -287,7 +275,7 @@ export default class Multiverse implements IMultiverse {
             region: this.options.region,
             // TODO: find better way to obtain a token?
             secretToken: databaseConfiguration.configuration.secretTokens[0].secret,
-            awsToken: this.awsToken
+            awsToken: this.options.awsToken
         });
     }
 
@@ -300,7 +288,7 @@ export default class Multiverse implements IMultiverse {
             name: database.databaseId.name,
             region: this.options.region,
             secretToken: database.configuration.secretTokens[0].secret,
-            awsToken: this.awsToken
+            awsToken: this.options.awsToken
         }));
     }
 }
