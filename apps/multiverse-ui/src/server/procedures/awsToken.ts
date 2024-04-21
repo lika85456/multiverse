@@ -10,8 +10,8 @@ import {
 } from "@/lib/mongodb/collections/aws-token";
 import { deleteAllDatabases } from "@/lib/mongodb/collections/database";
 import { TRPCError } from "@trpc/server";
-import { MultiverseFactory } from "@/server/multiverse-interface/MultiverseFactory";
-import { SQSHandler } from "@/features/statistics/statistics-processor/SQSHandler";
+import { MultiverseFactory } from "@/lib/multiverse-interface/MultiverseFactory";
+import { SQSHandler } from "@/lib/statistics-processor/SQSHandler";
 import { GetCallerIdentityCommand, STSClient } from "@aws-sdk/client-sts";
 import log from "@multiverse/log";
 import { handleError } from "@/server";
@@ -126,8 +126,7 @@ export const awsToken = router({
                 });
 
                 // create a queue for the user
-                const statisticsProcessor = new SQSHandler();
-                const queueName = await statisticsProcessor.createQueue();
+                const queueName = await SQSHandler.createQueue();
 
                 // store queue in mongodb
                 await addQueueToUser(sessionUser._id, queueName);
@@ -157,8 +156,7 @@ export const awsToken = router({
             log.debug(`Deleting AWS token for user ${sessionUser.email}`);
 
             // delete queue from AWS and mongodb
-            const statisticsProcessor = new SQSHandler();
-            await statisticsProcessor.deleteQueue();
+            await SQSHandler.deleteQueue();
             await removeQueueFromUser(sessionUser._id);
 
             // delete all databases in the mongodb

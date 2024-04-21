@@ -1,6 +1,6 @@
 import { publicProcedure, router } from "@/server/trpc";
 import z from "zod";
-import { generateHex } from "@/server/multiverse-interface/MultiverseMock";
+import { generateHex } from "@/lib/multiverse-interface/MultiverseMock";
 import type { DatabaseFindMongoDb, DatabaseGet } from "@/lib/mongodb/collections/database";
 import {
     createDatabase, deleteDatabase, EDatabaseState, getDatabase
@@ -16,7 +16,7 @@ import {
     removeDatabaseToBeCreatedFromUser,
     removeDatabaseToBeDeletedFromUser
 } from "@/lib/mongodb/collections/user";
-import { MultiverseFactory } from "@/server/multiverse-interface/MultiverseFactory";
+import { MultiverseFactory } from "@/lib/multiverse-interface/MultiverseFactory";
 import log from "@multiverse/log";
 import { handleError } from "@/server";
 import type { ObjectId } from "mongodb";
@@ -199,6 +199,13 @@ const storeDatabase = async(configuration: MultiverseDatabaseConfiguration): Pro
     };
 };
 
+const filterDefaultToken = (database: DatabaseGet): DatabaseGet => {
+    return {
+        ...database,
+        secretTokens: database.secretTokens.filter(token => token.name !== "default")
+    };
+};
+
 export const database = router({
     /**
      * List all databases.
@@ -224,10 +231,9 @@ export const database = router({
             const dbsToBeCreated = sessionUser.dbsToBeCreated || [];
             const dbsToBeDeleted = sessionUser.dbsToBeDeleted || [];
 
-            log.debug("Listing databases");
             const multiverse = await (new MultiverseFactory()).getMultiverse();
             const listedDatabases = await multiverse.listDatabases();
-            log.debug("Listed databases", JSON.stringify(listedDatabases, null, 2));
+
             const databases = (await Promise.all(listedDatabases.map(async(database): Promise<(DatabaseGet | undefined)> => {
                 const configuration = await database.getConfiguration();
 
@@ -245,8 +251,10 @@ export const database = router({
                     await database.updateConfiguration(configuration);
                 }
 
+                const storedDatabase = await storeDatabase(configuration);
+
                 // guaranteed that the database is stored in the mongodb
-                return await storeDatabase(configuration);
+                return filterDefaultToken(storedDatabase);
             }))).filter(database => database !== undefined) as DatabaseGet[];
 
             return {
@@ -311,7 +319,7 @@ export const database = router({
                 const storedDatabase = await storeDatabase(configuration);
 
                 return {
-                    database: storedDatabase,
+                    database: filterDefaultToken(storedDatabase),
                     state: EDatabaseState.CREATED
                 };
             } catch (error) {
@@ -352,11 +360,11 @@ export const database = router({
             codeName = generateDatabaseCodeName(opts.input.name);
             const name = opts.input.name;
 
-            const secretTokenList = [
+            const initialTokenList = [
                 {
                     name: "default",
-                    secret: "1234567890",
-                    validUntil: Date.now() + 1000 * 60 * 60 * 24 * 365
+                    secret: generateHex(16),
+                    validUntil: Number.MAX_SAFE_INTEGER
                 }
             ];
 
@@ -368,7 +376,7 @@ export const database = router({
             // create the database in the multiverse
             const database: MultiverseDatabaseConfiguration = {
                 name: codeName,
-                secretTokens: secretTokenList, //opts.input.secretTokens,
+                secretTokens: initialTokenList, //opts.input.secretTokens,
                 dimensions: opts.input.dimensions,
                 region: opts.input.region as "eu-central-1",
                 space: opts.input.space as "l2" | "cosine" | "ip",

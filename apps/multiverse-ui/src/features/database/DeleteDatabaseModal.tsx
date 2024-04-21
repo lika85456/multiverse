@@ -70,6 +70,7 @@ export default function DeleteDatabaseModal() {
                 <AlertDialogHeader>
                     <div className="flex flex-row justify-between">
                         <AlertDialogTitle>Delete Database</AlertDialogTitle>
+                        {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events,jsx-a11y/no-static-element-interactions */}
                         <div
                             className="border-0 text-primary-foreground hover:text-secondary-foreground w-8 h-8 p-0 m-0 cursor-pointer transition-all"
                             onClick={handleCloseModal}

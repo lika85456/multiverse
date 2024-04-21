@@ -16,9 +16,7 @@ import React, {
 } from "react";
 import Editor from "@monaco-editor/react";
 import { trpc } from "@/lib/trpc/client";
-import {
-    notFound, redirect, useParams
-} from "next/navigation";
+import { notFound, useParams } from "next/navigation";
 import type { NewVector } from "@multiverse/multiverse/src/core/Vector";
 import { customToast } from "@/features/fetching/CustomToast";
 import Spinner from "@/features/fetching/Spinner";
@@ -177,6 +175,7 @@ export default function UpsertVectorModal({ className, handleInvalidateResult }:
     return (
         <AlertDialog open={modalOpen}>
             <AlertDialogTrigger asChild>
+                {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events,jsx-a11y/no-static-element-interactions */}
                 <div className={className} onClick={handleOpenModal}>
                     <Button className="self-end bg-accent text-accent-foreground hover:bg-accent_light">
                         <IoAdd className="w-6 h-6 mr-2" />
