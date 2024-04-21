@@ -22,14 +22,16 @@ describe("SQS Queue", () => {
                 count: 20,
                 dbName: "test",
                 timestamp: Date.now() - 1000,
-                vectorsAfter: 20
+                vectorsAfter: 20,
+                dataSize: 100
             },
             {
                 type: "remove",
                 count: 10,
                 dbName: "test",
                 timestamp: Date.now(),
-                vectorsAfter: 10
+                vectorsAfter: 10,
+                dataSize: 90
             }
         ];
 
@@ -60,7 +62,8 @@ describe("SQS Queue", () => {
             count: i,
             dbName: "test",
             timestamp: Date.now() - 1000,
-            vectorsAfter: i
+            vectorsAfter: i,
+            dataSize: i
         }));
 
         await Promise.all(events.map(event => q.push(event)));

@@ -17,12 +17,14 @@ export type QueryEvent = BaseEvent & {
 export type AddEvent = BaseEvent & {
     type: "add";
     vectorsAfter: number;
+    dataSize: number;
     count: number;
 };
 
 export type RemoveEvent = BaseEvent & {
     type: "remove";
     vectorsAfter: number;
+    dataSize: number;
     count: number;
 };
 
