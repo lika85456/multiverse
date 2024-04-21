@@ -9,7 +9,6 @@ export type BaseEvent = {
 
 export type QueryEvent = BaseEvent & {
     type: "query";
-    query: string;
     duration: number;
 
     // instances involved ?
@@ -27,4 +26,4 @@ export type RemoveEvent = BaseEvent & {
     count: number;
 };
 
-export type Event = QueryEvent | AddEvent | RemoveEvent;
+export type StatisticsEvent = QueryEvent | AddEvent | RemoveEvent;

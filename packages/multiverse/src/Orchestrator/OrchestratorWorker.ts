@@ -4,10 +4,12 @@ import type { Worker } from "../Compute/Worker";
 import type {
     DatabaseConfiguration, DatabaseID, Region, StoredDatabaseConfiguration, Token
 } from "../core/DatabaseConfiguration";
+import type { StatisticsEvent } from "../core/Events";
 import type { Query, QueryResult } from "../core/Query";
 import type { NewVector } from "../core/Vector";
 import type InfrastructureStorage from "../InfrastructureStorage";
 import type { Infrastructure } from "../InfrastructureStorage";
+import SQSSStatisticsQueue from "../StatisticsQueue/SQSStatisticsQueue";
 import type Orchestrator from "./Orchestrator";
 import PartitionWorker from "./PartitionWorker";
 import logger from "@multiverse/log";
@@ -54,6 +56,8 @@ export default class OrchestratorWorker implements Orchestrator {
     }
 
     public async query(query: Query): Promise<QueryResult> {
+        const startTimestamp = Date.now();
+
         const infrastructure = await this.options.infrastructureStorage.get(this.options.databaseId.name);
         if (!infrastructure) {
             throw new Error(`Database ${this.options.databaseId.name} not found`);
@@ -89,6 +93,15 @@ export default class OrchestratorWorker implements Orchestrator {
             oldestUpdateTimestamp,
             updates,
             result
+        });
+
+        const endTimestamp = Date.now();
+
+        await this.safelySendStatisticsEvent({
+            dbName: this.options.databaseId.name,
+            type: "query",
+            duration: endTimestamp - startTimestamp,
+            timestamp: startTimestamp
         });
 
         return result.result;
@@ -129,6 +142,14 @@ export default class OrchestratorWorker implements Orchestrator {
 
         const count = await this.options.changesStorage.count();
 
+        await this.safelySendStatisticsEvent({
+            type: "add",
+            count: vectors.length,
+            dbName: this.options.databaseId.name,
+            timestamp: Date.now(),
+            vectorsAfter: count
+        });
+
         if (count > this.maxChangesCount) {
             await this.flushChangesStorage();
         }
@@ -142,6 +163,14 @@ export default class OrchestratorWorker implements Orchestrator {
         })));
 
         const count = await this.options.changesStorage.count();
+
+        await this.safelySendStatisticsEvent({
+            type: "remove",
+            count: labels.length,
+            dbName: this.options.databaseId.name,
+            timestamp: Date.now(),
+            vectorsAfter: count
+        });
 
         if (count > this.maxChangesCount) {
             await this.flushChangesStorage();
@@ -212,5 +241,21 @@ export default class OrchestratorWorker implements Orchestrator {
         return infrastructure.configuration.secretTokens.some(t =>
             t.secret === secret
             && t.validUntil > Date.now());
+    }
+
+    private async safelySendStatisticsEvent(e: StatisticsEvent) {
+        const infrastructure = await this.options.infrastructureStorage.get(this.options.databaseId.name);
+
+        if (!infrastructure) {
+            throw new Error(`Database ${this.options.databaseId.name} not found`);
+        }
+
+        if (!infrastructure.configuration.statisticsQueueName) {
+            return;
+        }
+
+        const q = new SQSSStatisticsQueue({ queueUrl: infrastructure.configuration.statisticsQueueName });
+
+        await q.push(e);
     }
 }
