@@ -93,22 +93,22 @@ describe("<LocalIndex>", () => {
         const dimensions = 1536;
         const vectors = Array.from({ length: 1000 }, (_, i) => ({
             label: i + "",
-            vector: Array.from({ length: dimensions }, () => Math.random() * 100000)
+            vector: Array.from({ length: dimensions }, () => i)
         }));
 
         const mockIndex = new LocalIndex({
             dimensions,
-            space: "ip"
+            space: "l2"
         });
         const realIndex = new HNSWIndex({
             dimensions,
-            space: "ip",
+            space: "l2",
         });
 
-        await realIndex.add(vectors);
         await mockIndex.add(vectors);
+        await realIndex.add(vectors);
 
-        const queryVector = Array.from({ length: dimensions }, () => Math.random());
+        const queryVector = Array.from({ length: dimensions }, () => 0);
         const query = {
             vector: queryVector,
             k: 10,
