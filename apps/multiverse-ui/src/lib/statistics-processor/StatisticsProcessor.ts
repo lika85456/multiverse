@@ -142,9 +142,9 @@ export class StatisticsProcessor {
         // calculate statistics from events and set resulting daily statistics
         const result = events.reduce((acc, event) => {
             if (event.type === "add") {
-                acc.writeCount += 1;
+                acc.writeCount += event.count;
             } else if (event.type === "remove") {
-                acc.writeCount += 1;
+                acc.writeCount += event.count;
             } else if (event.type === "query") {
                 acc.readCount += 1;
                 acc.totalResponseTime += event.duration;
@@ -166,21 +166,6 @@ export class StatisticsProcessor {
      * @private
      */
     private async processEventsForDatabase(databaseName: string, events: StatisticsEvent[]): Promise<void> {
-        // const eventsByDate = this.groupByDate(events); // events grouped by date
-        //         const allStatistics = await getDailyStatisticsForDates(Array
-        //             .from(eventsByDate.keys())
-        //             .map((e) => convertToISODate(e)), databaseName);
-        //
-        // // await Promise.all(Array.from(eventsByDate, async([date, events]) => {
-        // //
-        // // }))
-        //
-        // const generalDatabaseStatistics = await getGeneralDatabaseStatistics(databaseName);
-        //
-        // await Promise.all(Array.from(eventsByDate, async([date, events]) => {
-        //     const filteredStatistics = allStatistics.filter(stat => stat.date === date);
-        // }));
-
         const eventsByDate = this.groupByDate(events); // events grouped by date
         const allStatistics = await getDailyStatisticsForDates(Array
             .from(eventsByDate.keys())

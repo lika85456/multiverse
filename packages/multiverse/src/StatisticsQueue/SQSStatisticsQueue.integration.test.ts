@@ -53,7 +53,12 @@ describe("SQS Queue", () => {
             MessageId: result[1].MessageId
         });
 
-        await q.removeMessages(result.map(r => r.MessageId));
+        await q.removeMessages(result.map(r => {
+            return {
+                messageId: r.MessageId,
+                receiptHandle: r.ReceiptHandle
+            };
+        }));
     });
 
     it("should push 1000 items and get them all", async() => {
@@ -77,6 +82,11 @@ describe("SQS Queue", () => {
 
         expect(result.length).toBe(1000);
 
-        await q.removeMessages(result.map(r => r.MessageId));
+        await q.removeMessages(result.map(r => {
+            return {
+                messageId: r.MessageId,
+                receiptHandle: r.ReceiptHandle
+            };
+        }));
     });
 });
