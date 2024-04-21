@@ -5,12 +5,12 @@ import type {
     StoredDatabaseConfiguration
 } from "../core/DatabaseConfiguration";
 import type { Query } from "../core/Query";
-import MockIndex from "../Index/MockIndex";
+import LocalIndex from "../Index/LocalIndex";
 import MemoryInfrastructureStorage from "../InfrastructureStorage/MemoryInfrastructureStorage";
 import LocalSnapshotStorage from "../SnapshotStorage/LocalSnapshotStorage";
 import Orchestrator from "./OrchestratorWorker";
 
-describe("<Orchestrator>", () => {
+describe("<OrchestratorWorker>", () => {
 
     let databaseId: DatabaseID;
 
@@ -43,7 +43,7 @@ describe("<Orchestrator>", () => {
             changesStorage,
             partitionIndex: 0,
             ephemeralLimit: 10_000,
-            index: new MockIndex({
+            index: new LocalIndex({
                 dimensionsCount: databaseConfiguration.dimensions,
                 spaceType: databaseConfiguration.space
             }),

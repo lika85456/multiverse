@@ -6,6 +6,7 @@ import { mkdir } from "fs/promises";
 import type { Readable } from "stream";
 import log from "@multiverse/log";
 import type { DatabaseID } from "../core/DatabaseConfiguration";
+import type { AwsToken } from "../core/AwsToken";
 
 const logger = log.getSubLogger({ name: "S3SnapshotStorage" });
 
@@ -16,11 +17,17 @@ export class S3SnapshotStorageDeployer {
     constructor(private options: {
             bucketName: string;
             region: string;
+            awsToken?: AwsToken
         }) {
-        this.s3 = new S3({ region: this.options.region });
+        this.s3 = new S3({
+            region: this.options.region,
+            credentials: this.options.awsToken
+        });
     }
 
     public async deploy(): Promise<void> {
+        logger.debug(`Creating bucket ${this.options.bucketName}`);
+
         await this.s3.createBucket({
             Bucket: this.options.bucketName,
             // CreateBucketConfiguration: { LocationConstraint: this.options.region },
@@ -28,6 +35,8 @@ export class S3SnapshotStorageDeployer {
     }
 
     public async destroy(): Promise<void> {
+        logger.debug(`Deleting bucket ${this.options.bucketName}`);
+
         try {
             await this.s3.deleteBucket({ Bucket: this.options.bucketName });
         } catch (e) {
@@ -74,12 +83,17 @@ export default class S3SnapshotStorage implements SnapshotStorage {
         bucketName: string;
         databaseId: DatabaseID;
         downloadPath?: string;
+        awsToken?: AwsToken
     }) {
-        this.s3 = new S3({ region: options.databaseId.region });
+        this.s3 = new S3({
+            region: options.databaseId.region,
+            credentials: options.awsToken
+        });
         this.options.downloadPath = this.options.downloadPath || "/tmp/s3-snapshots";
         this.deployer = new S3SnapshotStorageDeployer({
             bucketName: this.options.bucketName,
-            region: this.options.databaseId.region
+            region: this.options.databaseId.region,
+            awsToken: this.options.awsToken
         });
     }
 

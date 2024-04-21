@@ -13,7 +13,7 @@
       "allowJs": true,
     },
     "include": [
-      "src/**/*", "src/core/DatabaseConfiguration.ts",
+      "src/**/*"
     ],
     "exclude": ["dist", "build", "node_modules"],
   }

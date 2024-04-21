@@ -1,11 +1,12 @@
 import MemoryChangesStorage from "../ChangesStorage/MemoryChangesStorage";
-import HNSWIndex from "../Index/HNSWIndex";
 import LocalSnapshotStorage from "../SnapshotStorage/LocalSnapshotStorage";
 import type { WorkerQuery } from "./Worker";
 import { Vector } from "../core/Vector";
 import ComputeWorker from "./ComputeWorker";
 import type { StoredVectorChange } from "../ChangesStorage/StoredVector";
 import type { DatabaseConfiguration } from "../core/DatabaseConfiguration";
+import LocalIndex from "../Index/LocalIndex";
+import type Index from "../Index";
 
 describe("<ComputeWorker>", () => {
 
@@ -18,13 +19,13 @@ describe("<ComputeWorker>", () => {
 
         let changesStorage: MemoryChangesStorage;
         let snapshotStorage: LocalSnapshotStorage;
-        let index: HNSWIndex;
+        let index: LocalIndex;
         let worker: ComputeWorker;
 
         beforeEach(async() => {
             changesStorage = new MemoryChangesStorage();
             snapshotStorage = new LocalSnapshotStorage(Math.random().toString(36).substring(7));
-            index = new HNSWIndex(config);
+            index = new LocalIndex(config);
             worker = new ComputeWorker({
                 changesStorage,
                 partitionIndex: 0,
@@ -156,13 +157,13 @@ describe("<ComputeWorker>", () => {
 
         let changesStorage: MemoryChangesStorage;
         let snapshotStorage: LocalSnapshotStorage;
-        let index: HNSWIndex;
+        let index: Index;
         let worker: ComputeWorker;
 
         beforeAll(async() => {
             changesStorage = new MemoryChangesStorage();
             snapshotStorage = new LocalSnapshotStorage(Math.random().toString(36).substring(7));
-            index = new HNSWIndex(config);
+            index = new LocalIndex(config);
             worker = new ComputeWorker({
                 changesStorage,
                 partitionIndex: 0,
@@ -205,7 +206,7 @@ describe("<ComputeWorker>", () => {
                 changesStorage,
                 partitionIndex: 0,
                 snapshotStorage,
-                index: new HNSWIndex(config),
+                index: new LocalIndex(config),
                 ephemeralLimit: 5000,
                 memoryLimit: 5000
             });

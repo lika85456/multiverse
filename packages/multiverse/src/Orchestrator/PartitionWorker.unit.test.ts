@@ -2,7 +2,7 @@ import MemoryChangesStorage from "../ChangesStorage/MemoryChangesStorage";
 import ComputeWorker from "../Compute/ComputeWorker";
 import type { Region, StoredDatabaseConfiguration } from "../core/DatabaseConfiguration";
 import { Vector } from "../core/Vector";
-import MockIndex from "../Index/MockIndex";
+import LocalIndex from "../Index/LocalIndex";
 import MemoryInfrastructureStorage from "../InfrastructureStorage/MemoryInfrastructureStorage";
 import LocalSnapshotStorage from "../SnapshotStorage/LocalSnapshotStorage";
 import PartitionWorker from "./PartitionWorker";
@@ -19,7 +19,7 @@ describe("<PartitionWorker>", () => {
         changesStorage,
         partitionIndex: 0,
         ephemeralLimit: 10_000,
-        index: new MockIndex({
+        index: new LocalIndex({
             dimensionsCount: 3,
             spaceType: "l2"
         }),

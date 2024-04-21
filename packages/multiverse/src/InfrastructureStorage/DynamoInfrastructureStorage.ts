@@ -8,6 +8,7 @@ import {
 import log from "@multiverse/log";
 import InfrastructureStorage from ".";
 import type { Infrastructure } from ".";
+import type { AwsToken } from "../core/AwsToken";
 
 const logger = log.getSubLogger({ name: "DynamoChangesStorageDeployer" });
 
@@ -18,8 +19,12 @@ export class InfrastructureStorageDeployer {
     constructor(private options: {
         region: string;
         tableName: string;
+        awsToken?: AwsToken
     }) {
-        this.dynamo = new DynamoDB({ region: options.region });
+        this.dynamo = new DynamoDB({
+            region: options.region,
+            credentials: options.awsToken
+        });
     }
 
     public async deploy() {
@@ -104,15 +109,20 @@ export default class DynamoInfrastructureStorage extends InfrastructureStorage {
 
     constructor(private options: {
         tableName: string;
-        region: string
+        region: string;
+        awsToken?: AwsToken
     }) {
         super();
-        const db = new DynamoDBClient({ region: options.region });
+        const db = new DynamoDBClient({
+            region: options.region,
+            credentials: options.awsToken
+        });
         this.dynamo = DynamoDBDocumentClient.from(db);
 
         this.deployer = new InfrastructureStorageDeployer({
             region: options.region,
-            tableName: options.tableName
+            tableName: options.tableName,
+            awsToken: options.awsToken
         });
     }
 
