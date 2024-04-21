@@ -2,10 +2,13 @@ import type { StatisticsEvent } from "../core/Events";
 import SQSSStatisticsQueue from "./SQSStatisticsQueue";
 
 describe("SQS Queue", () => {
-    const q = new SQSSStatisticsQueue({});
+    const q = new SQSSStatisticsQueue({
+        region: "eu-central-1",
+        queueName: Math.random().toString(36).substring(7)
+    });
 
     beforeAll(async() => {
-        await q.deploy({ queueName: Math.random().toString(36).substring(7) });
+        await q.deploy();
     });
 
     afterAll(async() => {
@@ -36,15 +39,23 @@ describe("SQS Queue", () => {
 
         await new Promise(resolve => setTimeout(resolve, 1000));
 
-        const result = (await q.getAllEvents()).sort((a, b) => a.timestamp - b.timestamp);
+        const result = (await q.receiveMessages(Date.now() + 10000, 2)).sort((a, b) => a.timestamp - b.timestamp);
 
         expect(result.length).toBe(2);
-        expect(result[0]).toEqual(events[0]);
-        expect(result[1]).toEqual(events[1]);
+        expect(result[0]).toEqual({
+            ...events[0],
+            MessageId: result[0].MessageId
+        });
+        expect(result[1]).toEqual({
+            ...events[1],
+            MessageId: result[1].MessageId
+        });
+
+        await q.removeMessages(result.map(r => r.MessageId));
     });
 
-    it.skip("should push 10000 items and get them all", async() => {
-        const events: StatisticsEvent[] = Array.from({ length: 10000 }, (_, i) => ({
+    it("should push 1000 items and get them all", async() => {
+        const events: StatisticsEvent[] = Array.from({ length: 1000 }, (_, i) => ({
             type: "add",
             count: i,
             dbName: "test",
@@ -58,9 +69,11 @@ describe("SQS Queue", () => {
 
         const start = Date.now();
 
-        const result = await q.getAllEventsParallel(100);
+        const result = await q.receiveMessages(Date.now() + 10000, 1000);
         console.log("Time", Date.now() - start);
 
-        expect(result.length).toBe(10000);
+        expect(result.length).toBe(1000);
+
+        await q.removeMessages(result.map(r => r.MessageId));
     });
 });

@@ -47,10 +47,12 @@ export default class SQSSStatisticsQueue implements StatisticsQueue {
         MessageId: string
     })[]> {
 
+        const queueUrl = await this.getQueueUrl();
+
         const events: (StatisticsEvent & { MessageId: string })[] = [];
 
         const app = Consumer.create({
-            queueUrl: await this.getQueueUrl(),
+            queueUrl,
             handleMessage: async(message) => {
                 if (!message.Body || !message.MessageId) {
                     return;
@@ -74,22 +76,39 @@ export default class SQSSStatisticsQueue implements StatisticsQueue {
 
         app.start();
 
-        // at stopAtTimeout stop the consumer if not stopped already
         setTimeout(() => {
             try {
                 app.stop();
             } catch (_e) {
-
+                // noop
             }
         }, stopAtTimestamp - Date.now());
 
-        app.on("stopped", () => {
-            
+        return new Promise((resolve) => {
+            app.on("stopped", () => {
+                resolve(events);
+            });
         });
     }
 
-    public async deploy({ queueName }: { queueName: string}): Promise<string> {
-        const result = await this.sqs.createQueue({ QueueName: queueName });
+    public async removeMessages(messageIds: string[]): Promise<void> {
+        await Promise.all(Array.from({ length: Math.ceil(messageIds.length / 10) }, (_, i) => {
+            return this.sqs.deleteMessageBatch({
+                QueueUrl: this.options.queueUrl,
+                Entries: messageIds.slice(i * 10, (i + 1) * 10).map(id => ({
+                    Id: id,
+                    ReceiptHandle: id
+                }))
+            });
+        }));
+    }
+
+    public async deploy(options?: { queueName: string}): Promise<string> {
+        if (!(options?.queueName ?? this.options.queueName)) {
+            throw new Error("queueName is required");
+        }
+
+        const result = await this.sqs.createQueue({ QueueName: options?.queueName ?? this.options.queueName });
 
         if (!result.QueueUrl) {
             throw new Error("Queue URL not found in createQueue response");
