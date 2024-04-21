@@ -19,12 +19,13 @@ import { CgDetailsMore } from "react-icons/cg";
 import { IoClose } from "react-icons/io5";
 import { customToast } from "@/features/fetching/CustomToast";
 
-export default function ViewVectorModal({ vector }: { vector: Vector }) {
+export default function ViewVectorModal({ vector, result }: { vector: Vector, result: number}) {
     const {
         modalOpen, handleOpenModal, handleCloseModal
     } = useModal();
-    const vectorData: Vector = {
+    const vectorData = {
         label: vector.label,
+        result: result,
         metadata: vector.metadata,
         vector: vector.vector,
     };
