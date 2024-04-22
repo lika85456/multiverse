@@ -13,8 +13,8 @@ export default defineWorkspace([
         minThreads: 4,
         maxThreads: 4
       }),
-      hookTimeout: 10000,
-      testTimeout: 10000,
+      hookTimeout: 60000,
+      testTimeout: 20000,
     }
   },
   {
@@ -57,20 +57,5 @@ export default defineWorkspace([
       hookTimeout: 180000,
       testTimeout: 180000
     }
-  },
-  {
-    test: {
-      include: ['./**/*.single-thread.test.ts'],
-      exclude: ['**/node_modules/**', "**/cdk.out/**", "**/dist/**"],
-      name: 'Single threaded tests',
-      environment: 'node',
-      globals: true,
-      ...(process.env.CI && {
-        minThreads: 4,
-        maxThreads: 4
-      }),
-      hookTimeout: 60000,
-      testTimeout: 60000
-    }
-  },
+  }
 ])

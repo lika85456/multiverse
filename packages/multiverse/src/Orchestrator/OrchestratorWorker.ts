@@ -28,6 +28,7 @@ export default class OrchestratorWorker implements Orchestrator {
         databaseId: DatabaseID;
         databaseConfiguration: DatabaseConfiguration;
 
+        
         maxChangesCount?: number;
         lambdaFactory?: (name: string, region: Region) => Worker;
     }) {
@@ -147,7 +148,8 @@ export default class OrchestratorWorker implements Orchestrator {
             count: vectors.length,
             dbName: this.options.databaseId.name,
             timestamp: Date.now(),
-            vectorsAfter: count
+            vectorsAfter: count,
+            dataSize: -1
         });
 
         if (count > this.maxChangesCount) {
@@ -169,7 +171,8 @@ export default class OrchestratorWorker implements Orchestrator {
             count: labels.length,
             dbName: this.options.databaseId.name,
             timestamp: Date.now(),
-            vectorsAfter: count
+            vectorsAfter: count,
+            dataSize: -1
         });
 
         if (count > this.maxChangesCount) {
@@ -254,7 +257,11 @@ export default class OrchestratorWorker implements Orchestrator {
             return;
         }
 
-        const q = new SQSSStatisticsQueue({ queueUrl: infrastructure.configuration.statisticsQueueName });
+        const q = new SQSSStatisticsQueue({
+            queueUrl: infrastructure.configuration.statisticsQueueName,
+            region,
+            awsToken: this.options.databaseId
+        });
 
         await q.push(e);
     }

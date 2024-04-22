@@ -150,7 +150,6 @@ export default class LambdaWorker implements Worker {
 
     public async deploy(options: {
         partition: number,
-        changesTable: string,
         snapshotBucket: string,
         env: "development" | "production",
         configuration: DatabaseConfiguration,
@@ -161,7 +160,6 @@ export default class LambdaWorker implements Worker {
             DATABASE_CONFIG: options.configuration,
             DATABASE_IDENTIFIER: options.databaseId,
             PARTITION: options.partition,
-            CHANGES_TABLE: options.changesTable,
             SNAPSHOT_BUCKET: options.snapshotBucket,
             NODE_ENV: options.env,
         };
@@ -181,7 +179,7 @@ export default class LambdaWorker implements Worker {
                     VARIABLES: JSON.stringify(variables),
                     NODE_ENV: options.env,
                 }
-            }
+            },
         });
 
         logger.debug("Created compute lambda", { result });

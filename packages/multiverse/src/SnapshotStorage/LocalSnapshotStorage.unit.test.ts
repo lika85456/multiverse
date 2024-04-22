@@ -14,11 +14,11 @@ describe("LocalSnapshotStorage", () => {
     });
 
     it("should create", async() => {
-        const snapshot = await snapshotStorage.create("/tmp/snapshots/testfile");
+        const snapshot = await snapshotStorage.create("/tmp/snapshots/testfile", 2);
 
         expect(snapshot).toBeDefined();
         expect(snapshot.filePath.startsWith("/tmp/snapshots/test/")).toBe(true);
-        expect(snapshot.timestamp).toBeGreaterThan(0);
+        expect(snapshot.timestamp).toBe(2);
         expect(snapshot.databaseName).toBe("test");
     });
 

@@ -1,4 +1,4 @@
-import { S3 } from "@aws-sdk/client-s3";
+import { S3, waitUntilBucketExists } from "@aws-sdk/client-s3";
 import type { Snapshot } from ".";
 import type SnapshotStorage from ".";
 import { createReadStream, createWriteStream } from "fs";
@@ -26,16 +26,23 @@ export class S3SnapshotStorageDeployer {
     }
 
     public async deploy(): Promise<void> {
-        logger.debug(`Creating bucket ${this.options.bucketName}`);
+        logger.info(`Creating bucket ${this.options.bucketName}`);
 
         await this.s3.createBucket({
             Bucket: this.options.bucketName,
             // CreateBucketConfiguration: { LocationConstraint: this.options.region },
         });
+
+        await waitUntilBucketExists({
+            client: this.s3,
+            maxWaitTime: 60,
+        }, { Bucket: this.options.bucketName });
+
+        logger.info(`Created bucket ${this.options.bucketName}`);
     }
 
     public async destroy(): Promise<void> {
-        logger.debug(`Deleting bucket ${this.options.bucketName}`);
+        logger.info(`Deleting bucket ${this.options.bucketName}`);
 
         try {
             await this.s3.deleteBucket({ Bucket: this.options.bucketName });
@@ -59,6 +66,8 @@ export class S3SnapshotStorageDeployer {
             }
 
             await this.s3.deleteBucket({ Bucket: this.options.bucketName });
+        } finally {
+            logger.info(`Deleted bucket ${this.options.bucketName}`);
         }
     }
 
@@ -97,9 +106,9 @@ export default class S3SnapshotStorage implements SnapshotStorage {
         });
     }
 
-    public async create(filePath: string): Promise<Snapshot> {
+    public async create(filePath: string, timestamp: number): Promise<Snapshot> {
         const now = Date.now();
-        const s3Path = `${this.options.databaseId.name}/${now}.snapshot`;
+        const s3Path = `${this.options.databaseId.name}/${timestamp}.snapshot`;
 
         logger.debug(`Uploading snapshot to s3://${this.options.bucketName}/${s3Path}`, { filePath });
 
@@ -109,11 +118,11 @@ export default class S3SnapshotStorage implements SnapshotStorage {
             Body: createReadStream(filePath)
         });
 
-        logger.info(`Uploaded snapshot to s3://${this.options.bucketName}/${s3Path}`);
+        logger.info(`Uploaded snapshot to s3://${this.options.bucketName}/${s3Path}`, { uploadTime: Date.now() - now, });
 
         return {
             filePath,
-            timestamp: now,
+            timestamp,
             databaseName: this.options.databaseId.name
         };
     }
@@ -176,7 +185,11 @@ export default class S3SnapshotStorage implements SnapshotStorage {
                 .on("error", reject);
         });
 
-        logger.info(`Downloaded snapshot from s3://${this.options.bucketName}/${latest.filePath}`);
+        logger.info(`Downloaded snapshot from s3://${this.options.bucketName}/${latest.filePath}`, {
+            filePath: `${this.options.downloadPath}/${latest.filePath}`,
+            timestamp: latest.timestamp,
+            databaseName: this.options.databaseId.name
+        });
 
         return {
             filePath: `${this.options.downloadPath}/${latest.filePath}`,

@@ -4,10 +4,7 @@
  */
 
 import log from "@multiverse/log";
-import type {
-    APIGatewayProxyEvent, APIGatewayProxyResult, Context
-} from "aws-lambda";
-import DynamoChangesStorage from "../ChangesStorage/DynamoChangesStorage";
+import type { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import HNSWIndex from "../Index/HNSWIndex";
 import S3SnapshotStorage from "../SnapshotStorage/S3SnapshotStorage";
 import type { Worker } from "./Worker";
@@ -20,11 +17,6 @@ if (!process.env.VARIABLES) {
 
 const env = databaseEnvSchema.parse(JSON.parse(process.env.VARIABLES));
 
-const changesStorage = new DynamoChangesStorage({
-    tableName: env.CHANGES_TABLE,
-    databaseId: env.DATABASE_IDENTIFIER
-});
-
 const index = new HNSWIndex(env.DATABASE_CONFIG);
 
 const snapshotStorage = new S3SnapshotStorage({
@@ -33,8 +25,8 @@ const snapshotStorage = new S3SnapshotStorage({
     downloadPath: "/tmp"
 });
 
+// TODO!: change size from ENV variables
 const databaseWorker = new ComputeWorker({
-    changesStorage,
     partitionIndex: env.PARTITION,
     ephemeralLimit: 1024,
     index,
@@ -48,15 +40,7 @@ export type DatabaseEvent = {
     waitTime?: number;
 };
 
-export async function handler(
-    event: APIGatewayProxyEvent,
-    context: Context,
-): Promise<APIGatewayProxyResult> {
-    log.debug("Received event", {
-        event,
-        context,
-        environment: process.env,
-    });
+export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
 
     if (!event.body) {
         return {
@@ -73,6 +57,12 @@ export async function handler(
     if (e.waitTime) {
         await new Promise(resolve => setTimeout(resolve, e.waitTime));
     }
+
+    log.debug("Received event", {
+        event,
+        result,
+        waitTime: e.waitTime
+    });
 
     return {
         statusCode: 200,

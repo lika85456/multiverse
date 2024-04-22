@@ -40,13 +40,9 @@ describe("<OrchestratorWorker>", () => {
         snapshotStorage = new LocalSnapshotStorage(databaseId.name);
 
         realLambdaFactory = (_name: string, _region: Region) => new ComputeWorker({
-            changesStorage,
             partitionIndex: 0,
             ephemeralLimit: 10_000,
-            index: new LocalIndex({
-                dimensionsCount: databaseConfiguration.dimensions,
-                spaceType: databaseConfiguration.space
-            }),
+            index: new LocalIndex(databaseConfiguration),
             memoryLimit: 10_000,
             snapshotStorage
         });

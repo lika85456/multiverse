@@ -11,17 +11,15 @@ export default class LocalSnapshotStorage implements SnapshotStorage {
 
     }
 
-    public async create(filePath: string): Promise<Snapshot> {
+    public async create(filePath: string, timestamp: number): Promise<Snapshot> {
         // create if not exists the folder for the index
         await mkdir(`${this.path}/${this.databaseName}`, { recursive: true });
 
-        const now = Date.now();
-
-        await cp(filePath, `${this.path}/${this.databaseName}/${now}.snapshot`);
+        await cp(filePath, `${this.path}/${this.databaseName}/${timestamp}.snapshot`);
 
         return {
-            filePath: `${this.path}/${this.databaseName}/${now}.snapshot`,
-            timestamp: now,
+            filePath: `${this.path}/${this.databaseName}/${timestamp}.snapshot`,
+            timestamp: timestamp,
             databaseName: this.databaseName
         };
     }

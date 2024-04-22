@@ -63,8 +63,12 @@ export default class LocalIndex implements Index {
         this.storedVectors = this.storedVectors.filter((vector) => !labels.includes(vector.label));
     }
 
-    public async size(): Promise<number> {
+    public async count(): Promise<number> {
         return Promise.resolve(this.storedVectors.length);
+    }
+
+    public async physicalSize(): Promise<number> {
+        return Promise.resolve(JSON.stringify(this.storedVectors).length);
     }
 
     public async dimensions(): Promise<number> {

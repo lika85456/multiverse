@@ -1,12 +1,15 @@
 import type { Infrastructure } from ".";
 import type { WorkerState } from "../Compute/Worker";
 import DynamoInfrastructureStorage from "./DynamoInfrastructureStorage";
+import MemoryInfrastructureStorage from "./MemoryInfrastructureStorage";
 
-describe("<DynamoInfrastructureStorage>", () => {
-    const storage = new DynamoInfrastructureStorage({
+describe.each([
+    ["<MemoryInfrastructureStorage>", new MemoryInfrastructureStorage()],
+    ["<DynamoInfrastructureStorage>", new DynamoInfrastructureStorage({
         region: "eu-central-1",
         tableName: "multiverse-test-infrastructure-storage-" + Date.now()
-    });
+    })]
+])("%s", (name, storage) => {
 
     beforeAll(async() => {
         await storage.deploy();
@@ -151,5 +154,9 @@ describe("<DynamoInfrastructureStorage>", () => {
         await storage.remove("test");
         const infrastructure = await storage.get("test");
         expect(infrastructure).toBeUndefined();
+    });
+
+    it.skip("should not overwrite the rest of the data when updating state of an instance", async() => {
+
     });
 });

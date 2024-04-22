@@ -2,8 +2,12 @@ import type { DatabaseConfiguration } from "../core/DatabaseConfiguration";
 import { Vector } from "../core/Vector";
 import HNSWIndex from "./HNSWIndex";
 import { execSync } from "child_process";
+import LocalIndex from "./LocalIndex";
 
-describe("<HNSWIndex>", () => {
+describe.each([
+    ["HNSWIndex", (config: DatabaseConfiguration) => new HNSWIndex(config)],
+    ["LocalIndex", (config: DatabaseConfiguration) => new LocalIndex(config)]
+])("%s", (name, indexFactory) => {
 
     const config: DatabaseConfiguration = {
         dimensions: 3,
@@ -11,10 +15,10 @@ describe("<HNSWIndex>", () => {
     };
 
     describe("Basic functions", () => {
-        const index = new HNSWIndex(config);
+        const index = indexFactory(config);
 
         it("should be empty", async() => {
-            expect(index.physicalSize()).toBe(0);
+            expect(await index.count()).toBe(0);
         });
 
         it("should add vectors", async() => {
@@ -29,21 +33,22 @@ describe("<HNSWIndex>", () => {
                 }
             ]);
 
-            expect(index.physicalSize()).toBe(2);
+            expect(await index.count()).toBe(2);
         });
 
         it("should remove vectors", async() => {
             await index.remove(["test label 1"]);
 
-            // physical size should remain the same
-            expect(index.physicalSize()).toBe(2);
+            // size should be 1
+            expect(await index.count()).toBe(1);
         });
 
         it("should query", async() => {
             const query = [3, 3, 3];
             const result = await index.knn({
                 k: 10,
-                vector: query
+                vector: query,
+                sendVector: true
             });
 
             expect(result.length).toBe(1);
@@ -126,64 +131,114 @@ describe("<HNSWIndex>", () => {
             }
 
             for (const instance of instances) {
-                expect(instance.physicalSize()).toBe(200);
+                expect(await instance.count()).toBe(200);
             }
         });
     });
 
     describe("Saving & Loading", () => {
-        const index = new HNSWIndex({
-            dimensions: 1536,
-            space: "l2",
-        });
-
-        const path = "/tmp/multiverse-test-index";
-
-        const firstVector = Vector.random(1536);
-        const secondVector = Vector.random(1536);
-
-        beforeAll(async() => {
-            await index.add([
-                {
-                    label: "test label 1",
-                    vector: firstVector,
-                    metadata: { somsing: "smoozie" }
-                },
-                {
-                    label: "test label 2",
-                    vector: secondVector,
-                }
-            ]);
-        });
-
-        afterAll(async() => {
-            execSync(`rm -rf ${path}`);
-        });
-
-        it("should save", async() => {
-            await index.save(path);
-        });
-
-        it("should load", async() => {
-            const newIndex = new HNSWIndex({
+        describe("Small amount of vectors", () => {
+            const index = new HNSWIndex({
                 dimensions: 1536,
                 space: "l2",
             });
 
-            await newIndex.load(path);
+            const path = "/tmp/multiverse-test-index";
 
-            expect(newIndex.physicalSize()).toBe(2);
-            expect(await newIndex.dimensions()).toBe(1536);
+            const firstVector = Vector.random(1536);
+            const secondVector = Vector.random(1536);
 
-            const query = {
-                k: 10,
-                vector: firstVector,
-            };
+            beforeAll(async() => {
+                await index.add([
+                    {
+                        label: "test label 1",
+                        vector: firstVector,
+                        metadata: { somsing: "smoozie" }
+                    },
+                    {
+                        label: "test label 2",
+                        vector: secondVector,
+                    }
+                ]);
+            });
 
-            const newQueryResult = await newIndex.knn(query);
-            const oldQueryResult = await index.knn(query);
+            afterAll(async() => {
+                execSync(`rm -rf ${path}`);
+            });
 
-            expect(newQueryResult).toEqual(oldQueryResult);
+            it("should save", async() => {
+                await index.save(path);
+            });
+
+            it("should load", async() => {
+                const newIndex = new HNSWIndex({
+                    dimensions: 1536,
+                    space: "l2",
+                });
+
+                await newIndex.load(path);
+
+                expect(await newIndex.count()).toBe(2);
+                expect(await newIndex.dimensions()).toBe(1536);
+
+                const query = {
+                    k: 10,
+                    vector: firstVector,
+                };
+
+                const newQueryResult = await newIndex.knn(query);
+                const oldQueryResult = await index.knn(query);
+
+                expect(newQueryResult).toEqual(oldQueryResult);
+            });
+        });
+
+        describe("Large amount of vectors", () => {
+            const index = new HNSWIndex({
+                dimensions: 1536,
+                space: "l2",
+            });
+
+            const path = "/tmp/multiverse-test-index";
+
+            const vectors = Array.from({ length: 10000 }, (_, i) => ({
+                label: "test label " + i,
+                vector: Vector.random(1536)
+            }));
+
+            beforeAll(async() => {
+                await index.add(vectors);
+            });
+
+            afterAll(async() => {
+                execSync(`rm -rf ${path}`);
+            });
+
+            it("should save", async() => {
+                await index.save(path);
+            });
+
+            it("should load", async() => {
+                const newIndex = new HNSWIndex({
+                    dimensions: 1536,
+                    space: "l2",
+                });
+
+                await newIndex.load(path);
+
+                expect(await newIndex.count()).toBe(10000);
+                expect(await newIndex.dimensions()).toBe(1536);
+
+                const query = {
+                    k: 10,
+                    vector: vectors[0].vector,
+                };
+
+                const newQueryResult = await newIndex.knn(query);
+                const oldQueryResult = await index.knn(query);
+
+                expect(newQueryResult).toEqual(oldQueryResult);
+            });
         });
     });
 });

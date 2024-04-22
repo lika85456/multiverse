@@ -5,7 +5,7 @@ export type Snapshot = {
 };
 
 export default interface SnapshotStorage {
-    create(filePath: string): Promise<Snapshot>;
+    create(filePath: string, timestamp: number): Promise<Snapshot>;
     loadLatest(): Promise<Snapshot | undefined>;
     directoryPath(): Promise<string>;
 

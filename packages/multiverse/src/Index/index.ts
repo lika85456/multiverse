@@ -6,7 +6,8 @@ export default interface Index {
     add(vectors: NewVector[]): Promise<void>;
     remove(labels: string[]): Promise<void>;
 
-    size(): Promise<number>;
+    count(): Promise<number>;
+    physicalSize(): Promise<number>;
     dimensions(): Promise<number>;
 
     save(path: string): Promise<void>;

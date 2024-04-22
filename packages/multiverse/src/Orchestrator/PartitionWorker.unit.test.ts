@@ -1,4 +1,3 @@
-import MemoryChangesStorage from "../ChangesStorage/MemoryChangesStorage";
 import ComputeWorker from "../Compute/ComputeWorker";
 import type { Region, StoredDatabaseConfiguration } from "../core/DatabaseConfiguration";
 import { Vector } from "../core/Vector";
@@ -9,20 +8,15 @@ import PartitionWorker from "./PartitionWorker";
 
 describe("<PartitionWorker>", () => {
 
-    let changesStorage: MemoryChangesStorage;
     let snapshotStorage: LocalSnapshotStorage;
     let config: StoredDatabaseConfiguration;
 
     let infrastructureStorage: MemoryInfrastructureStorage;
 
     const realLambdaFactory = (_name: string, _region: Region) => new ComputeWorker({
-        changesStorage,
         partitionIndex: 0,
         ephemeralLimit: 10_000,
-        index: new LocalIndex({
-            dimensionsCount: 3,
-            spaceType: "l2"
-        }),
+        index: new LocalIndex(config),
         memoryLimit: 10_000,
         snapshotStorage
     });
@@ -55,7 +49,6 @@ describe("<PartitionWorker>", () => {
 
     beforeEach(async() => {
 
-        changesStorage = new MemoryChangesStorage();
         snapshotStorage = new LocalSnapshotStorage(Math.random() + "");
         config = {
             secretTokens: [],

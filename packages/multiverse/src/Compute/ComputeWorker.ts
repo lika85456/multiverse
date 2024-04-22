@@ -1,4 +1,3 @@
-import type ChangesStorage from "../ChangesStorage";
 import type Index from "../Index";
 import type SnapshotStorage from "../SnapshotStorage";
 import os from "node-os-utils";
@@ -15,17 +14,13 @@ export default class ComputeWorker implements Worker {
     private instanceId = Math.random().toString(36).slice(2);
     private lastUpdate = 0;
 
-    private coldStartPromise;
-
     constructor(private options: {
         partitionIndex: number,
         snapshotStorage: SnapshotStorage,
-        changesStorage: ChangesStorage,
         index: Index,
         memoryLimit: number,
         ephemeralLimit: number,
     }) {
-        this.coldStartPromise = this.loadLatestSnapshot();
     }
 
     public async state(): Promise<StatefulResponse<void>> {
@@ -44,8 +39,6 @@ export default class ComputeWorker implements Worker {
     }
 
     public async update(updates: StoredVectorChange[]): Promise<StatefulResponse<void>> {
-        await this.coldStartPromise;
-
         for (const update of updates) {
             // some of the updates might have been proccessed already (if lastUpdate===update.timestamp),
             // but if in the right order, it should lead to the same results
@@ -69,7 +62,20 @@ export default class ComputeWorker implements Worker {
     }
 
     public async query(query: WorkerQuery): Promise<StatefulResponse<WorkerQueryResult>> {
-        await this.coldStartPromise;
+        if (query.query.k === 0) {
+            return {
+                ...(await this.state()),
+                result: { result: [] }
+            };
+        }
+
+        if (query.query.k < 0) {
+            throw new Error("K must be greater than 0");
+        }
+
+        if (query.query.vector.length !== await this.options.index.dimensions()) {
+            throw new Error(`Vector dimensions must be ${await this.options.index.dimensions()}`);
+        }
 
         if (query.updates && query.updates.length > 0) {
             await this.update(query.updates);
@@ -84,8 +90,6 @@ export default class ComputeWorker implements Worker {
     }
 
     public async wake(wait: number): Promise<void> {
-        await this.coldStartPromise;
-
         await new Promise((resolve) => setTimeout(resolve, wait));
     }
 
@@ -94,7 +98,7 @@ export default class ComputeWorker implements Worker {
         const path = `/tmp/${randomId}`;
         await this.options.index.save(path);
 
-        const snapshot = await this.options.snapshotStorage.create(path);
+        const snapshot = await this.options.snapshotStorage.create(path, this.lastUpdate);
 
         log.debug(`Saved snapshot ${snapshot.filePath}`, { snapshot });
 
@@ -120,7 +124,10 @@ export default class ComputeWorker implements Worker {
 
         this.lastUpdate = snapshot.timestamp;
 
-        log.debug(`Loaded snapshot ${snapshot.filePath}`, { snapshot });
+        log.debug(`Loaded snapshot ${snapshot.filePath}`, {
+            snapshot,
+            totalVectorsLoaded: await this.options.index.count()
+        });
 
         return await this.state();
     }
@@ -129,12 +136,10 @@ export default class ComputeWorker implements Worker {
         vectors: number,
         vectorDimensions: number
     }>> {
-        await this.coldStartPromise;
-
         return { // TODO: implement properly
             ...(await this.state()),
             result: {
-                vectors: await this.options.index.size(),
+                vectors: await this.options.index.count(),
                 vectorDimensions: await this.options.index.dimensions(),
             }
         };

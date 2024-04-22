@@ -33,11 +33,11 @@ describe("<S3SnapshotStorage>", () => {
     });
 
     it("should create", async() => {
-        const snapshot = await snapshotStorage.create("/tmp/snapshots/testfile");
+        const snapshot = await snapshotStorage.create("/tmp/snapshots/testfile", 69);
 
         expect(snapshot).toBeDefined();
         expect(snapshot.filePath).toBe("/tmp/snapshots/testfile");
-        expect(snapshot.timestamp).toBeGreaterThan(0);
+        expect(snapshot.timestamp).toBe(69);
         expect(snapshot.databaseName).toBe("test");
         expect(readFile(snapshot.filePath, "utf-8")).resolves.toBe("test");
     });
@@ -51,7 +51,7 @@ describe("<S3SnapshotStorage>", () => {
 
         expect(snapshot).toBeDefined();
         expect(snapshot.filePath.startsWith("/tmp/s3-snapshots/")).toBe(true);
-        expect(snapshot.timestamp).toBeGreaterThan(1);
+        expect(snapshot.timestamp).toBe(69);
         expect(snapshot.databaseName).toBe("test");
         expect(readFile(snapshot.filePath, "utf-8")).resolves.toBe("test");
     });

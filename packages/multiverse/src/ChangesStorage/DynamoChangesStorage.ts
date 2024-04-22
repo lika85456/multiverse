@@ -302,9 +302,13 @@ export default class DynamoChangesStorage implements ChangesStorage {
     }
 
     public async deploy() {
-        logger.info("Deploying dynamo changes storage");
-        await this.deployer.deploy();
-        logger.info("Dynamo changes storage deployed");
+        if (!this.deployer.exists()) {
+            logger.info("Deploying dynamo changes storage");
+            await this.deployer.deploy();
+            logger.info("Dynamo changes storage deployed");
+        } else {
+            logger.info("Dynamo changes storage already exists");
+        }
     }
 
     public async destroy() {

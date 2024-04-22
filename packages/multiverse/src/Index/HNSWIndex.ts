@@ -22,10 +22,19 @@ export default class HNSWIndex implements Index {
         this.index = this.initializeIndex();
     }
 
-    private initializeIndex() {
-        log.debug("Initializing index");
+    private initializeIndex(size = 1000) {
+        log.debug("Initializing  HNSW index");
+        const start = Date.now();
+
         const index = new HierarchicalNSW(this.config.space, this.config.dimensions);
-        index.initIndex(1000, undefined, undefined, undefined, true);
+        index.initIndex(size, undefined, undefined, undefined, true);
+
+        const end = Date.now();
+
+        log.debug("Initialized HNSW index", {
+            time: end - start,
+            size
+        });
 
         return index;
     }
@@ -38,7 +47,6 @@ export default class HNSWIndex implements Index {
     }
 
     public async knn(query: Omit<Query, "sendVector">): Promise<SearchResultVector[]> {
-        log.debug("Querying", { query });
 
         const result = this.index.searchKnn(query.vector, query.k);
 
@@ -60,13 +68,19 @@ export default class HNSWIndex implements Index {
             });
         }
 
+        log.debug("Querying", {
+            query,
+            results
+        });
+
         return results;
     }
 
     public async add(vectors: NewVector[]): Promise<void> {
         const index = this.index;
-        vectors.forEach(vector => {
 
+        for (let i = 0; i < vectors.length; i++) {
+            const vector = vectors[i];
             const id = this.hashLabel(vector.label);
 
             this.idMap[id] = vector.label;
@@ -76,14 +90,9 @@ export default class HNSWIndex implements Index {
 
             index.addPoint(vector.vector, id, true);
 
-            log.debug("Added vector", {
-                vector,
-                id
-            });
-        });
-
-        if (index.getCurrentCount() >= index.getMaxElements() / 2) {
-            index.resizeIndex(index.getMaxElements() * 2);
+            if (index.getCurrentCount() >= index.getMaxElements() / 2) {
+                this.resize(index.getMaxElements() * 2);
+            }
         }
     }
 
@@ -93,38 +102,45 @@ export default class HNSWIndex implements Index {
         labels.forEach(label => {
             const id = this.hashLabel(label);
             delete this.idMap[id];
+            delete this.metadata[id];
             index.markDelete(id);
-
-            log.debug("Removed vector", {
-                label,
-                id
-            });
         });
     }
 
     public async resize(newSize: number) {
-        log.debug("Resizing index", {
-            newSize,
-            oldSize: this.index.getMaxElements()
-        });
+
+        const start = Date.now();
 
         const index = this.index;
         index.resizeIndex(newSize);
 
+        const end = Date.now();
+
+        log.debug("Resized index", {
+            newSize,
+            oldSize: this.index.getMaxElements(),
+            time: end - start
+        });
     }
 
     private async saveIdMap(path: string) {
         const idMapJson = JSON.stringify(this.idMap);
         await writeFile(path, idMapJson);
 
-        log.debug("Saved id map", { path });
+        log.debug("Saved id map", {
+            path,
+            contentLength: idMapJson.length
+        });
     }
 
     private async saveMetadata(path: string) {
         const metadataJson = JSON.stringify(this.metadata);
         await writeFile(path, metadataJson);
 
-        log.debug("Saved metadata", { path });
+        log.debug("Saved metadata", {
+            path,
+            contentLength: metadataJson.length
+        });
     }
 
     public async save(path: string) {
@@ -152,7 +168,11 @@ export default class HNSWIndex implements Index {
 
         await writeFile(path, buffer);
 
-        log.debug("Saved index", { path });
+        log.debug("Saved index", {
+            path,
+            contentLength: buffer.length,
+            totalVectorsSaved: await this.count()
+        });
     }
 
     public async load(path: string) {
@@ -161,7 +181,7 @@ export default class HNSWIndex implements Index {
 
         const index = this.initializeIndex();
 
-        await index.readIndex("/tmp/index.hnsw");
+        await index.readIndex("/tmp/index.hnsw", true);
 
         const idMapJson = await readFile("/tmp/idMap.json");
         const metadataJson = await readFile("/tmp/metadata.json");
@@ -171,17 +191,21 @@ export default class HNSWIndex implements Index {
 
         this.index = index;
 
-        log.debug("Loaded index", { path });
+        log.debug("Loaded index", {
+            path,
+            totalVectorsLoaded: await this.count(),
+        });
     }
 
-    public physicalSize() {
-        const index = this.index;
-
-        return index.getCurrentCount();
+    // TODO: return bytes
+    public async physicalSize() {
+        return this.index.getCurrentCount() * 4 * this.config.dimensions
+        + JSON.stringify(this.idMap).length
+        + JSON.stringify(this.metadata).length;
     }
 
-    public async size() {
-        return this.physicalSize();
+    public async count() {
+        return Object.keys(this.idMap).length;
     }
 
     public async dimensions() {
