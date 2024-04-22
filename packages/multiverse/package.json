@@ -4,8 +4,7 @@
   "main": "src/index.ts",
   "scripts": {
     "test": "vitest",
-    "typecheck": "tsc -noEmit",
-    "build": "tsup src/index.ts --format cjs --dts-resolve --minify --clean --legacy-output --sourcemap --target node18 --out-dir dist"
+    "typecheck": "tsc -noEmit"
   },
   "devDependencies": {
     "@types/jest": "^29.5.2",

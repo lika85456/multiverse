@@ -260,9 +260,8 @@ export default class LambdaOrchestrator implements Orchestrator {
     }
 
     private async deployPartition({
-        changesTable, snapshotBucket, env, partition, databaseConfiguration
+        snapshotBucket, env, partition, databaseConfiguration
     }: {
-        changesTable: string;
         snapshotBucket: string;
         env: "development" | "production";
         partition: number;
@@ -280,7 +279,6 @@ export default class LambdaOrchestrator implements Orchestrator {
         });
 
         await lambdaWorker.deploy({
-            changesTable,
             snapshotBucket,
             configuration: databaseConfiguration,
             databaseId: this.options.databaseId,
@@ -360,7 +358,6 @@ export default class LambdaOrchestrator implements Orchestrator {
                 databaseConfiguration
             }).catch(e => errors.push(e)),
             this.deployPartition({
-                changesTable,
                 snapshotBucket,
                 env: "production",
                 partition: 0,

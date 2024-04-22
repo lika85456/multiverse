@@ -1,6 +1,7 @@
 import type ChangesStorage from "../ChangesStorage";
 import LambdaWorker from "../Compute/LambdaWorker";
 import type { Worker } from "../Compute/Worker";
+import type { AwsToken } from "../core/AwsToken";
 import type {
     DatabaseConfiguration, DatabaseID, Region, StoredDatabaseConfiguration, Token
 } from "../core/DatabaseConfiguration";
@@ -27,14 +28,15 @@ export default class OrchestratorWorker implements Orchestrator {
         changesStorage: ChangesStorage;
         databaseId: DatabaseID;
         databaseConfiguration: DatabaseConfiguration;
+        awsToken?: AwsToken;
 
-        
         maxChangesCount?: number;
         lambdaFactory?: (name: string, region: Region) => Worker;
     }) {
         this.lambdaFactory = this.options.lambdaFactory ?? ((name, region) => new LambdaWorker({
             lambdaName: name,
-            region
+            region,
+            awsToken: this.options.awsToken
         }));
 
         this.maxChangesCount = this.options.maxChangesCount ?? this.maxChangesCount;
@@ -259,8 +261,8 @@ export default class OrchestratorWorker implements Orchestrator {
 
         const q = new SQSSStatisticsQueue({
             queueUrl: infrastructure.configuration.statisticsQueueName,
-            region,
-            awsToken: this.options.databaseId
+            region: this.options.databaseId.region,
+            awsToken: this.options.awsToken
         });
 
         await q.push(e);

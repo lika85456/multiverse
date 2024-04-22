@@ -17,7 +17,10 @@ function MultiverseStack({ stack }: StackContext) {
         runtime: "nodejs20.x",
     });
 
-    stack.addOutputs({ docsUrl: docsWeb.cdk?.distribution.distributionDomainName });
+    stack.addOutputs({
+        docsUrl: docsWeb.cdk?.distribution.distributionDomainName,
+        appUrl: nextSite.url
+    });
 }
 
 // https://docs.sst.dev/configuring-sst
