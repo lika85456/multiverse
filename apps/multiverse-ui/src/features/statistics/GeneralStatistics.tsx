@@ -4,6 +4,8 @@ import { cn } from "@/lib/utils";
 import type { GeneralStatisticsData } from "@/server/procedures/statistics";
 import format from "@/features/statistics/format";
 import { customToast } from "@/features/fetching/CustomToast";
+import StatisticsDisclaimer from "@/features/statistics/StatisticsDisclaimer";
+import * as React from "react";
 
 export interface GeneralStatisticsItemProps {
   title: string;
@@ -77,22 +79,25 @@ export default function GeneralStatistics({
     className,
 }: GeneralStatisticsProps) {
     return (
-        <ul
-            className={cn(
-                "flex flex-row justify-between space-x-4 w-full",
-                className,
-            )}
-        >
-            {items && items.slice(0, 6).map((item) => {
-                return (
-                    <GeneralStatisticsItem
-                        key={item.title}
-                        title={item.title}
-                        value={item.value}
-                        enabled={item.enabled}
-                    />
-                );
-            })}
-        </ul>
+        <div className="flex w-full flex-col items-end">
+            <ul
+                className={cn(
+                    "flex flex-row justify-between space-x-4 w-full",
+                    className,
+                )}
+            >
+                {items && items.slice(0, 6).map((item) => {
+                    return (
+                        <GeneralStatisticsItem
+                            key={item.title}
+                            title={item.title}
+                            value={item.value}
+                            enabled={item.enabled}
+                        />
+                    );
+                })}
+            </ul>
+            <StatisticsDisclaimer/>
+        </div>
     );
 }

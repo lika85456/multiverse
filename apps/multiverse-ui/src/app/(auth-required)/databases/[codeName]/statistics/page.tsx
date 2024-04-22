@@ -10,8 +10,8 @@ import Loading from "@/features/fetching/Loading";
 import GeneralError from "@/features/fetching/GeneralError";
 import { useEffect } from "react";
 import type { GraphData } from "@/server/procedures/statistics";
-import { IoIosWarning } from "react-icons/io";
 import { Warning } from "@/features/fetching/Warning";
+import StatisticsDisclaimer from "@/features/statistics/StatisticsDisclaimer";
 
 export default function DatabaseStatistics() {
     const codeName = useParams().codeName as string;
@@ -49,7 +49,8 @@ export default function DatabaseStatistics() {
             {!isError && (!data || data.reads.length === 0) && isLoading && <Loading/>}
             {isError && <GeneralError/>}
             {!isError && data && (
-                <>
+                <div className="flex flex-col w-full items-end pb-16">
+                    <StatisticsDisclaimer/>
                     {data.costsEnabled !== undefined && !data.costsEnabled && (
                         <Warning>
                             Costs calculation is turned off.
@@ -60,11 +61,11 @@ export default function DatabaseStatistics() {
                         getDate={() => dateRange}
                         setDate={handleDateIntervalChange}
                     />
-                    <StatisticsGraph title="Requests" data={data.reads} />
-                    <StatisticsGraph title="Write Count" data={data.writes} />
+                    <StatisticsGraph title="Requests" data={data.reads}/>
+                    <StatisticsGraph title="Write Count" data={data.writes}/>
                     {!!data.costsEnabled && <StatisticsGraph title="Costs" data={data.costs} unit={"$"}/>}
-                    <StatisticsGraph title="Response Time" data={data.responseTime} />
-                </>)
+                    <StatisticsGraph title="Response Time" data={data.responseTime}/>
+                </div>)
             }
         </div>
     );

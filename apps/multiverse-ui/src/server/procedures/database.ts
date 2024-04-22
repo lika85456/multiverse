@@ -1,6 +1,5 @@
 import { publicProcedure, router } from "@/server/trpc";
 import z from "zod";
-import { generateHex } from "@/lib/multiverse-interface/MultiverseMock";
 import type { DatabaseFindMongoDb, DatabaseGet } from "@/lib/mongodb/collections/database";
 import {
     createDatabase, deleteDatabase, EDatabaseState, getDatabase
@@ -18,7 +17,7 @@ import {
 } from "@/lib/mongodb/collections/user";
 import { MultiverseFactory } from "@/lib/multiverse-interface/MultiverseFactory";
 import log from "@multiverse/log";
-import { handleError } from "@/server";
+import { generateHex, handleError } from "@/server";
 import type { ObjectId } from "mongodb";
 import { getGeneralDatabaseStatistics } from "@/lib/mongodb/collections/general-database-statistics";
 import type { MultiverseDatabaseConfiguration } from "@multiverse/multiverse/src";

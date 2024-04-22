@@ -3,8 +3,7 @@ import z from "zod";
 import { getRelatedDatabase, normalizeString } from "@/server/procedures/database";
 import { TRPCError } from "@trpc/server";
 import log from "@multiverse/log";
-import { handleError } from "@/server";
-import { generateHex } from "@/lib/multiverse-interface/MultiverseMock";
+import { generateHex, handleError } from "@/server";
 
 const MAX_TOKEN_NAME_LENGTH = 16;
 

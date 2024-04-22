@@ -8,6 +8,7 @@ import { useMemo } from "react";
 import { UTCDate } from "@date-fns/utc";
 import Loading from "@/features/fetching/Loading";
 import GeneralError from "@/features/fetching/GeneralError";
+import * as React from "react";
 
 export default function GeneralDatabaseStatistics() {
     const params = useParams();
@@ -24,10 +25,12 @@ export default function GeneralDatabaseStatistics() {
 
     return (
         <div className="flex flex-col w-full">
-            <SectionTitle title={"Statistics"} />
+            <SectionTitle title={"Statistics"}/>
             {isLoading && <Loading/>}
             {isError && <GeneralError/>}
-            {isSuccess && generalStatistics && <GeneralStatistics items={createProps(generalStatistics)} />}
+            {isSuccess && generalStatistics && (<>
+                <GeneralStatistics items={createProps(generalStatistics)}/>
+            </>)}
         </div>
     );
 }

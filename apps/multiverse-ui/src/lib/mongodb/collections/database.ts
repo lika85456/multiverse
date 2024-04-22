@@ -87,12 +87,14 @@ export const createDatabase = async(databaseData: DatabaseInsertMongoDb): Promis
 
     try {
         return await session.withTransaction(async() => {
-            const resultDatabase = await db.collection("databases").insertOne({ ...databaseData });
+            const resultDatabase = await db.collection<DatabaseInsertMongoDb>("databases").insertOne({ ...databaseData });
             if (!resultDatabase.acknowledged) {
+                log.error("Database not created");
                 throw new Error("Database not created");
             }
             const database = await db.collection("databases").findOne({ _id: resultDatabase.insertedId });
             if (!database) {
+                log.error("Database not created");
                 throw new Error("Database not found");
             }
             await addDatabaseToUser(databaseData.ownerId, database.codeName);

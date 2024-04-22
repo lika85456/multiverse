@@ -84,18 +84,6 @@ async function saveJsonFile() {
     }
 }
 
-export function generateHex(length: number): string {
-    let result = "";
-    const hexCharacters = "0123456789ABCDEF";
-
-    for (let i = 0; i < length; i++) {
-        const randomIndex = Math.floor(Math.random() * hexCharacters.length);
-        result += hexCharacters.charAt(randomIndex);
-    }
-
-    return result;
-}
-
 async function refresh() {
     await saveJsonFile();
     await loadJsonFile();

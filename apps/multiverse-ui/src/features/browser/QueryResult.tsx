@@ -25,7 +25,7 @@ export default function QueryResult({
 
     const vectorDataString = vector.vector.slice(0, 10)
         .map((element) => `${element.toFixed(3)}`)
-        .join(", ").slice(0, 60 - vectorResultString.length);
+        .join(", ").slice(0, 60 - vectorResultString.length).slice(0, 52);
 
     return (
         <>

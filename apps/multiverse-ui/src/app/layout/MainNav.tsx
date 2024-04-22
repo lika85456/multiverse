@@ -1,6 +1,5 @@
 import Link from "next/link";
 import MultiverseLogo from "@/app/layout/MultiverseLogo";
-import { IoDocumentTextOutline } from "react-icons/io5";
 
 import NavigationOptions from "@/app/layout/NavigationOptions";
 import ThemePicker from "@/app/layout/ThemePicker";
