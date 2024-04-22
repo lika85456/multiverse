@@ -7,7 +7,8 @@ function MultiverseStack({ stack }: StackContext) {
     const docsWeb = new StaticSite(stack, "docs", {
         path: "./apps/docs",
         buildOutput: "build",
-        buildCommand: "pnpm -C ../../ run build:tsdocs && pnpm run build",
+        // buildCommand: "pnpm -C ../../ run build:tsdocs && pnpm run build",
+        buildCommand: "pnpm run build"
     });
 
     const nextSite = new NextjsSite(stack, "app", {
