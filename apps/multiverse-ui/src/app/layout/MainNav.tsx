@@ -22,6 +22,11 @@ export default async function MainNav() {
             title: "Pricing",
             requiredAuth: false,
         },
+        {
+            path: "/docs",
+            title: "Docs",
+            requiredAuth: false,
+        },
     ];
 
     return (
@@ -37,9 +42,9 @@ export default async function MainNav() {
                 />
             </div>
             <div className="flex flex-row items-center">
-                <Link href={"/docs"}>
-                    <IoDocumentTextOutline className="w-6 h-6 text-foreground m-2.5" />
-                </Link>
+                {/*<Link href={"/docs"}>*/}
+                {/*    <IoDocumentTextOutline className="w-6 h-6 text-foreground m-2.5" />*/}
+                {/*</Link>*/}
                 <ThemePicker />
                 <LoginOptions user={session?.user} />
             </div>
