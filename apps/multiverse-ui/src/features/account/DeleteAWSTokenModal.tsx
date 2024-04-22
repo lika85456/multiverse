@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { FaRegTrashAlt } from "react-icons/fa";
 import { IoClose } from "react-icons/io5";
 import { TrashIcon } from "lucide-react";
-import useModal from "@/features/hooks/use-modal";
+import useModal from "@/features/modal/use-modal";
 import { trpc } from "@/lib/trpc/client";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";

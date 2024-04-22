@@ -26,7 +26,7 @@ import {
 import React, { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import useModal from "@/features/hooks/use-modal";
+import useModal from "@/features/modal/use-modal";
 import { trpc } from "@/lib/trpc/client";
 import { UTCDate } from "@date-fns/utc";
 import { customToast } from "@/features/fetching/CustomToast";

@@ -21,8 +21,14 @@ export default function QueryResult({
         setIsDeleted(true);
     };
 
+    const vectorResultString = vector.resultDistance.toFixed(3);
+
+    const vectorDataString = vector.vector.slice(0, 10)
+        .map((element) => `${element.toFixed(3)}`)
+        .join(", ").slice(0, 60 - vectorResultString.length);
+
     return (
-        <div>
+        <>
             <div
                 className={`flex flex-row w-full h-9 justify-center items-center px-4 border-b ${
                     isDeleted ?
@@ -30,31 +36,31 @@ export default function QueryResult({
                         "text-primary-foreground border-border hover:bg-secondary"
                 } transition-all`}>
                 <div className="flex flex-row w-full justify-between items-center">
-                    <div className="w-32  truncate">
-                        {vector.label}
+                    <div className="flex flex-row">
+                        <div className="w-32 truncate mr-2">
+                            {vector.label}
+                        </div>
+                        <div className="truncate tracking-tighter font-mono font-thin">{`[ ${vectorDataString}...]`}</div>
                     </div>
-                    <div className=" truncate">{`[${vector.vector
-                        .slice(0, 10)
-                        .map((element) => ` ${element.toFixed(3)}`)} ...]`}</div>
-                    <div className="flex justify-end w-16">
-                        {vector.resultDistance.toFixed(3)}
+                    <div className="flex justify-end w-fit tracking-tighter font-mono font-thin">
+                        {`${vectorResultString}`}
                     </div>
                 </div>
                 {isDeleted && (
                     <>
-                        <TrashIcon className="w-6 h-6 ml-4  cursor-not-allowed"/>
+                        <TrashIcon className="w-6 h-6 ml-4 cursor-not-allowed"/>
                         <CgDetailsMore className="w-6 h-6 ml-4  cursor-not-allowed"/>
                     </>
                 )}
                 {!isDeleted && (
                     <>
                         <DeleteVectorModal label={vector.label} codeName={codeName} markAsDeleted={handleMarkAsDeleted}/>
-                        <ViewVectorModal vector={{ ...vector }}/>
+                        <ViewVectorModal vector={{ ...vector }} result={vector.resultDistance}/>
                     </>
                 )}
 
             </div>
 
-        </div>
+        </>
     );
 }

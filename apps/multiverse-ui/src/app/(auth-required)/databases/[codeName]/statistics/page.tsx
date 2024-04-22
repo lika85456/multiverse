@@ -10,6 +10,8 @@ import Loading from "@/features/fetching/Loading";
 import GeneralError from "@/features/fetching/GeneralError";
 import { useEffect } from "react";
 import type { GraphData } from "@/server/procedures/statistics";
+import { IoIosWarning } from "react-icons/io";
+import { Warning } from "@/features/fetching/Warning";
 
 export default function DatabaseStatistics() {
     const codeName = useParams().codeName as string;
@@ -36,6 +38,7 @@ export default function DatabaseStatistics() {
             reads: dailyStatistics.reads,
             writes: dailyStatistics.writes,
             costs: dailyStatistics.costs,
+            costsEnabled: dailyStatistics.costsEnabled,
             responseTime: dailyStatistics.responseTime,
         });
 
@@ -47,6 +50,11 @@ export default function DatabaseStatistics() {
             {isError && <GeneralError/>}
             {!isError && data && (
                 <>
+                    {data.costsEnabled !== undefined && !data.costsEnabled && (
+                        <Warning>
+                            Costs calculation is turned off.
+                        </Warning>
+                    )}
                     <DateIntervalPicker
                         className="self-end"
                         getDate={() => dateRange}
@@ -54,7 +62,7 @@ export default function DatabaseStatistics() {
                     />
                     <StatisticsGraph title="Requests" data={data.reads} />
                     <StatisticsGraph title="Write Count" data={data.writes} />
-                    <StatisticsGraph title="Costs" data={data.costs} unit={"$"}/>
+                    {!!data.costsEnabled && <StatisticsGraph title="Costs" data={data.costs} unit={"$"}/>}
                     <StatisticsGraph title="Response Time" data={data.responseTime} />
                 </>)
             }

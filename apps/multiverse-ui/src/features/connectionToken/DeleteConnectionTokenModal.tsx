@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { TrashIcon } from "lucide-react";
 import { IoClose } from "react-icons/io5";
-import useModal from "@/features/hooks/use-modal";
+import useModal from "@/features/modal/use-modal";
 import type { SecretToken } from "@/lib/mongodb/collections/database";
 import { trpc } from "@/lib/trpc/client";
 import { useParams } from "next/navigation";

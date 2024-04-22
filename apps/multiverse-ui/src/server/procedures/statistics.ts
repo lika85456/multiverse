@@ -16,6 +16,7 @@ import type { ObjectId } from "mongodb";
 export interface GeneralStatisticsData {
     costs: {
         value: number;
+        enabled: boolean;
         currency: "$";
     };
     totalVectors: {
@@ -29,6 +30,7 @@ export interface GeneralStatisticsData {
 const emptyGeneralStatistics = {
     costs: {
         value: 0,
+        enabled: false,
         currency: "$" as const,
     },
     totalVectors: {
@@ -47,6 +49,7 @@ export interface GraphData {
     reads: StatisticsData[];
     writes: StatisticsData[];
     costs: StatisticsData[];
+    costsEnabled?: boolean;
     responseTime: StatisticsData[];
 }
 
@@ -104,14 +107,22 @@ const calculateGeneralStatistics = async({
 }: {
     from: string,
     to: string,
-    databaseName: string
+    databaseName: string,
 },): Promise<GeneralStatisticsData> => {
     const { fromISO, toISO } = dateIntervalISO(from, to);
+
     // get general statistics for a specific database
     const generalDatabaseStatistics = await getGeneralDatabaseStatistics(databaseName);
     if (!generalDatabaseStatistics) {
         // general database statistics do not exist, return empty general statistics
-        return emptyGeneralStatistics;
+        return {
+            ...emptyGeneralStatistics,
+            costs: {
+                value: 0,
+                currency: "$" as const,
+                enabled: false,
+            },
+        };
     }
 
     // extract reads and writes from daily statistics
@@ -123,6 +134,7 @@ const calculateGeneralStatistics = async({
         costs: {
             value: 0,
             currency: "$" as const,
+            enabled: false,
         },
         totalVectors: {
             count: generalDatabaseStatistics.totalVectors,
@@ -278,8 +290,9 @@ const calculateDailyStatistics = async(databaseName: string, from: string, to: s
  * Extracts statistics from daily statistics data.
  * Statistics are extracted in a form usable for the frontend.
  * @param data
+ * @param costsEnabled
  */
-export const extractStatistics = (data: DailyStatisticsData[]): GraphData => {
+export const extractStatistics = (data: DailyStatisticsData[], costsEnabled: boolean): GraphData => {
     return {
         costs: data.map((stat) => {
             return {
@@ -287,6 +300,7 @@ export const extractStatistics = (data: DailyStatisticsData[]): GraphData => {
                 date: stat.date
             };
         }),
+        costsEnabled: costsEnabled,
         reads: data.map((stat) => {
             return {
                 value: stat.reads,
@@ -353,6 +367,7 @@ export const statistics = router({
                         to: toISO,
                         databaseName: opts.input.database,
                     });
+                    generalStatistics.costs.enabled = sessionUser.acceptedCostsGeneration;
 
                     // get costs from AWS API and add them to the general statistics
                     generalStatistics.costs.value = await calculateCostsMerged(fromUTC, toUTC, sessionUser._id, opts.input.database);
@@ -378,12 +393,14 @@ export const statistics = router({
                 }));
                 log.info("Returning general statistics for all databases from", fromISO, "to", toISO, "for user", sessionUser.email);
 
+                const costsEnabled = sessionUser.acceptedCostsGeneration;
                 // sum general statistics for all databases
                 const summedGeneralStatistics = generalStatistics.reduce((acc, curr) => {
                     return {
                         costs: {
                             value: acc.costs.value + curr.costs.value,
                             currency: "$" as const,
+                            enabled: costsEnabled,
                         },
                         totalVectors: {
                             count: acc.totalVectors.count + curr.totalVectors.count,
@@ -457,7 +474,7 @@ export const statistics = router({
                     const dailyStatistics = await calculateDailyStatistics(opts.input.database, fromISO, toISO);
                     const dailyCosts = await calculateCosts(fromUTC, toUTC, sessionUser._id, opts.input.database);
 
-                    return extractStatistics(addCostsToDailyStatistics(dailyStatistics, dailyCosts));
+                    return extractStatistics(addCostsToDailyStatistics(dailyStatistics, dailyCosts), sessionUser.acceptedCostsGeneration);
                 }
 
                 // calculate daily statistics for all databases sessionUser owns otherwise
@@ -469,7 +486,7 @@ export const statistics = router({
                 if (dailyDatabaseStatistics.length === 0) {
                     log.info(`No daily statistics found for user ${sessionUser.email} from ${fromISO} to ${toISO}`);
 
-                    return extractStatistics(Array.from(constructInterval(fromISO, toISO).values()));
+                    return extractStatistics(Array.from(constructInterval(fromISO, toISO).values()), sessionUser.acceptedCostsGeneration);
                 }
 
                 // merge daily statistics from all databases to get the final statistics
@@ -484,7 +501,7 @@ export const statistics = router({
                 const dailyCosts = await calculateCosts(fromUTC, toUTC, sessionUser._id);
                 log.info("Returning daily statistics for all databases from", fromISO, "to", toISO, "for user", sessionUser.email);
 
-                return extractStatistics(addCostsToDailyStatistics(mergedStatistics, dailyCosts));
+                return extractStatistics(addCostsToDailyStatistics(mergedStatistics, dailyCosts), sessionUser.acceptedCostsGeneration);
             } catch (error) {
                 throw handleError({
                     error,
