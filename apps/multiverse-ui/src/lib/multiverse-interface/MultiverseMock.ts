@@ -150,12 +150,10 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
             return Promise.resolve();
         }
 
-        const oldVectors = database.vectors;
-        if (vector.some((newVector) => oldVectors.some((oldVector) => oldVector.label === newVector.label))) {
-            log.error("Vector with the same label already exists");
-            throw new Error("Vector with the same label already exists");
-        }
-
+        // remove old vectors with the same label to simulate replacement
+        const oldVectors = database.vectors.filter((oldVector) => {
+            return !vector.find((newVector) => newVector.label === oldVector.label);
+        });
         const newValue: DatabaseWrapper = {
             multiverseDatabase: database.multiverseDatabase,
             vectors: [...oldVectors, ...vector],
