@@ -45,7 +45,7 @@ export const getDailyStatisticsForDates = async(dates: string[], databaseName: s
 
     // log.debug(`Getting daily statistics for dates ${JSON.stringify(dates, null, 2)} for ${databaseName} `);
     try {
-        const result = await db.collection(collectionName).find({
+        const result = await db.collection<DailyStatisticsGet>(collectionName).find({
             date: dates.map((date) => convertToISODate(date)),
             databaseName
         }).toArray();
@@ -82,7 +82,7 @@ export const getDailyStatisticsInterval = async(
     try {
         const client = await clientPromise;
         const db = client.db();
-        const result = await db.collection(collectionName).find({
+        const result = await db.collection<DailyStatisticsGet>(collectionName).find({
             date: {
                 $gte: convertToISODate(dateFrom),
                 $lte: convertToISODate(dateTo)
@@ -119,7 +119,7 @@ export const addDailyStatistics = async(statistics: DailyStatisticsAdd): Promise
     const db = client.db();
 
     try {
-        const result = await db.collection(collectionName).findOne({
+        const result = await db.collection<DailyStatisticsAdd>(collectionName).findOne({
             date: convertToISODate(statistics.date),
             databaseName: statistics.databaseName
         });
@@ -162,7 +162,7 @@ export const removeAllDailyStatisticsForDatabase = async(databaseName: string): 
 
     log.info(`Removing all daily statistics for database ${databaseName}`);
     try {
-        await db.collection(collectionName).deleteMany({ databaseName });
+        await db.collection<DailyStatisticsGet>(collectionName).deleteMany({ databaseName });
         log.info(`Removed all daily statistics for database ${databaseName}`);
     } catch (error) {
         log.error(error);
