@@ -38,7 +38,7 @@ export const addAwsToken = async(tokenData: AwsTokenInsert,): Promise<AwsTokenGe
 
     try {
         return await session.withTransaction(async() => {
-            const result = await db.collection("aws_tokens").insertOne({
+            const result = await db.collection<AwsTokenInsert>("aws_tokens").insertOne({
                 accessKeyId: tokenData.accessKeyId,
                 secretAccessKey: encryptSecretAccessKey(tokenData.accessKeyId, tokenData.secretAccessKey),
                 ownerId: owner._id,
@@ -79,7 +79,7 @@ export const addAwsToken = async(tokenData: AwsTokenInsert,): Promise<AwsTokenGe
 export const getAwsTokenById = async(tokenId: ObjectId): Promise<AwsTokenGet | undefined> => {
     try {
         const db = (await clientPromise).db();
-        const result = await db.collection("aws_tokens").findOne({ _id: tokenId });
+        const result = await db.collection<AwsTokenGet>("aws_tokens").findOne({ _id: tokenId });
 
         if (!result) {
             return undefined;
@@ -104,7 +104,7 @@ export const getAwsTokenById = async(tokenId: ObjectId): Promise<AwsTokenGet | u
 export const getAwsTokenByAccessKeyId = async(accessKeyId: string,): Promise<AwsTokenGet | undefined> => {
     try {
         const db = (await clientPromise).db();
-        const result = await db.collection("aws_tokens").findOne({ accessKeyId });
+        const result = await db.collection<AwsTokenGet>("aws_tokens").findOne({ accessKeyId });
 
         if (!result) {
             return undefined;
@@ -131,7 +131,7 @@ export const getAwsTokenByAccessKeyId = async(accessKeyId: string,): Promise<Aws
 export const getAwsTokenByOwner = async(ownerId: ObjectId,): Promise<AwsTokenGet | undefined> => {
     try {
         const db = (await clientPromise).db();
-        const result = await db.collection("aws_tokens").findOne({ ownerId });
+        const result = await db.collection<AwsTokenGet>("aws_tokens").findOne({ ownerId });
 
         if (!result) {
             return undefined;
@@ -168,7 +168,7 @@ export const removeAwsToken = async(userId: ObjectId): Promise<void> => {
             }
 
             const result = await db
-                .collection("aws_tokens")
+                .collection<AwsTokenGet>("aws_tokens")
                 .deleteOne({ ownerId: user._id });
             if (!result.acknowledged) {
                 throw new Error("AWS token not removed");

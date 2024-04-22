@@ -36,7 +36,7 @@ export const getGeneralDatabaseStatistics = async(databaseName: string): Promise
         const client = await clientPromise;
         const db = client.db();
 
-        const result = await db.collection(collectionName).findOne({ databaseName });
+        const result = await db.collection<GeneralDatabaseStatisticsGet>(collectionName).findOne({ databaseName });
 
         if (!result) {
             log.debug(`General database statistics for database ${databaseName} not found in mongodb`);
@@ -77,7 +77,7 @@ export const addGeneralDatabaseStatistics = async(statistics: GeneralDatabaseSta
 
         if (!getStatisticsResult) {
             // general statistics don't exist for this database, create new statistics
-            await db.collection(collectionName).insertOne(statistics);
+            await db.collection<GeneralDatabaseStatisticsInsert>(collectionName).insertOne(statistics);
             log.info(`Created general database statistics for database ${statistics.databaseName} in mongodb`);
 
             return;
@@ -85,7 +85,8 @@ export const addGeneralDatabaseStatistics = async(statistics: GeneralDatabaseSta
         // general statistics exist for this database
         if (statistics.updated.getTime() > getStatisticsResult.updated.getTime()) {
             // update if the latest write event is newer
-            await db.collection(collectionName).updateOne({ databaseName: statistics.databaseName }, { $set: statistics });
+            await db.collection<GeneralDatabaseStatisticsGet>(collectionName)
+                .updateOne({ databaseName: statistics.databaseName }, { $set: statistics });
             log.info(`Updated general database statistics for database ${statistics.databaseName} in mongodb`);
 
             return;
@@ -108,7 +109,7 @@ export const removeGeneralDatabaseStatistics = async(databaseName: string): Prom
         const client = await clientPromise;
         const db = client.db();
 
-        const result = await db.collection(collectionName).deleteOne({ databaseName });
+        const result = await db.collection<GeneralDatabaseStatisticsGet>(collectionName).deleteOne({ databaseName });
         if (!result.acknowledged) {
             throw new Error("General database statistics not removed");
         }

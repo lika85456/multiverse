@@ -72,7 +72,6 @@ const emptyDailyStatistics = {
 };
 
 const dateIntervalISO = (from: string | UTCDate, to: string | UTCDate): { fromISO: string, toISO: string } => {
-    //TODO replace with UTCDate
     return {
         fromISO: convertToISODate(from),
         toISO: convertToISODate(to),
@@ -349,7 +348,7 @@ export const statistics = router({
                         message: "Cannot get general statistics, user is not authenticated",
                     });
                 }
-                log.info("Calculating general statistics for the user", sessionUser.email, "from", fromISO, "to", toISO);
+                const costsEnabled = sessionUser.acceptedCostsGeneration ?? false;
 
                 if (opts.input.database) {
                     // calculate general statistics for a specific database
@@ -359,7 +358,7 @@ export const statistics = router({
                             message: "User does not have access to the database",
                         });
                     }
-                    log.info("Returning general statistics for the database", opts.input.database, "from", fromISO, "to", toISO);
+                    log.debug("Returning general statistics for the database", opts.input.database, "from", fromISO, "to", toISO);
 
                     // calculate general statistics for a specific database
                     const generalStatistics = await calculateGeneralStatistics({
@@ -367,10 +366,10 @@ export const statistics = router({
                         to: toISO,
                         databaseName: opts.input.database,
                     });
-                    generalStatistics.costs.enabled = sessionUser.acceptedCostsGeneration;
 
                     // get costs from AWS API and add them to the general statistics
                     generalStatistics.costs.value = await calculateCostsMerged(fromUTC, toUTC, sessionUser._id, opts.input.database);
+                    generalStatistics.costs.enabled = costsEnabled;
 
                     // return general statistics with costs
                     return generalStatistics;
@@ -378,9 +377,11 @@ export const statistics = router({
 
                 // check if user has databases defined
                 if (!sessionUser.databases) {
-                    log.info(`User ${sessionUser.email} does not have any databases, returning empty general statistics`);
+                    log.debug(`User ${sessionUser.email} does not have any databases, returning empty general statistics`);
+                    const generalStatistics = emptyGeneralStatistics;
+                    generalStatistics.costs.enabled = costsEnabled;
 
-                    return emptyGeneralStatistics;
+                    return generalStatistics;
                 }
 
                 // calculate general statistics for all databases
@@ -391,16 +392,15 @@ export const statistics = router({
                         databaseName: database,
                     });
                 }));
-                log.info("Returning general statistics for all databases from", fromISO, "to", toISO, "for user", sessionUser.email);
+                log.debug("Returning general statistics for all databases from", fromISO, "to", toISO, "for user", sessionUser.email);
 
-                const costsEnabled = sessionUser.acceptedCostsGeneration;
                 // sum general statistics for all databases
                 const summedGeneralStatistics = generalStatistics.reduce((acc, curr) => {
                     return {
                         costs: {
                             value: acc.costs.value + curr.costs.value,
                             currency: "$" as const,
-                            enabled: costsEnabled,
+                            enabled: false,
                         },
                         totalVectors: {
                             count: acc.totalVectors.count + curr.totalVectors.count,
@@ -413,7 +413,7 @@ export const statistics = router({
 
                 // get costs from AWS API and add them to the general statistics
                 summedGeneralStatistics.costs.value = await calculateCostsMerged(fromUTC, toUTC, sessionUser._id);
-
+                summedGeneralStatistics.costs.enabled = costsEnabled;
                 log.debug(`Result ${sessionUser.email} general statistics, queries ${summedGeneralStatistics.reads}, writes ${summedGeneralStatistics.writes}, costs ${summedGeneralStatistics.costs.value}, vectors ${summedGeneralStatistics.totalVectors.count}, bytes ${summedGeneralStatistics.totalVectors.bytes}`);
 
                 return summedGeneralStatistics;
@@ -480,11 +480,11 @@ export const statistics = router({
                 // calculate daily statistics for all databases sessionUser owns otherwise
                 const dailyDatabaseStatistics = await Promise.all(sessionUser.databases.map(async(database) => {
                     return await calculateDailyStatistics(database, fromISO, toISO);
-                }));
+                }) ?? []);
 
                 // if no daily statistics found, return empty statistics
                 if (dailyDatabaseStatistics.length === 0) {
-                    log.info(`No daily statistics found for user ${sessionUser.email} from ${fromISO} to ${toISO}`);
+                    log.debug(`No daily statistics found for user ${sessionUser.email} from ${fromISO} to ${toISO}`);
 
                     return extractStatistics(Array.from(constructInterval(fromISO, toISO).values()), sessionUser.acceptedCostsGeneration);
                 }
@@ -499,7 +499,7 @@ export const statistics = router({
 
                 // calculate costs for all databases
                 const dailyCosts = await calculateCosts(fromUTC, toUTC, sessionUser._id);
-                log.info("Returning daily statistics for all databases from", fromISO, "to", toISO, "for user", sessionUser.email);
+                log.debug("Returning daily statistics for all databases from", fromISO, "to", toISO, "for user", sessionUser.email);
 
                 return extractStatistics(addCostsToDailyStatistics(mergedStatistics, dailyCosts), sessionUser.acceptedCostsGeneration);
             } catch (error) {

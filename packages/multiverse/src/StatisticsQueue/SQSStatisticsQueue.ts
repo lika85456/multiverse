@@ -125,6 +125,6 @@ export default class SQSSStatisticsQueue implements StatisticsQueue {
     }
 
     public async destroy() {
-        await this.sqs.deleteQueue({ QueueUrl: this.options.queueUrl });
+        await this.sqs.deleteQueue({ QueueUrl: await this.getQueueUrl() });
     }
 }

@@ -4,7 +4,6 @@ import SectionTitle from "@/app/layout/components/SectionTitle";
 import { Switch } from "@/components/ui/switch";
 import { trpc } from "@/lib/trpc/client";
 import { useEffect, useState } from "react";
-import { IoIosWarning } from "react-icons/io";
 import { Warning } from "@/features/fetching/Warning";
 
 export function CostGeneratorAcceptor() {

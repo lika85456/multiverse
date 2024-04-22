@@ -87,12 +87,14 @@ export const createDatabase = async(databaseData: DatabaseInsertMongoDb): Promis
 
     try {
         return await session.withTransaction(async() => {
-            const resultDatabase = await db.collection("databases").insertOne({ ...databaseData });
+            const resultDatabase = await db.collection<DatabaseInsertMongoDb>("databases").insertOne({ ...databaseData });
             if (!resultDatabase.acknowledged) {
+                log.error("Database not created");
                 throw new Error("Database not created");
             }
-            const database = await db.collection("databases").findOne({ _id: resultDatabase.insertedId });
+            const database = await db.collection<DatabaseFindMongoDb>("databases").findOne({ _id: resultDatabase.insertedId });
             if (!database) {
+                log.error("Database not created");
                 throw new Error("Database not found");
             }
             await addDatabaseToUser(databaseData.ownerId, database.codeName);
@@ -133,12 +135,12 @@ export const deleteDatabase = async(codeName: string): Promise<void> => {
     const db = (await clientPromise).db();
     try {
         await session.withTransaction(async() => {
-            const database = await db.collection("databases").findOne({ codeName });
+            const database = await db.collection<DatabaseFindMongoDb>("databases").findOne({ codeName });
             if (!database) {
                 throw new Error("Database not found");
             }
             //remove existing database
-            const result = await db.collection("databases").deleteOne({ codeName });
+            const result = await db.collection<DatabaseFindMongoDb>("databases").deleteOne({ codeName });
             if (!result.acknowledged) {
                 throw new Error("Database deletion not acknowledged");
             }
@@ -203,7 +205,7 @@ export const deleteAllDatabases = async(ownerId: ObjectId) => {
             }));
 
             // remove all databases
-            const result = await db.collection("databases").deleteMany({ ownerId });
+            const result = await db.collection<DatabaseFindMongoDb>("databases").deleteMany({ ownerId });
             if (!result.acknowledged) {
                 throw new Error(`Databases not deleted for user ${ownerResult.email}`);
             }

@@ -27,6 +27,18 @@ export interface Vector {
   vector: number[];
 }
 
+function generateHex(length: number): string {
+    let result = "";
+    const hexCharacters = "0123456789ABCDEF";
+
+    for (let i = 0; i < length; i++) {
+        const randomIndex = Math.floor(Math.random() * hexCharacters.length);
+        result += hexCharacters.charAt(randomIndex);
+    }
+
+    return result;
+}
+
 export default function UpsertVectorModal({ className, handleInvalidateResult }: {className?: string, handleInvalidateResult: () => void}) {
     const {
         modalOpen, handleOpenModal, handleCloseModal
@@ -51,7 +63,7 @@ export default function UpsertVectorModal({ className, handleInvalidateResult }:
     const dimensions = database?.database?.dimensions;
     const defaultVector = useCallback(() => {
         const vector: Vector = {
-            label: "red tractor",
+            label: `red tractor ${generateHex(8)}`,
             metadata: undefined,
             vector: Array(dimensions).fill(0),
         };

@@ -53,7 +53,7 @@ function Statistics() {
                             setDate={handleDateIntervalChange}
                         />
                     </div>
-                    <GeneralStatistics items={createProps(generalStatistics)} className="pb-8" />
+                    <GeneralStatistics items={createProps(generalStatistics)} />
                     {!!dailyStatistics.costsEnabled && <StatisticsGraph title="Costs" data={dailyStatistics.costs} unit={"$"} />}
                     {dailyStatistics.costsEnabled !== undefined && !dailyStatistics.costsEnabled && (
                         <Warning>

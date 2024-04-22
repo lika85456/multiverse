@@ -84,18 +84,6 @@ async function saveJsonFile() {
     }
 }
 
-export function generateHex(length: number): string {
-    let result = "";
-    const hexCharacters = "0123456789ABCDEF";
-
-    for (let i = 0; i < length; i++) {
-        const randomIndex = Math.floor(Math.random() * hexCharacters.length);
-        result += hexCharacters.charAt(randomIndex);
-    }
-
-    return result;
-}
-
 async function refresh() {
     await saveJsonFile();
     await loadJsonFile();
@@ -150,12 +138,10 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
             return Promise.resolve();
         }
 
-        const oldVectors = database.vectors;
-        if (vector.some((newVector) => oldVectors.some((oldVector) => oldVector.label === newVector.label))) {
-            log.error("Vector with the same label already exists");
-            throw new Error("Vector with the same label already exists");
-        }
-
+        // remove old vectors with the same label to simulate replacement
+        const oldVectors = database.vectors.filter((oldVector) => {
+            return !vector.find((newVector) => newVector.label === oldVector.label);
+        });
         const newValue: DatabaseWrapper = {
             multiverseDatabase: database.multiverseDatabase,
             vectors: [...oldVectors, ...vector],
