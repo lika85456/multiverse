@@ -56,12 +56,13 @@ export const handleError = ({
         });
     }
 
+    // log the error message
+    log.error(throwee.message);
     // also log the logMessage if specified
     if (logMessage) {
         // log logMessage if provided too
         log.error(logMessage);
     }
-    log.error(throwee.message); // log error message
 
     // hide internal error message
     throwee.message = errorMessage;

@@ -94,7 +94,7 @@ export default function CreateDatabaseModal() {
 
     async function onSubmit(values: z.infer<typeof DatabaseFormSchema>) {
         // invalidate the database route after 200ms
-        sleep(200).then(async() => {
+        sleep(400).then(async() => {
             handleCloseModal();
             form.reset();
             await util.database.list.invalidate();

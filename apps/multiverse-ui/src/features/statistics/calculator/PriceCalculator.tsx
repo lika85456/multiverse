@@ -24,6 +24,8 @@ function calculateCost({
   dimensions: number;
   metadataPerVector?: number;
 }) {
+    // TODO - author vojta
+
     const bytesPerVector = metadataPerVector + dimensions * 4; // 500 bytes for metadata, 4 bytes per dimension
 
     /**

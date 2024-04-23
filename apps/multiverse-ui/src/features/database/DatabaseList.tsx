@@ -1,11 +1,13 @@
 "use client";
 
-import DatabaseItem from "@/app/(auth-required)/databases/components/DatabaseItem";
+import DatabaseItem from "@/features/database/DatabaseItem";
 import CreateDatabaseModal from "@/features/database/CreateDatabaseModal";
 import { trpc } from "@/lib/trpc/client";
 import Loading from "@/features/fetching/Loading";
 import GeneralError from "@/features/fetching/GeneralError";
 import Spinner from "@/features/fetching/Spinner";
+import { useEffect, useState } from "react";
+import log from "@multiverse/log";
 
 export const DbsToCreate = ({ dbsToCreate }: {dbsToCreate: string[]}) => {
     if (!dbsToCreate || dbsToCreate.length === 0) return null;
@@ -44,9 +46,28 @@ export const DbsToDelete = ({ dbsToDelete }: {dbsToDelete: string[]}) => {
 };
 
 export default function DatabaseList() {
+    const [timer, setTimer] = useState<NodeJS.Timeout | null>(null);
     const {
-        data: databases, isError, isSuccess, isLoading
+        data: databases, isError, isSuccess, isLoading, refetch
     } = trpc.database.list.useQuery();
+
+    useEffect(() => {
+        if (!timer && databases && (databases.dbsToBeCreated.length > 0 || databases.dbsToBeDeleted.length > 0)) {
+            const newTimer = setTimeout(async() => {
+                log.debug("Invalidating");
+                await refetch();
+                setTimer(null);
+            }, 2000);
+
+            setTimer(newTimer);
+        }
+
+        return () => {
+            if (timer) {
+                clearTimeout(timer);
+            }
+        };
+    }, [databases, timer, refetch]);
 
     return (
         <>

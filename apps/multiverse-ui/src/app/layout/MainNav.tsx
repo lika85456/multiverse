@@ -6,6 +6,7 @@ import ThemePicker from "@/app/layout/ThemePicker";
 import LoginOptions from "@/app/layout/LoginOptions";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/auth";
+import { ENV } from "@/lib/env";
 
 export default async function MainNav() {
     const session = await getServerSession(authOptions);
@@ -15,16 +16,19 @@ export default async function MainNav() {
             path: "/databases",
             title: "Databases",
             requiredAuth: true,
+            newTab: false,
         },
         {
             path: "/pricing",
             title: "Pricing",
             requiredAuth: false,
+            newTab: false,
         },
         {
-            path: "/docs",
+            path: ENV.DOCS_URL,
             title: "Docs",
             requiredAuth: false,
+            newTab: true,
         },
     ];
 

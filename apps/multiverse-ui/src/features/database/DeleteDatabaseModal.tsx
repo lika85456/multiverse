@@ -46,7 +46,7 @@ export default function DeleteDatabaseModal() {
 
     const handleDeleteDatabase = async() => {
         setIsProcessing(true);
-        sleep(200).then(async() => {
+        sleep(400).then(async() => {
             await utils.database.list.invalidate();
             log.debug("Invalidated database list");
             handleCloseModal();

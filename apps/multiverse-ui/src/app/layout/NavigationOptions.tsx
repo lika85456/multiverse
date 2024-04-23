@@ -14,6 +14,7 @@ export interface NavigationOptionsProps {
     path: string;
     title: string;
     requiredAuth: boolean;
+    newTab: boolean;
   }[];
 }
 
@@ -26,7 +27,7 @@ export default function NavigationOptions({ pages }: NavigationOptionsProps) {
                 {pages.map((page) => {
                     return (
                         <NavigationMenuItem key={page.path}>
-                            <Link href={page.path} legacyBehavior passHref>
+                            {!page.newTab && <Link href={page.path} legacyBehavior passHref>
                                 <NavigationMenuLink
                                     className={`text-sm tracking-[0.2rem] px-4 uppercase font-thin hover:underline hover:underline-offset-4 ${
                                         pathName.includes(page.path)
@@ -36,7 +37,16 @@ export default function NavigationOptions({ pages }: NavigationOptionsProps) {
                                 >
                                     {page.title}
                                 </NavigationMenuLink>
-                            </Link>
+                            </Link>}
+                            {page.newTab && <a
+                                href={page.path}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={`text-sm tracking-[0.2rem] px-4 uppercase font-thin hover:underline hover:underline-offset-4 ${
+                                    pathName.includes(page.path)
+                                        ? "underline underline-offset-4 text-primary-foreground"
+                                        : "text-secondary-foreground"
+                                }`}>{page.title}</a>}
                         </NavigationMenuItem>
                     );
                 })}

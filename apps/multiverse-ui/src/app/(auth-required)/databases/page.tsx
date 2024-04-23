@@ -4,7 +4,7 @@ import * as React from "react";
 import GeneralStatistics, { createProps } from "@/features/statistics/GeneralStatistics";
 import useDateInterval from "@/features/statistics/use-date-interval";
 import { Separator } from "@/components/ui/separator";
-import DatabaseList from "@/app/(auth-required)/databases/components/DatabaseList";
+import DatabaseList from "@/features/database/DatabaseList";
 import { trpc } from "@/lib/trpc/client";
 import AddAWSTokenModal from "@/features/account/AddAWSTokenModal";
 import { useMemo } from "react";

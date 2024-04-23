@@ -18,15 +18,16 @@ const envSchema = z.object({
         .enum(["development", "test", "production"])
         .default("development"),
     SECRET_KEY: z.string(),
+    // AWS_ACCESS_KEY_ID: z.string(),
+    // AWS_SECRET_ACCESS_KEY: z.string(),
     NEXTAUTH_SECRET_KEY: z.string(),
     NEXTAUTH_URL: z.string(),
-    GITHUB_ID: z.string(),
-    GITHUB_SECRET: z.string(),
+    DOCS_URL: z.string(),
+    MONGODB_URI: z.string(),
     GOOGLE_ID: z.string(),
     GOOGLE_SECRET: z.string(),
-    MONGODB_URI: z.string(),
-    AWS_ACCESS_KEY_ID: z.string(),
-    AWS_SECRET_ACCESS_KEY: z.string(),
+    GITHUB_ID: z.string(),
+    GITHUB_SECRET: z.string(),
 });
 
 export const getEnvIssues = (): z.ZodIssue[] => {
