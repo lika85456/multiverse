@@ -8,13 +8,13 @@ export default function OAuthProvider({
     provider,
 }: Readonly<{
   children: ReactNode;
-  provider: "google" | "aws" | "github";
+  provider: "google" | "github";// | "aws";
 }>) {
     const handleAuthenticate = async() => {
         try {
             await signIn(provider, { callbackUrl: "/" }).catch(console.error);
         } catch (error) {
-            // console.error("Could not authenticate with the provider", error);
+            console.error("Could not authenticate with the provider", error);
         }
     };
 

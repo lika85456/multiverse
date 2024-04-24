@@ -348,7 +348,7 @@ export class MultiverseMock implements IMultiverse {
         if (!database) {
             return Promise.resolve();
         }
-        const vectorsLength = database.vectors.length;
+        // const vectorsLength = database.vectors.length;
         // await sleep(100 * vectorsLength + 1000 * 20); // 5 seconds + 100ms per vector to simulate fast deletion speed
 
         await sleep(30 * 1000);

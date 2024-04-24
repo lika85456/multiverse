@@ -39,7 +39,16 @@ export default function EmailInput() {
                 className={
                     "rounded-l-none bg-accent text-primary hover:bg-accent_light"
                 }
-                onClick={() => signIn("email", { email })}
+                onClick={async() => {
+                    try {
+                        await signIn("email", {
+                            email,
+                            callbackUrl: "/"
+                        });
+                    } catch (error) {
+                        console.error("Could not authenticate with the provider", error);
+                    }
+                }}
             >
                 <IoArrowForward className="w-6 h-6 text-accent-foreground" />
             </Button>

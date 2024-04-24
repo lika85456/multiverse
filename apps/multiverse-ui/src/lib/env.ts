@@ -28,6 +28,12 @@ const envSchema = z.object({
     GOOGLE_SECRET: z.string(),
     GITHUB_ID: z.string(),
     GITHUB_SECRET: z.string(),
+    // SMTP_USER: z.string(),
+    // SMTP_PASSWORD: z.string(),
+    // SMTP_HOST: z.string(),
+    // SMTP_PORT: z.string(),
+    EMAIL_SERVER: z.string(),
+    EMAIL_FROM: z.string(),
 });
 
 export const getEnvIssues = (): z.ZodIssue[] => {
