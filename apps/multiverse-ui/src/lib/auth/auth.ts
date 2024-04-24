@@ -19,8 +19,7 @@ export const authOptions: AuthOptions = {
             clientSecret: ENV.GOOGLE_SECRET,
         }),
         Email({
-            // server: `smtp://${ENV.SMTP_USER}:${ENV.SMTP_PASSWORD}@${ENV.SMTP_HOST}:${ENV.SMTP_PORT}`,
-            server: ENV.EMAIL_SERVER,
+            server: `smtp://${ENV.SMTP_USER}:${ENV.SMTP_PASSWORD}@${ENV.SMTP_HOST}:${ENV.SMTP_PORT}`,
             from: ENV.EMAIL_FROM,
             // maxAge: 24 * 60 * 60,
         }),

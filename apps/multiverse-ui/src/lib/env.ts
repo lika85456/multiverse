@@ -28,11 +28,11 @@ const envSchema = z.object({
     GOOGLE_SECRET: z.string(),
     GITHUB_ID: z.string(),
     GITHUB_SECRET: z.string(),
-    // SMTP_USER: z.string(),
-    // SMTP_PASSWORD: z.string(),
-    // SMTP_HOST: z.string(),
-    // SMTP_PORT: z.string(),
-    EMAIL_SERVER: z.string(),
+    SMTP_USER: z.string(),
+    SMTP_PASSWORD: z.string(),
+    SMTP_HOST: z.string(),
+    SMTP_PORT: z.string(),
+    // EMAIL_SERVER: z.string(), // instead of filling SMTP credentials individually, can be used as a connection string
     EMAIL_FROM: z.string(),
 });
 
