@@ -1,25 +1,14 @@
 import z from "zod";
 import { prettifyIssues } from "@multiverse/env";
 import { config } from "dotenv";
-import path from "path";
 
-config({
-    path: path.join(
-        __dirname,
-        "..",
-        "..",
-        "..",
-        process.env.NODE_ENV === "test" ? ".env" : ".env",
-    ),
-});
+config({ path: "../../../.env", }); // __dirname is not available for cron environment
 
 const envSchema = z.object({
     NODE_ENV: z
         .enum(["development", "test", "production"])
         .default("development"),
     SECRET_KEY: z.string(),
-    // AWS_ACCESS_KEY_ID: z.string(),
-    // AWS_SECRET_ACCESS_KEY: z.string(),
     NEXTAUTH_SECRET_KEY: z.string(),
     NEXTAUTH_URL: z.string(),
     DOCS_URL: z.string(),
@@ -32,7 +21,6 @@ const envSchema = z.object({
     SMTP_PASSWORD: z.string(),
     SMTP_HOST: z.string(),
     SMTP_PORT: z.string(),
-    // EMAIL_SERVER: z.string(), // instead of filling SMTP credentials individually, can be used as a connection string
     EMAIL_FROM: z.string(),
 });
 

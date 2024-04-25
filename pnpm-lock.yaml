@@ -480,6 +480,31 @@ importers:
         specifier: ^0.32.2
         version: 0.32.4
 
+  packages/statistics-api-invoker:
+    dependencies:
+      '@multiverse/env':
+        specifier: workspace:^
+        version: link:../env
+      '@multiverse/log':
+        specifier: workspace:^
+        version: link:../log
+      dotenv:
+        specifier: ^16.3.1
+        version: 16.4.5
+      zod:
+        specifier: ^3.21.4
+        version: 3.23.0
+    devDependencies:
+      '@types/dotenv':
+        specifier: ^8.2.0
+        version: 8.2.0
+      '@types/node':
+        specifier: ^20.12.7
+        version: 20.12.7
+      typescript:
+        specifier: ^4.5.4
+        version: 4.9.5
+
 packages:
 
   /@aashutoshrathi/word-wrap@1.2.6:
@@ -7537,6 +7562,13 @@ packages:
     resolution: {integrity: sha512-vIChWdVG3LG1SMxEvI/AK+FWJthlrqlTu7fbrlywTkkaONwk/UAGaULXRlf8vkzFBLVm0zkMdCquhL5aOjhXPQ==}
     dependencies:
       '@types/ms': 0.7.34
+
+  /@types/dotenv@8.2.0:
+    resolution: {integrity: sha512-ylSC9GhfRH7m1EUXBXofhgx4lUWmFeQDINW5oLuS+gxWdfUeW4zJdeVTYVkexEW+e2VUvlZR2kGnGGipAWR7kw==}
+    deprecated: This is a stub types definition. dotenv provides its own type definitions, so you do not need this installed.
+    dependencies:
+      dotenv: 16.4.5
+    dev: true
 
   /@types/eslint-scope@3.7.7:
     resolution: {integrity: sha512-MzMFlSLBqNF2gcHWO0G1vP/YQyfvrxZ0bF+u7mzUdZ1/xK4A4sru+nraZz5i3iEIk1l1uyicaDVTB4QbbEkAYg==}
@@ -17302,6 +17334,12 @@ packages:
       minimatch: 9.0.4
       shiki: 0.14.7
       typescript: 5.4.5
+    dev: true
+
+  /typescript@4.9.5:
+    resolution: {integrity: sha512-1FXk9E2Hm+QzZQ7z+McJiHL4NW1F2EzMu9Nq9i3zAaGqibafqYwCVU6WyWAuyQRRzOlxou8xZSyXLEN8oKj24g==}
+    engines: {node: '>=4.2.0'}
+    hasBin: true
     dev: true
 
   /typescript@5.4.5:

@@ -4,6 +4,9 @@ This project is a bachelor thesis of Michal Kornúc (Multiverse UI part) and Voj
 The consulter and leader of this project is Ing. Jan Blizničenko from the 
 [Faculty of Information Technology at Czech Technical University in Prague](https://fit.cvut.cz/cs).
 
+App is deployed at [d2l3pgy3g16qpx.cloudfront.net](https://d2l3pgy3g16qpx.cloudfront.net/). 
+If the page is not available, it was probably taken down due to the costs of running the application.
+
 Multiverse is a platform for managing and querying vector data. It is a platform that allows users to store, manage, and query vector data.
 The platform is divided into two parts: Multiverse Library and Multiverse UI. 
 
@@ -39,13 +42,27 @@ It also add extra features, like AWS Token management and usage statistics.
 
 To run Multiverse UI, you need to have installed `Node.js (v20)` and `pnpm`. You will also need a `Docker` with `MongoDB`.
 Before running the application, there are some steps you will need to take. First, you need to install all dependencies.
-Fill in the `.env` file with your configuration. Then you can run the application.
+Fill in the `.env` file with your configuration. Then you can run the application. 
 
-### Running Multiverse UI locally
+NOTE: Root `.env` file is used for the deployment of the application. The `apps/multiverse-ui/.env` file is used for running the application locally.
 
-Create an `.env` file in the `apps/multiverse-ui` folder and copy content of the `.env.example` file.
-Fill in the `NODE_ENV` key with `development` or `production`.
-Also fill the `NEXTAUTH_SECRET_KEY` and `REPLACE_ME` keys with your own values. 
+### Local environment
+
+To run the application locally, you will need to fill in the `apps/multiverse-ui/.env` file with your configuration.
+All keys provided in the `apps/multiverse-ui/.env.example` need to be filled. This environment configuration is used for
+running the application locally.
+
+### Deployment environment
+
+To deploy the application, you will need to fill in the root `.env` file with your configuration. 
+All keys provided in the `.env.example` need to be filled. This environment configuration is used for
+deploying the application. Only different keys are `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` which are used 
+by SST for deployment.
+
+### Environment configuration
+
+Environment consists of multiple variables. All of the variables (as defined in the `.env.example` file) are required.
+Configuration of each variable is described below.
 
 #### AWS accessKeyId and secretAccessKey
 
@@ -60,12 +77,12 @@ AWS Token when using the application. All users will have to generate their own 
 
 #### Google
 
-In your [google cloud console](`https://console.cloud.google.com/apis/credentials`) create a new project Multiverse. There set up your credentials . Provide:
+In your [google cloud console](`https://console.cloud.google.com/apis/credentials`) create a new project Multiverse. There set up your credentials. Provide:
 - Authorized JavaScript origins (`http://[domain]`) and; 
 - Authorized redirect URIs (`http://[domain]/api/auth/callback/google` and `https://[domain]/api/auth/callback/google`). 
 
 In local development use the domain `localhost:3000`, in production use the domain of your deployed application.
-Finally, fill in the `GOOGLE_ID` and `GOOGLE_SECRET` keys in the `apps/multiverse-ui/.env` file.
+Finally, fill in the `GOOGLE_ID` and `GOOGLE_SECRET` keys in the related `.env` file.
 
 #### GitHub
 GitHub requires the domain of the deployed application, so you cannot use it locally. In `Settings/Developer settings/OAuth Apps` create a new OAuth App `Multiverse`.
@@ -74,7 +91,7 @@ Fill in the form with your application:
   - and the `Authorization callback URL`. Fill in the `GITHUB_ID` and `GITHUB_SECRET` keys.
 
 Then, when the application is created, use `Generate a new client secret` to generate the `GITHUB_SECRET`.
-Fill the keys `GITHUB_ID` and `GITHUB_SECRET` in the `apps/multiverse-ui/.env` file.
+Fill the keys `GITHUB_ID` and `GITHUB_SECRET` in the related `.env` file.
 
 #### SSO with AWS SES
 
@@ -86,37 +103,46 @@ it to send emails from it. To email another email, you will need to verify it as
 your SES is still in the sandbox mode. To send emails to any email, you will need to request a production access.
 
 Then in the `Configuration/SMTP settings` you will have to create a new SMTP credentials. Provide User name or just use the default one.
-Store the access key and secret key. This key will not be shown again, so store it in a safe place.
-Fill in the `SMTP_USER` and `SMTP_PASSWORD` keys in the `apps/multiverse-ui/.env` file with the credentials. 
+Store the access key and secret key. This variable will not be shown again, so store it in a safe place.
+Fill in the `SMTP_USER` and `SMTP_PASSWORD` keys in the related `.env` file with the credentials. 
 `SMTP_HOST` and `SMTP_PORT` are provided in the SMTP settings.
 
 #### MongoDB
 
 You will need to have a running MongoDB instance. In production, you will have to create your own MongoDB database in [Mongo Atlas](https://cloud.mongodb.com/).
 More about using MongoDB Atlas can be found in the [MongoDB Atlas documentation](https://www.mongodb.com/docs/atlas/).
-In development, create mongodb in Docker or use the MongoDB database in Mongo Atlas. Copy the connection string
-(with credentials if needed) and fill in the `MONGODB_URI` key in the `apps/multiverse-ui/.env` file.
+In development, create mongodb in Docker or use the cloud MongoDB database in Mongo Atlas. Copy the connection string
+(with credentials if needed) and fill in the `MONGODB_URI` variable in the `apps/multiverse-ui/.env` file.
+
+#### Secret keys
+
+To set `NEXTAUTH_SECRET_KEY` and `SECRET_KEY` you can use any random string. It is used for encrypting the session and
+for encrypting the user's AWS Token. For better security, you can quickly generate a random string using the following command:
+
+```bash
+openssl rand -base64 32
+```
 
 #### Running Multiverse UI - development (uses MultiverseMock instead of Multiverse)
 
-Make sure to set the `NODE_ENV` key to `development` in the `.env` and `apps/multiverse-ui/.env` file and provide
-`MONGODB_URI` connection string to running database instance into `apps/multiverse-ui/.env`.
+Make sure to set the `NODE_ENV` variable to `development` in the related `.env` file and provide `MONGODB_URI` connection 
+string to running development database instance. Set other keys as well.
 
 NOTE: costs calculation in development mode is disabled to prevent unnecessary costs, since Cost Explorer API is expensive (0.01$ per request).
 
 ```bash
-cd apps/multiverse-ui
+cd apps/multiverse-ui #if not already in the directory
 pnpm i
 pnpm dev
 ```
 
 #### Running Multiverse UI - production (uses Multiverse)
 
-Make sure to set the `NODE_ENV` key to `development` in the `.env` and `apps/multiverse-ui/.env` file and provide
-`MONGODB_URI` connection string to running database instance into `apps/multiverse-ui/.env`.
+Make sure to set the `NODE_ENV` variable to `production` in the related `.env` file and provide `MONGODB_URI` connection string
+to running production database instance. Set other keys as well.
 
 ```bash
-pnpm build:orchestrator
+pnpm build:orchestrator # in the root of the project
 cd apps/multiverse-ui
 pnpm i
 pnpm build
@@ -127,13 +153,14 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 ### Deploying Multiverse UI
 
-Deployment has to be done in two steps. Since some of the environment variables are depending on the domain of deployed application,
-it is not possible to provide them at first deployment. After deploying the application, provide the domain into your environment variables
-and don't forget to authorize the domain in all providers (Google, GitHub).
+Deployment has to be done in two steps. Since some of the environment variables are depending on the domain of deployed 
+application, it is not possible to provide them at first deployment. After deploying the application, provide the domain 
+into your environment variables and don't forget to `authorize the domain` in all providers (Google, GitHub).
 
-Deploying is done from the root of the project. You will need to have the AWS Token set up in the root `.env` file and provide
-`MONGODB_URI` connection string in `apps/multiverse-ui/.env`. Make sure to provide all other keys as well. Make sure to not leave
-any key with value related to the development environment. Switch to the production environment by setting the `NODE_ENV` key to `production`.
+Deploying is done from the root of the project. You will need to have the `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`
+variables set in the root `.env` file.Make sure to provide all other keys as well. At second deployment, make sure to not
+leave any variable with value related to the development environment. Switch to the production environment by setting the 
+`NODE_ENV` variable to `production`.
 
 ```bash
 pnpm i
@@ -147,9 +174,10 @@ To deploy to the `prod` stage, use the following command:
 pnpm sst deploy --stage prod
 ```
 
-After the deployment is done, you will see the URL of the deployed application. Open it in your browser to see the result.
-As you might notice, the application is not fully functional yet. You will need to provide the domain of the deployed application
-to the environment variables and authorize the domain in all providers (Google, GitHub).
+After the deployment is done, you will see the URL of the deployed application and URL of the deployed documentation. 
+Open it in your browser to see the result. As you might notice, the application is not fully functional yet. 
+You will need to provide the domain of the deployed application to the environment variables and `authorize the domain` 
+in ALL providers (Google, GitHub).
 
 After doing so, redeploy the application:
 
@@ -157,23 +185,29 @@ After doing so, redeploy the application:
 pnpm sst deploy # (--stage prod) if you are deploying to the prod stage
 ```
 
-NOTE: First deploy is usually longer (~10-15 minutes). Subsequent deploys are faster (~5 minutes).
-When first using the deployed application, it might be a little bit slower, since the application is starting up and it's not cached.
+NOTE: First deploy is usually longer (~10-15 minutes). Subsequent deploys are faster (~5 minutes). When first using the 
+deployed application, it might be a little bit slower, since the application is starting up and it's not cached.
 
 ### Common issues
 Some of the most common issues encountered during the development and deployment of the application are listed below.
+
+#### Deployed application throws 504 error
+- don't panic, it's just the application starting up
+- try to refresh the page or switch to another page (/login, /pricing)
+- if the problem persists, close the tab and open the application in a new tab
+- otherwise check the logs in the AWS CloudWatch for the Next.js server lambda
 
 #### Provider not working correctly
 - check if the domain is authorized in the provider
 - check your credentials for the problematic provider
 
 #### Application not working correctly
-- check the `NODE_ENV` key in the `.env` file
+- check the `NODE_ENV` variable in the `.env` file (might be set to `development` instead of `production`)
 - double-check the environment variables
 
 #### Authentication fails
-- check the `NEXTAUTH_URL` key in the `apps/multiverse-ui/.env` file
-- check the `MONGODB_URI` key in the `apps/multiverse-ui/.env` file
+- check the `NEXTAUTH_URL` variable in the `.env` file
+- check the `MONGODB_URI` variable in the `.env` file
 - check if the identity you are using (email address to send email from/to) is verified in the SES
 - check your credentials for the problematic providers
 

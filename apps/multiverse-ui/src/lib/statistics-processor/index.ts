@@ -3,7 +3,7 @@ import { StatisticsProcessor } from "@/lib/statistics-processor/StatisticsProces
 import SQSSStatisticsQueue from "@multiverse/multiverse/src/StatisticsQueue/SQSStatisticsQueue";
 import log from "@multiverse/log";
 
-export async function POST() {
+export async function start() {
     log.info("STATISTICS_PROCESSOR: [START] Processing statistics");
     const startTime = performance.now(); // start timer for processing
     const queuesWithCredentials = await getAllQueuesWithCredentials();
@@ -53,5 +53,5 @@ export async function POST() {
     const endTime = performance.now() - startTime; // end timer for processing
     log.info(`STATISTICS_PROCESSOR: [DONE] Processed ${processedEventsCount} events in ${endTime / 1000}s`);
 
-    return new Response(`Processed ${processedEventsCount} events in ${endTime / 1000}s`);
+    return `Processed ${processedEventsCount} events in ${endTime / 1000}s`;
 }
