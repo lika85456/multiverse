@@ -4,6 +4,9 @@ import type { DatabaseConfiguration } from "../core/DatabaseConfiguration";
 import type { Query, SearchResultVector } from "../core/Query";
 import type { NewVector } from "../core/Vector";
 import { readFile, writeFile } from "fs/promises";
+import logger from "@multiverse/log";
+
+const log = logger.getSubLogger({ name: "LocalIndex" });
 
 export default class LocalIndex implements Index {
 
@@ -81,6 +84,11 @@ export default class LocalIndex implements Index {
 
         // save
         await writeFile(path, contents);
+
+        log.debug("Saved index", {
+            path,
+            vectors: this.storedVectors.length
+        });
     }
 
     public async load(path: string): Promise<void> {
@@ -89,6 +97,11 @@ export default class LocalIndex implements Index {
 
         // parse
         this.storedVectors = JSON.parse(contents);
+
+        log.debug("Loaded index", {
+            path,
+            vectors: this.storedVectors.length
+        });
     }
 
 }

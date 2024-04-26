@@ -16,6 +16,8 @@ import LambdaWorker from "../Compute/LambdaWorker";
 import type { OrchestratorEvent } from "./Orchestrator";
 import fs from "fs/promises";
 import type { AwsToken } from "../core/AwsToken";
+import type { WorkerType } from "../Compute/Worker";
+import type { ScalingTargetConfiguration } from "../InfrastructureStorage";
 
 const log = logger.getSubLogger({ name: "LambdaOrchestrator" });
 
@@ -32,6 +34,10 @@ export default class LambdaOrchestrator implements Orchestrator {
             region: options.databaseId.region,
             credentials: options.awsToken
         });
+    }
+
+    public async initialize() {
+        // noop
     }
 
     private async request<T extends keyof Orchestrator>(
@@ -139,7 +145,7 @@ export default class LambdaOrchestrator implements Orchestrator {
         return `multiverse-orchestrator-${this.options.databaseId.name}`;
     }
 
-    public lambdaWorkerName(partition: number, type: "primary" | "fallback") {
+    public lambdaWorkerName(partition: number, type: WorkerType) {
         return `multiverse-worker-${this.options.databaseId.name}-${partition}-${type}`;
     }
 
@@ -173,29 +179,29 @@ export default class LambdaOrchestrator implements Orchestrator {
             RoleName: roleName,
         });
 
-        // add policy AWSLambdaBasicExecutionRole
-        await iam.attachRolePolicy({
-            RoleName: roleName,
+        // add logs policy
+        log.debug(await iam.attachRolePolicy({
             PolicyArn: "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
-        });
+            RoleName: roleName
+        }));
 
         // add dynamodb policy
-        await iam.attachRolePolicy({
-            RoleName: roleName,
+        log.debug(await iam.attachRolePolicy({
             PolicyArn: "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess",
-        });
+            RoleName: roleName
+        }));
 
-        // add lambda:InvokeFunction
-        await iam.attachRolePolicy({
-            RoleName: roleName,
-            PolicyArn: "arn:aws:iam::aws:policy/AWSLambda_FullAccess",
-        });
+        // add invoke policy
+        log.debug(await iam.attachRolePolicy({
+            PolicyArn: "arn:aws:iam::aws:policy/service-role/AWSLambdaRole",
+            RoleName: roleName
+        }));
 
         // add s3 policy
-        await iam.attachRolePolicy({
-            RoleName: roleName,
+        log.debug(await iam.attachRolePolicy({
             PolicyArn: "arn:aws:iam::aws:policy/AmazonS3FullAccess",
-        });
+            RoleName: roleName
+        }));
 
         log.debug("Created role", { result, });
 
@@ -229,25 +235,55 @@ export default class LambdaOrchestrator implements Orchestrator {
 
         orchestratorEnvSchema.parse(variables);
 
-        const result = await this.lambda.createFunction({
-            Code: { ZipFile: await this.build(), },
-            FunctionName: this.lambdaName(),
-            Role: await this.lambdaRoleARN(),
-            Runtime: Runtime.nodejs18x,
-            Architectures: [Architecture.arm64],
-            Handler: "packages/multiverse/Orchestrator/dist/index.handler",
-            Timeout: 60,
-            Environment: {
-                Variables: {
-                    NODE_ENV: process.env.NODE_ENV ?? "development",
-                    VARIABLES: JSON.stringify(variables),
-                }
+        // const result = await this.lambda.createFunction({
+        //     Code: { ZipFile: await this.build(), },
+        //     FunctionName: this.lambdaName(),
+        //     Role: await this.lambdaRoleARN(),
+        //     Runtime: Runtime.nodejs18x,
+        //     Architectures: [Architecture.arm64],
+        //     Handler: "packages/multiverse/Orchestrator/dist/index.handler",
+        //     Timeout: 60,
+        //     Environment: {
+        //         Variables: {
+        //             NODE_ENV: process.env.NODE_ENV ?? "development",
+        //             VARIABLES: JSON.stringify(variables),
+        //         }
+        //     }
+        // });
+
+        let result;
+        let tries = 0;
+        while (tries < 3) {
+            try {
+                result = await this.lambda.createFunction({
+                    Code: { ZipFile: await this.build(), },
+                    FunctionName: this.lambdaName(),
+                    Role: await this.lambdaRoleARN(),
+                    Runtime: Runtime.nodejs18x,
+                    Architectures: [Architecture.arm64],
+                    Handler: "packages/multiverse/Orchestrator/dist/index.handler",
+                    Timeout: 60,
+                    Environment: {
+                        Variables: {
+                            NODE_ENV: process.env.NODE_ENV ?? "development",
+                            VARIABLES: JSON.stringify(variables),
+                        }
+                    }
+                });
+
+                break;
+            } catch (e) {
+                log.error("Failed to create orchestrator lambda", { error: e });
+                tries++;
             }
-        });
+
+            const backoffs = [0, 2000, 10000, 20000];
+            await new Promise(resolve => setTimeout(resolve, backoffs[tries]));
+        }
+
+        if (!result || !result.FunctionArn) throw new Error("Failed to create orchestrator lambda");
 
         log.debug("Created orchestrator lambda", { result });
-
-        if (!result.FunctionArn) throw new Error("Failed to create orchestrator lambda");
 
         // wait for lambda to be created
         await waitUntilPublishedVersionActive({
@@ -308,12 +344,13 @@ export default class LambdaOrchestrator implements Orchestrator {
     }
 
     public async deploy({
-        changesTable, snapshotBucket, infrastructureTable, databaseConfiguration
+        changesTable, snapshotBucket, infrastructureTable, databaseConfiguration, scalingTargetConfiguration
     }: {
         changesTable: string;
         snapshotBucket: string;
         infrastructureTable: string;
         databaseConfiguration: StoredDatabaseConfiguration;
+        scalingTargetConfiguration: ScalingTargetConfiguration;
     }) {
         const infrastructureStorage = new DynamoInfrastructureStorage({
             region: this.options.databaseId.region,
@@ -330,22 +367,42 @@ export default class LambdaOrchestrator implements Orchestrator {
             configuration: databaseConfiguration,
             databaseId: this.options.databaseId,
             partitions: [{
-                lambda: [{
-                    instances: [],
-                    name: this.lambdaWorkerName(0, "primary"),
-                    region: this.options.databaseId.region,
-                    type: "primary",
-                    wakeUpInstances: 1,
-                }],
+                // lambda: [{
+                //     instances: [],
+                //     name: this.lambdaWorkerName(0, "primary"),
+                //     region: this.options.databaseId.region,
+                //     type: "primary",
+                //     wakeUpInstances: 1,
+                // }],
+                lambda: [
+                    // primary
+                    {
+                        instances: [],
+                        name: this.lambdaWorkerName(0, "primary"),
+                        region: this.options.databaseId.region,
+                        type: "primary",
+                        wakeUpInstances: scalingTargetConfiguration.warmPrimaryInstances
+                    },
+                    // secondary
+                    ...Array.from({ length: scalingTargetConfiguration.secondaryFallbacks }, () => ({
+                        instances: [],
+                        name: this.lambdaWorkerName(0, "secondary"),
+                        region: this.options.databaseId.region,
+                        type: "secondary" as const,
+                        wakeUpInstances: scalingTargetConfiguration.warmSecondaryInstances
+                    })),
+                    // regional SKIP
+                    // ...Array.from({ length: scalingTargetConfiguration.outOfRegionFallbacks }, (_, i) => ({
+                    //     instances: [],
+                    //     name: this.lambdaWorkerName(0, "regional"),
+                    //     region: this.options.databaseId.region,
+                    //     type: "regional" as const,
+                    //     wakeUpInstances: scalingTargetConfiguration.warmRegionalInstances
+                    // })
+                ],
                 partitionIndex: 0
             }],
-            scalingTargetConfiguration: {
-                outOfRegionFallbacks: 0,
-                secondaryFallbacks: 0,
-                warmPrimaryInstances: 1,
-                warmRegionalInstances: 0,
-                warmSecondaryInstances: 0
-            }
+            scalingTargetConfiguration
         });
 
         const errors: Error[] = [];
@@ -391,11 +448,16 @@ export default class LambdaOrchestrator implements Orchestrator {
     }
 
     public async destroy() {
-
-        const result = await this.lambda.deleteFunction({ FunctionName: this.lambdaName(), });
-
-        await this.destroyPartition({ partition: 0 });
-
-        log.debug("Deleted lambda function", { result, });
+        await Promise.allSettled([
+            this.destroyPartition({ partition: 0 }),
+            async() => {
+                try {
+                    await this.lambda.deleteFunction({ FunctionName: this.lambdaName(), });
+                    log.debug("Deleted orchestrator lambda");
+                } catch (e) {
+                    log.error("Failed to delete orchestrator lambda", { error: e });
+                }
+            }
+        ]);
     }
 }

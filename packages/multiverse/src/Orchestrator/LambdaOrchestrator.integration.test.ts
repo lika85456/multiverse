@@ -7,10 +7,11 @@ import DynamoInfrastructureStorage from "../InfrastructureStorage/DynamoInfrastr
 import S3SnapshotStorage from "../SnapshotStorage/S3SnapshotStorage";
 import LambdaOrchestrator from "./LambdaOrchestrator";
 
+// ! DID YOU COMPILE ?
 describe("<LambdaOrchestrator>", () => {
 
     const databaseId: DatabaseID = {
-        name: Date.now() + "",
+        name: Math.random().toString(36).substring(7),
         region: "eu-central-1"
     };
 
@@ -26,16 +27,16 @@ describe("<LambdaOrchestrator>", () => {
 
     const changesStorage = new DynamoChangesStorage({
         databaseId,
-        tableName: databaseId.name + "-changes"
+        tableName: "multiverse-changes-" + databaseId.name
     });
 
     const infrastructureStorage = new DynamoInfrastructureStorage({
         region: databaseId.region,
-        tableName: databaseId.name + "-infrastructure"
+        tableName: "multiverse-infrastructure-" + databaseId.name
     });
 
     const snapshotStorage = new S3SnapshotStorage({
-        bucketName: databaseId.name + "-snapshot",
+        bucketName: "multiverse-snapshot-" + databaseId.name,
         databaseId
     });
 
@@ -52,15 +53,22 @@ describe("<LambdaOrchestrator>", () => {
         ]);
 
         await orchestrator.deploy({
-            changesTable: databaseId.name + "-changes",
-            infrastructureTable: databaseId.name + "-infrastructure",
-            snapshotBucket: databaseId.name + "-snapshot",
+            changesTable: "multiverse-changes-" + databaseId.name,
+            infrastructureTable: "multiverse-infrastructure-" + databaseId.name,
+            snapshotBucket: "multiverse-snapshot-" + databaseId.name,
             databaseConfiguration,
+            scalingTargetConfiguration: {
+                outOfRegionFallbacks: 0,
+                secondaryFallbacks: 0,
+                warmPrimaryInstances: 5,
+                warmRegionalInstances: 0,
+                warmSecondaryInstances: 0
+            }
         });
     });
 
     afterAll(async() => {
-        await Promise.all([
+        await Promise.allSettled([
             changesStorage.destroy(),
             infrastructureStorage.destroy(),
             snapshotStorage.destroy(),

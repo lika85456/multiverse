@@ -1,5 +1,6 @@
 import MemoryChangesStorage from "../ChangesStorage/MemoryChangesStorage";
 import ComputeWorker from "../Compute/ComputeWorker";
+import type { Worker } from "../Compute/Worker";
 import type {
     DatabaseID, Region,
     StoredDatabaseConfiguration
@@ -8,6 +9,7 @@ import type { Query } from "../core/Query";
 import LocalIndex from "../Index/LocalIndex";
 import MemoryInfrastructureStorage from "../InfrastructureStorage/MemoryInfrastructureStorage";
 import LocalSnapshotStorage from "../SnapshotStorage/LocalSnapshotStorage";
+import mockWorkerFactory from "./MockWorkerFactory";
 import Orchestrator from "./OrchestratorWorker";
 
 describe("<OrchestratorWorker>", () => {
@@ -24,7 +26,7 @@ describe("<OrchestratorWorker>", () => {
     let infrastructureStorage: MemoryInfrastructureStorage;
     let snapshotStorage: LocalSnapshotStorage;
 
-    let realLambdaFactory: (name: string, region: Region) => ComputeWorker;
+    let realLambdaFactory: (name: string, region: Region) => Worker;
 
     let orchestrator: Orchestrator;
 
@@ -39,13 +41,13 @@ describe("<OrchestratorWorker>", () => {
         infrastructureStorage = new MemoryInfrastructureStorage();
         snapshotStorage = new LocalSnapshotStorage(databaseId.name);
 
-        realLambdaFactory = (_name: string, _region: Region) => new ComputeWorker({
+        realLambdaFactory = mockWorkerFactory((_name, _region) => new ComputeWorker({
             partitionIndex: 0,
             ephemeralLimit: 10_000,
             index: new LocalIndex(databaseConfiguration),
             memoryLimit: 10_000,
             snapshotStorage
-        });
+        }));
 
         await infrastructureStorage.set(databaseId.name, {
             configuration: databaseConfiguration,
@@ -61,7 +63,7 @@ describe("<OrchestratorWorker>", () => {
                 partitionIndex: 0
             }],
             scalingTargetConfiguration: {
-                warmPrimaryInstances: 1,
+                warmPrimaryInstances: 20,
                 warmRegionalInstances: 0,
                 warmSecondaryInstances: 0,
                 secondaryFallbacks: 0,
@@ -74,10 +76,13 @@ describe("<OrchestratorWorker>", () => {
             databaseConfiguration,
             databaseId,
             infrastructureStorage,
+            snapshotStorage,
 
             maxChangesCount: 10,
             lambdaFactory: realLambdaFactory
         });
+
+        await orchestrator.initialize();
     });
 
     it("should query empty", async() => {

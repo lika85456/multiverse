@@ -2,7 +2,7 @@ import type Index from "../Index";
 import type SnapshotStorage from "../SnapshotStorage";
 import os from "node-os-utils";
 import fs from "fs/promises";
-import log from "@multiverse/log";
+import logger from "@multiverse/log";
 import type {
     StatefulResponse,
     Worker, WorkerQuery, WorkerQueryResult
@@ -13,6 +13,8 @@ export default class ComputeWorker implements Worker {
 
     private instanceId = Math.random().toString(36).slice(2);
     private lastUpdate = 0;
+    private lastSnapshotUpdate = 0;
+    private log = logger.getSubLogger({ name: `ComputeWorker-${this.instanceId}` });
 
     constructor(private options: {
         partitionIndex: number,
@@ -77,6 +79,10 @@ export default class ComputeWorker implements Worker {
             throw new Error(`Vector dimensions must be ${await this.options.index.dimensions()}`);
         }
 
+        if (query.updateSnapshotIfOlderThan && this.lastSnapshotUpdate < query.updateSnapshotIfOlderThan) {
+            await this.loadLatestSnapshot();
+        }
+
         if (query.updates && query.updates.length > 0) {
             await this.update(query.updates);
         }
@@ -100,7 +106,7 @@ export default class ComputeWorker implements Worker {
 
         const snapshot = await this.options.snapshotStorage.create(path, this.lastUpdate);
 
-        log.debug(`Saved snapshot ${snapshot.filePath}`, { snapshot });
+        this.log.debug(`Saved snapshot ${snapshot.filePath}`, { snapshot });
 
         return await this.state();
     }
@@ -115,7 +121,7 @@ export default class ComputeWorker implements Worker {
         const snapshot = await this.options.snapshotStorage.loadLatest();
 
         if (!snapshot) {
-            log.debug("No snapshot to load");
+            this.log.debug("No snapshot to load");
 
             return await this.state();
         }
@@ -123,8 +129,9 @@ export default class ComputeWorker implements Worker {
         await this.options.index.load(snapshot.filePath);
 
         this.lastUpdate = snapshot.timestamp;
+        this.lastSnapshotUpdate = snapshot.timestamp;
 
-        log.debug(`Loaded snapshot ${snapshot.filePath}`, {
+        this.log.debug(`Loaded snapshot ${snapshot.filePath}`, {
             snapshot,
             totalVectorsLoaded: await this.options.index.count()
         });

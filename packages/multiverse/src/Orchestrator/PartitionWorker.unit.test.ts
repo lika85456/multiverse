@@ -4,6 +4,7 @@ import { Vector } from "../core/Vector";
 import LocalIndex from "../Index/LocalIndex";
 import MemoryInfrastructureStorage from "../InfrastructureStorage/MemoryInfrastructureStorage";
 import LocalSnapshotStorage from "../SnapshotStorage/LocalSnapshotStorage";
+import mockWorkerFactory from "./MockWorkerFactory";
 import PartitionWorker from "./PartitionWorker";
 
 describe("<PartitionWorker>", () => {
@@ -47,6 +48,14 @@ describe("<PartitionWorker>", () => {
         };
     };
 
+    const scalingTargetConfiguration = {
+        warmPrimaryInstances: 20,
+        warmSecondaryInstances: 0,
+        warmRegionalInstances: 5,
+        secondaryFallbacks: 0,
+        outOfRegionFallbacks: 0
+    };
+
     beforeEach(async() => {
 
         snapshotStorage = new LocalSnapshotStorage(Math.random() + "");
@@ -64,13 +73,7 @@ describe("<PartitionWorker>", () => {
                 name: "test",
                 region: "eu-central-1"
             },
-            scalingTargetConfiguration: {
-                warmPrimaryInstances: 1,
-                warmRegionalInstances: 0,
-                warmSecondaryInstances: 0,
-                secondaryFallbacks: 0,
-                outOfRegionFallbacks: 0
-            },
+            scalingTargetConfiguration,
             partitions: [{
                 partitionIndex: 0,
                 lambda: [
@@ -150,5 +153,32 @@ describe("<PartitionWorker>", () => {
         });
 
         expect(result.result.result.length).toBe(0);
+    });
+
+    it("should call scalingTarget instances", async() => {
+        let instances = 0;
+
+        const workerFactory = mockWorkerFactory((_name: string, _region: Region) => {
+            instances++;
+
+            return new ComputeWorker({
+                partitionIndex: 0,
+                ephemeralLimit: 10_000,
+                index: new LocalIndex(config),
+                memoryLimit: 10_000,
+                snapshotStorage
+            });
+        });
+
+        const worker = new PartitionWorker({
+            databaseName: "test",
+            infrastructureStorage,
+            partitionIndex: 0,
+            lambdaFactory: workerFactory
+        });
+
+        await worker.requestAll("loadLatestSnapshot", [], "all", scalingTargetConfiguration);
+
+        expect(instances).toBe(25);
     });
 });

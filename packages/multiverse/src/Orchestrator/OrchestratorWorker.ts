@@ -10,6 +10,7 @@ import type { Query, QueryResult } from "../core/Query";
 import type { NewVector } from "../core/Vector";
 import type InfrastructureStorage from "../InfrastructureStorage";
 import type { Infrastructure } from "../InfrastructureStorage";
+import type SnapshotStorage from "../SnapshotStorage";
 import SQSSStatisticsQueue from "../StatisticsQueue/SQSStatisticsQueue";
 import type Orchestrator from "./Orchestrator";
 import PartitionWorker from "./PartitionWorker";
@@ -28,6 +29,7 @@ export default class OrchestratorWorker implements Orchestrator {
         changesStorage: ChangesStorage;
         databaseId: DatabaseID;
         databaseConfiguration: DatabaseConfiguration;
+        snapshotStorage: SnapshotStorage;
         awsToken?: AwsToken;
 
         maxChangesCount?: number;
@@ -40,6 +42,27 @@ export default class OrchestratorWorker implements Orchestrator {
         }));
 
         this.maxChangesCount = this.options.maxChangesCount ?? this.maxChangesCount;
+    }
+
+    /**
+     * Initialize should be called if new instance is created (once per orchestrator lifecycle)
+     */
+    public async initialize() {
+        // check if infrastructure meets scaling quotas, if not, scale up
+        const infrastructure = await this.options.infrastructureStorage.get(this.options.databaseId.name);
+
+        if (!infrastructure) {
+            throw new Error(`Database ${this.options.databaseId.name} not found`);
+        }
+
+        // TODO: create infrastructure if doesnt exist
+
+        // todo implement partitions
+        const workers = await this.getWorkers(infrastructure);
+
+        for (const worker of Object.values(workers)) {
+            await worker.requestAll("loadLatestSnapshot", [], "all", infrastructure.scalingTargetConfiguration);
+        }
     }
 
     private async getWorkers(infrastructure: Infrastructure): Promise<{[partitionIndex: number]: PartitionWorker}> {
@@ -83,16 +106,17 @@ export default class OrchestratorWorker implements Orchestrator {
 
         const updates = await this.options.changesStorage.getAllChangesAfter(oldestUpdateTimestamp);
 
+        const latestSnapshot = await this.options.snapshotStorage.latestWithoutDownload();
+
         const result = await worker[1].query({
             query,
-            updates
+            updates,
+            updateSnapshotIfOlderThan: latestSnapshot?.timestamp ?? 0
         });
-
         // TODO! merge result with updates!!!!!!§
 
         log.debug("Querying", {
             infrastructure,
-            workers,
             oldestUpdateTimestamp,
             updates,
             result
@@ -133,7 +157,7 @@ export default class OrchestratorWorker implements Orchestrator {
 
         await worker.saveSnapshotWithUpdates(changes);
 
-        await worker.requestAll("loadLatestSnapshot", [], "all");
+        await worker.requestAll("loadLatestSnapshot", [], "all", infrastructure.scalingTargetConfiguration);
     }
 
     public async addVectors(vectors: NewVector[]): Promise<void> {

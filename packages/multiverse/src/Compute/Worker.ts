@@ -7,6 +7,8 @@ import { storedVectorChangeSchema } from "../ChangesStorage/StoredVector";
 export const workerQuerySchema = z.object({
     query: querySchema,
     updates: z.array(storedVectorChangeSchema).optional(),
+
+    updateSnapshotIfOlderThan: z.number().optional(),
 });
 
 export type WorkerQuery = z.infer<typeof workerQuerySchema>;
@@ -36,6 +38,8 @@ export type CountResponse = {
     vectorDimensions: number,
     // TODO: stored bytes
 };
+
+export type WorkerType = "primary" | "secondary" | "fallback";
 
 export interface Worker {
     query(query: WorkerQuery): Promise<StatefulResponse<WorkerQueryResult>>;
