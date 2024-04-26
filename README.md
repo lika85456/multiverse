@@ -111,13 +111,21 @@ You will need to have a running MongoDB instance. In production, you will have t
 create mongodb in Docker or use the cloud MongoDB database in Mongo Atlas. Copy the connection string (with credentials 
 if needed) and fill in the `MONGODB_URI` variable in the `apps/multiverse-ui/.env` file.
 
-#### Secret keys
+#### NextAuth secret key
 
-To set `NEXTAUTH_SECRET_KEY` and `SECRET_KEY` you can use any random string. It is used for encrypting the session and
-for encrypting the user's AWS Token. For better security, you can quickly generate a random string using the following command:
+To set `NEXTAUTH_SECRET_KEY` you can use any random string. It is used for encrypting the session. For better security, 
+you can quickly generate a random string using the following command:
 
 ```bash
 openssl rand -base64 32
+```
+
+#### Secret key
+
+To set `SECRET_KEY` have to use a hex sting of length 32. You can generate it using the following command:
+
+```bash
+openssl rand -hex 16
 ```
 
 #### Running Multiverse UI - development (uses MultiverseMock instead of Multiverse)

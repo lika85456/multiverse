@@ -16,7 +16,7 @@ function MultiverseStack({ stack }: StackContext) {
 
     const nextSite = new NextjsSite(stack, "app", {
         path: "./apps/multiverse-ui",
-        timeout: 10,
+        timeout: 60,
         memorySize: "256 MB",
         runtime: "nodejs20.x",
     });
