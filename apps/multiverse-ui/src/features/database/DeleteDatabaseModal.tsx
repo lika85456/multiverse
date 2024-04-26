@@ -78,9 +78,11 @@ export default function DeleteDatabaseModal() {
                             <IoClose className="w-8 h-8" />
                         </div>
                     </div>
-                    <AlertDialogDescription className="text-secondary-foreground">
+                    <AlertDialogDescription className="flex flex-col text-secondary-foreground">
+                        <span>
             Do you really wish to delete this database? This action cannot be
-            undone. To delete this database, type{" "}
+            undone. To delete this database, type:{" "}
+                        </span>
                         <span className="text-destructive font-bold tracking-wide">
               “{codeName}”
                         </span>

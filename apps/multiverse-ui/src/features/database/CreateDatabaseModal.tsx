@@ -111,15 +111,6 @@ export default function CreateDatabaseModal() {
 
     }
 
-    const handleCopyRequest = async() => {
-        try {
-            await navigator.clipboard.writeText(`${"Create mongodb text"}`);
-            customToast("Data have been copied into your clipboard.");
-        } catch (error) {
-            customToast.error("Data could not be copied.");
-        }
-    };
-
     return (
         <AlertDialog open={modalOpen}>
             <AlertDialogTrigger
@@ -247,13 +238,6 @@ export default function CreateDatabaseModal() {
 
                         </div>
                         <AlertDialogFooter>
-                            <Button
-                                className="flex w-fit border border-border bg-inherit hover:bg-primary"
-                                onClick={handleCopyRequest}
-                            >
-                                <FaRegCopy className="w-6 h-6 mr-2"/>
-                                Copy request
-                            </Button>
                             <Button
                                 type="submit"
                                 className="flex w-fit text-accent-foreground bg-accent hover:bg-accent_light"

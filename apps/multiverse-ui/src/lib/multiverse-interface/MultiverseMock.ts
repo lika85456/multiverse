@@ -295,7 +295,7 @@ export class MultiverseMock implements IMultiverse {
     async createDatabase(options: MultiverseDatabaseConfiguration,): Promise<void> {
         await loadJsonFile();
 
-        await sleep(1000 * 20); // 5 seconds, to simulate fast creation speed
+        await sleep(1000 * 5); // 5 seconds, to simulate fast creation speed
 
         databases.set(options.name, {
             multiverseDatabase: new MultiverseDatabaseMock({
@@ -348,10 +348,9 @@ export class MultiverseMock implements IMultiverse {
         if (!database) {
             return Promise.resolve();
         }
-        // const vectorsLength = database.vectors.length;
-        // await sleep(100 * vectorsLength + 1000 * 20); // 5 seconds + 100ms per vector to simulate fast deletion speed
+        const vectorsLength = database.vectors.length;
+        await sleep(100 * vectorsLength + 1000 * 5); // 5 seconds + 100ms per vector to simulate fast deletion speed
 
-        await sleep(30 * 1000);
         if (database.multiverseDatabase.getAwsToken().awsToken.accessKeyId !== this.awsToken.accessKeyId) {
             return Promise.resolve();
         }
