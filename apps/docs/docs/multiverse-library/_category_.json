@@ -1,0 +1,8 @@
+{
+  "label": "Multiverse Library",
+  "position": 2,
+  "link": {
+    "type": "generated-index",
+    "description": "Look into packages used in the project"
+  }
+}

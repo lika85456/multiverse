@@ -10,10 +10,10 @@ import {themes as prismThemes} from 'prism-react-renderer';
 const config = {
   title: 'Multiverse',
   tagline: 'Serverless vector database.',
-  favicon: 'img/favicon.ico',
+  favicon: 'img/multiverse-logo.svg',
 
   // Set the production url of your site here
-  url: 'https://your-docusaurus-site.example.com',
+  url: 'https://d1ui5ipuceb3b0.cloudfront.net',
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
   baseUrl: '/',
@@ -66,17 +66,17 @@ const config = {
       // Replace with your project's social card
       image: 'img/docusaurus-social-card.jpg',
       navbar: {
-        title: 'Multiverse docs',
+        title: 'Multiverse',
         logo: {
           alt: 'My Site Logo',
-          src: 'img/logo.svg',
+          src: 'img/multiverse-logo.svg',
         },
         items: [
           {
             type: 'docSidebar',
             sidebarId: 'tutorialSidebar',
             position: 'left',
-            label: 'Tutorial',
+            label: 'Get started',
           },
           // {to: '/blog', label: 'Blog', position: 'left'},
           {
@@ -129,7 +129,7 @@ const config = {
         //     ],
         //   },
         // ],
-        copyright: `Copyright © ${new Date().getFullYear()} My Project, Inc. Built with Docusaurus.`,
+        copyright: `Copyright © ${new Date().getFullYear()} Multiverse, Michal Kornúc & Vojtěch Jedlička, FIT ČVUT v Praze.`,
       },
       prism: {
         theme: prismThemes.github,

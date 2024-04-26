@@ -61,7 +61,7 @@ export default function DatabaseStatistics() {
                         getDate={() => dateRange}
                         setDate={handleDateIntervalChange}
                     />
-                    <StatisticsGraph title="Requests" data={data.reads}/>
+                    <StatisticsGraph title="Queries" data={data.reads}/>
                     <StatisticsGraph title="Write Count" data={data.writes}/>
                     {!!data.costsEnabled && <StatisticsGraph title="Costs" data={data.costs} unit={"$"}/>}
                     <StatisticsGraph title="Response Time" data={data.responseTime}/>
