@@ -450,14 +450,14 @@ export default class LambdaOrchestrator implements Orchestrator {
     public async destroy() {
         await Promise.allSettled([
             this.destroyPartition({ partition: 0 }),
-            async() => {
+            (async() => {
                 try {
                     await this.lambda.deleteFunction({ FunctionName: this.lambdaName(), });
                     log.debug("Deleted orchestrator lambda");
                 } catch (e) {
                     log.error("Failed to delete orchestrator lambda", { error: e });
                 }
-            }
+            })()
         ]);
     }
 }

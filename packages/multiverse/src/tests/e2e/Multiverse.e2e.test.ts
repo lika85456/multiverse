@@ -1,3 +1,4 @@
+import log from "@multiverse/log";
 import Multiverse from "../..";
 import type { Region } from "../../core/DatabaseConfiguration";
 
@@ -50,7 +51,9 @@ describe("<Multiverse E2E>", () => {
             throw new Error("Database not found");
         }
 
+        const addStart = Date.now();
         await db.add(vectors);
+        const addEnd = Date.now();
 
         const query = {
             k: 10,
@@ -58,10 +61,15 @@ describe("<Multiverse E2E>", () => {
             vector: [1, 2, 3]
         };
 
+        const queryStart = Date.now();
         const results = await Promise.all(Array.from({ length: 100 }, () => db.query(query)));
+        const queryEnd = Date.now();
+
+        log.debug("Add time", addEnd - addStart);
+        log.debug("Query time", queryEnd - queryStart);
 
         expect(results.length).toBe(100);
-        console.log(results.slice(0, 10));
+        expect(results.map(r => r.result)).toMatchSnapshot();
     });
 
     it("should remove database", async() => {
