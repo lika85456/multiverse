@@ -24,6 +24,10 @@ export default class LocalSnapshotStorage implements SnapshotStorage {
         };
     }
 
+    public async latestWithoutDownload(): Promise<Snapshot | undefined> {
+        return await this.loadLatest();
+    }
+
     public async loadLatest(): Promise<Snapshot | undefined> {
 
         try {

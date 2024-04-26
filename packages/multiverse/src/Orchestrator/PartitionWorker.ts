@@ -5,7 +5,8 @@ import type {
 } from "../Compute/Worker";
 import type { Region } from "../core/DatabaseConfiguration";
 import type {
-    Infrastructure, PartitionInfrastructureState, PartitionLambdaState
+    Infrastructure, PartitionInfrastructureState, PartitionLambdaState,
+    ScalingTargetConfiguration
 } from "../InfrastructureStorage";
 import type InfrastructureStorage from "../InfrastructureStorage";
 import LambdaWorker from "../Compute/LambdaWorker";
@@ -76,9 +77,9 @@ export default class PartitionWorker implements Worker {
                     throw new Error("Primary not found");
                 }
 
-                const secondaries = partition.lambda.filter(l => l.type === "fallback" && l.region === primary.region);
+                const secondaries = partition.lambda.filter(l => l.type === "secondary");
 
-                const regions = partition.lambda.filter(l => l.region !== primary.region);
+                const regions = partition.lambda.filter(l => l.type === "fallback");
 
                 return [primary, ...secondaries, ...regions];
             });
@@ -134,43 +135,64 @@ export default class PartitionWorker implements Worker {
         throw new Error(`All lambdas failed: ${JSON.stringify(errors)}`);
     }
 
+    /**
+     * This function will call all instances of a certain type lambda in a partition based on given scaling target.
+     * It does process state of the instances that responded.
+     *
+     * Total timeout for this method is 5x the timeout of a REQUEST_ALL_WAIT_TIME
+     */
     public async requestAll<TEvent extends keyof Worker>(
         event: TEvent,
         payload: Parameters<Worker[TEvent]>,
-        lambdaType: "primary" | "fallback" | "all"
-    ): Promise<Array<ReturnType<Worker[TEvent]>>> {
+        lambdaType: "primary" | "fallback" | "all",
+        scalingTarget: ScalingTargetConfiguration
+    ): Promise<Awaited<ReturnType<Worker[TEvent]>[]>> {
 
         await this.partition;
 
-        const responses: Array<ReturnType<Worker[TEvent]>> = [];
+        // find lambdas of the type
+        const lambdas = await this.lambdasByPriority;
+        const lambdasByType = lambdas.filter(l => lambdaType === "all" || l.type === lambdaType);
 
-        for (const lambdaState of await this.lambdasByPriority) {
-            if (lambdaType !== "all" && lambdaState.type !== lambdaType) {
-                continue;
-            }
+        const results: {
+            result: Awaited<ReturnType<Worker[TEvent]>>;
+            lambdaName: string;
+        }[] = [];
 
-            try {
-                const worker = this.lambdaFactory(lambdaState.name, lambdaState.region, this.REQUEST_ALL_WAIT_TIME);
+        const responsePromises = lambdasByType.map(lambdaState => {
+            const worker = this.lambdaFactory(lambdaState.name, lambdaState.region, this.REQUEST_ALL_WAIT_TIME);
 
+            const warmInstances = lambdaState.type === "primary"
+                ? scalingTarget.warmPrimaryInstances
+                : lambdaState.type === "secondary"
+                    ? scalingTarget.warmSecondaryInstances
+                    : scalingTarget.warmRegionalInstances;
+
+            return Array.from({ length: warmInstances }, () => ({
                 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                 // @ts-ignore
-                const responsePromise = worker[event](...payload) as Promise<ReturnType<Worker[TEvent]>>;
+                result: worker[event](...payload) as Promise<Awaited<ReturnType<Worker[TEvent]>>>,
+                lambdaName: lambdaState.name
+            }));
+        })
+            .flat()
+            .map(promise => promise.result.then(result => {
+                results.push({
+                    result,
+                    lambdaName: promise.lambdaName
+                });
+            }));
 
-                const response = await this.throwOnTimeout(responsePromise, this.REQUEST_TIMEOUT);
+        // promise all but throw on timeout
+        await this.throwOnTimeout(Promise.allSettled(responsePromises), this.REQUEST_ALL_WAIT_TIME * 5).catch();
 
-                await this.infrastructureStorage.processState(this.databaseName, lambdaState.name, response.state);
+        // parse states
+        // TODO: parse states asynchronously
+        await Promise.all(results.map(async result => {
+            await this.infrastructureStorage.processState(this.databaseName, result.lambdaName, result.result.state);
+        }));
 
-                responses.push(response);
-            } catch (e) {
-                log.debug(`Lambda ${lambdaState.name} failed: ${e}`);
-            }
-        }
-
-        if (responses.length === 0) {
-            throw new Error("All lambdas failed");
-        }
-
-        return responses;
+        return results as Array<ReturnType<Worker[TEvent]>>;
     }
 
     public async update(updates: StoredVectorChange[]): Promise<StatefulResponse<void>> {

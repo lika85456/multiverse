@@ -9,6 +9,7 @@ export type OrchestratorEvent = {
 };
 
 export default interface Orchestrator {
+    initialize(): Promise<void>;
     query(query: Query): Promise<QueryResult>;
     addVectors(vectors: NewVector[]): Promise<void>;
     removeVectors(labels: string[]): Promise<void>;

@@ -4,11 +4,14 @@ import type {
     DatabaseID, Region,
     StoredDatabaseConfiguration
 } from "../core/DatabaseConfiguration";
+import logger from "@multiverse/log";
+
+const log = logger.getSubLogger({ name: "InfrastructureStorage" });
 
 export type PartitionLambdaState = {
     name: string;
     region: Region;
-    type: "primary" | "fallback";
+    type: "primary" | "secondary" | "fallback";
     wakeUpInstances: number;
     instances: {
         id: string;
@@ -72,6 +75,12 @@ export default abstract class InfrastructureStorage {
     }
 
     public async processState(dbName: string, lambdaName: string, state: WorkerState) {
+        log.debug("Processing state", {
+            dbName,
+            lambdaName,
+            state
+        });
+
         const infrastructure = await this.get(dbName);
         if (!infrastructure) {
             throw new Error(`Database ${dbName} not found`);
@@ -113,7 +122,7 @@ export default abstract class InfrastructureStorage {
         let oldest = Infinity;
         for (const lambda of partition.lambda) {
             for (const instance of lambda.instances) {
-                if (instance.lastUpdated < oldest) {
+                if (instance.lastUpdated < oldest && instance.lastUpdated !== 0) {
                     oldest = instance.lastUpdated;
                 }
             }

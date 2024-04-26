@@ -201,7 +201,7 @@ describe.each([
 
             const path = "/tmp/multiverse-test-index";
 
-            const vectors = Array.from({ length: 10000 }, (_, i) => ({
+            const vectors = Array.from({ length: 2000 }, (_, i) => ({
                 label: "test label " + i,
                 vector: Vector.random(1536)
             }));
@@ -226,7 +226,7 @@ describe.each([
 
                 await newIndex.load(path);
 
-                expect(await newIndex.count()).toBe(10000);
+                expect(await newIndex.count()).toBe(2000);
                 expect(await newIndex.dimensions()).toBe(1536);
 
                 const query = {

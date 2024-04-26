@@ -163,7 +163,7 @@ describe.each([
                             vector: Vector.random(config.dimensions),
                             sendVector: true
                         },
-                        updates: []
+                        updates: [],
                     });
 
                     expect(result.result.result.length).toBe(0);

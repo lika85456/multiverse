@@ -127,6 +127,47 @@ export default class S3SnapshotStorage implements SnapshotStorage {
         };
     }
 
+    public async latestWithoutDownload(): Promise<Snapshot | undefined> {
+        const s3Objects = await this.s3.listObjectsV2({
+            Bucket: this.options.bucketName,
+            Prefix: this.options.databaseId.name
+        });
+
+        if (!s3Objects.Contents || s3Objects.Contents.length === 0) {
+            return undefined;
+        }
+
+        const snapshots: Snapshot[] = [];
+
+        for (const s3Object of s3Objects.Contents) {
+            const filePath = s3Object.Key;
+
+            if (!filePath) {
+                continue;
+            }
+
+            const timestamp = filePath.split("/")[1].split(".")[0];
+
+            snapshots.push({
+                filePath,
+                timestamp: +timestamp,
+                databaseName: this.options.databaseId.name
+            });
+        }
+
+        // sort by timestamp
+        snapshots.sort((a, b) => a.timestamp - b.timestamp);
+
+        // download the latest
+        const latest = snapshots[snapshots.length - 1];
+
+        return {
+            filePath: "",
+            timestamp: latest.timestamp,
+            databaseName: this.options.databaseId.name
+        };
+    }
+
     public async loadLatest(): Promise<Snapshot | undefined> {
 
         logger.debug(`Loading latest snapshot from s3://${this.options.bucketName}/${this.options.databaseId.name}`);

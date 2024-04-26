@@ -198,7 +198,14 @@ export default class Multiverse implements IMultiverse {
                 changesTable: `multiverse-changes-${options.name}`,
                 snapshotBucket: `multiverse-snapshot-${options.name}`,
                 databaseConfiguration: options,
-                infrastructureTable: this.INFRASTRUCTURE_TABLE_NAME
+                infrastructureTable: this.INFRASTRUCTURE_TABLE_NAME,
+                scalingTargetConfiguration: {
+                    warmPrimaryInstances: 10,
+                    warmRegionalInstances: 0,
+                    warmSecondaryInstances: 0,
+                    secondaryFallbacks: 0,
+                    outOfRegionFallbacks: 0
+                }
             })
         ];
 

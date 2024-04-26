@@ -12,6 +12,7 @@ import DynamoChangesStorage from "../ChangesStorage/DynamoChangesStorage";
 import InfrastructureStorage from "../InfrastructureStorage/DynamoInfrastructureStorage";
 import Orchestrator from "./OrchestratorWorker";
 import type { OrchestratorEvent } from "./Orchestrator";
+import S3SnapshotStorage from "../SnapshotStorage/S3SnapshotStorage";
 
 const databaseConfiguration = ORCHESTRATOR_ENV.DATABASE_CONFIG;
 
@@ -25,12 +26,20 @@ const infrastructureStorage = new InfrastructureStorage({
     region: ORCHESTRATOR_ENV.DATABASE_IDENTIFIER.region,
 });
 
+const snapshotStorage = new S3SnapshotStorage({
+    bucketName: ORCHESTRATOR_ENV.SNAPSHOT_BUCKET,
+    databaseId: ORCHESTRATOR_ENV.DATABASE_IDENTIFIER
+});
+
 const orchestrator = new Orchestrator({
     changesStorage,
     databaseConfiguration,
     databaseId: ORCHESTRATOR_ENV.DATABASE_IDENTIFIER,
-    infrastructureStorage
+    infrastructureStorage,
+    snapshotStorage
 });
+
+orchestrator.initialize();
 
 export async function handler(
     event: APIGatewayProxyEvent,

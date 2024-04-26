@@ -38,6 +38,32 @@ describe("<Multiverse E2E>", () => {
         expect(result.result.length).toBe(0);
     });
 
+    it("should add 1000 vectors and query among them correctly and with multiple clients at a time", async() => {
+        const vectors = Array.from({ length: 1000 }, (_, i) => ({
+            label: i + "",
+            vector: [i, i, i]
+        }));
+
+        const db = await multiverse.getDatabase("test");
+
+        if (!db) {
+            throw new Error("Database not found");
+        }
+
+        await db.add(vectors);
+
+        const query = {
+            k: 10,
+            sendVector: true,
+            vector: [1, 2, 3]
+        };
+
+        const results = await Promise.all(Array.from({ length: 100 }, () => db.query(query)));
+
+        expect(results.length).toBe(100);
+        console.log(results.slice(0, 10));
+    });
+
     it("should remove database", async() => {
         await multiverse.removeDatabase("test");
     });
