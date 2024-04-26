@@ -7,8 +7,8 @@ The consulter and leader of this project is Ing. Jan Blizničenko from the
 App is deployed at [d2l3pgy3g16qpx.cloudfront.net](https://d2l3pgy3g16qpx.cloudfront.net/). 
 If the page is not available, it was probably taken down due to the costs of running the application.
 
-Multiverse is a platform for managing and querying vector data. It is a platform that allows users to store, manage, and query vector data.
-The platform is divided into two parts: Multiverse Library and Multiverse UI. 
+Multiverse is a platform for managing and querying vector data. It is a platform that allows users to store, manage, and
+query vector data. The platform is divided into two parts: Multiverse Library and Multiverse UI. 
 
 The Multiverse Library is a backend application that provides the core functionality of the platform, like creating
 databases, adding vectors, querying vectors, and more.
@@ -26,8 +26,7 @@ Multiverse runs on AWS and uses the following services:
 
 It is deployed using the [Serverless Stack Framework (SST)](https://sst.dev/).
 Platform currently does not contain payment functionality, it is free to use. However, Multiverse Library runs in users 
-AWS account and costs are billed directly to the user's AWS account. Expected costs can be calculated in the
-Multiverse UI.
+AWS account and costs are billed directly to the user's AWS account. Expected costs can be calculated in the Multiverse UI.
 
 # Multiverse Library
 
@@ -54,14 +53,12 @@ running the application locally.
 
 ### Deployment environment
 
-To deploy the application, you will need to fill in the root `.env` file with your configuration. 
-All keys provided in the `.env.example` need to be filled. This environment configuration is used for
-deploying the application. Only different keys are `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` which are used 
-by SST for deployment.
+During deployment the `apps/multiverse-ui/.env` file will be used. If you don't have global AWS credentials environment
+variable set up, you will also need to provide the `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` in the root `.env` file.
 
 ### Environment configuration
 
-Environment consists of multiple variables. All of the variables (as defined in the `.env.example` file) are required.
+Environment consists of multiple variables. All the variables (as defined in the `.env.example` file) are required.
 Configuration of each variable is described below.
 
 #### AWS accessKeyId and secretAccessKey
@@ -72,12 +69,13 @@ Save your generated credentials in a safe place. Fill in the `AWS_ACCESS_KEY_ID`
 
 This AWS Token will be used to deploy the application with the [SST](https://sst.dev/).
 
-You may generate up to 2 active access keys pre account. You can use the same access key for deployment and for the user's
+You may generate up to 2 active access keys per account. You can use the same access key for deployment and for the user's
 AWS Token when using the application. All users will have to generate their own AWS Token and provide it in the application.
 
 #### Google
 
-In your [google cloud console](`https://console.cloud.google.com/apis/credentials`) create a new project Multiverse. There set up your credentials. Provide:
+In your [google cloud console](`https://console.cloud.google.com/apis/credentials`) create a new project Multiverse. 
+There set up your credentials. Provide:
 - Authorized JavaScript origins (`http://[domain]`) and; 
 - Authorized redirect URIs (`http://[domain]/api/auth/callback/google` and `https://[domain]/api/auth/callback/google`). 
 
@@ -85,8 +83,8 @@ In local development use the domain `localhost:3000`, in production use the doma
 Finally, fill in the `GOOGLE_ID` and `GOOGLE_SECRET` keys in the related `.env` file.
 
 #### GitHub
-GitHub requires the domain of the deployed application, so you cannot use it locally. In `Settings/Developer settings/OAuth Apps` create a new OAuth App `Multiverse`.
-Fill in the form with your application: 
+GitHub requires the domain of the deployed application, so you cannot use it locally. In `Settings/Developer settings/OAuth Apps` 
+create a new OAuth App `Multiverse`. Fill in the form with your application: 
   - the `Homepage URL`, where you provide your deployed application domain; 
   - and the `Authorization callback URL`. Fill in the `GITHUB_ID` and `GITHUB_SECRET` keys.
 
@@ -95,24 +93,23 @@ Fill the keys `GITHUB_ID` and `GITHUB_SECRET` in the related `.env` file.
 
 #### SSO with AWS SES
 
-To enable SSO authentication, you will have to set up a `SES email service`. 
-To achieve that, you will need to have an [Amazon Web Services (AWS)](https://aws.amazon.com/) account. 
-In the [Amazon SES](https://eu-central-1.console.aws.amazon.com/) open the `Configuration/Identities` tab to create a new identity. 
-Choose the domain of your application or provide an email. If you choose the email, you will need to verify
+To enable SSO authentication, you will have to set up a `SES email service`. To achieve that, you will need to have an 
+[Amazon Web Services (AWS)](https://aws.amazon.com/) account. In the [Amazon SES](https://eu-central-1.console.aws.amazon.com/) open the `Configuration/Identities` tab to create a 
+new identity. Choose the domain of your application or provide an email. If you choose the email, you will need to verify
 it to send emails from it. To email another email, you will need to verify it as well. This is a security measure, since 
 your SES is still in the sandbox mode. To send emails to any email, you will need to request a production access.
 
-Then in the `Configuration/SMTP settings` you will have to create a new SMTP credentials. Provide User name or just use the default one.
-Store the access key and secret key. This variable will not be shown again, so store it in a safe place.
-Fill in the `SMTP_USER` and `SMTP_PASSWORD` keys in the related `.env` file with the credentials. 
-`SMTP_HOST` and `SMTP_PORT` are provided in the SMTP settings.
+Then in the `Configuration/SMTP settings` you will have to create a new SMTP credentials. Provide User name or just use 
+the default one. Store the access key and secret key. This variable will not be shown again, so store it in a safe place.
+Fill in the `SMTP_USER` and `SMTP_PASSWORD` keys in the related `.env` file with the credentials. `SMTP_HOST` and 
+`SMTP_PORT` are provided in the SMTP settings.
 
 #### MongoDB
 
-You will need to have a running MongoDB instance. In production, you will have to create your own MongoDB database in [Mongo Atlas](https://cloud.mongodb.com/).
-More about using MongoDB Atlas can be found in the [MongoDB Atlas documentation](https://www.mongodb.com/docs/atlas/).
-In development, create mongodb in Docker or use the cloud MongoDB database in Mongo Atlas. Copy the connection string
-(with credentials if needed) and fill in the `MONGODB_URI` variable in the `apps/multiverse-ui/.env` file.
+You will need to have a running MongoDB instance. In production, you will have to create your own MongoDB database in 
+[Mongo Atlas](https://cloud.mongodb.com/). More about using MongoDB Atlas can be found in the [MongoDB Atlas documentation](https://www.mongodb.com/docs/atlas/). In development, 
+create mongodb in Docker or use the cloud MongoDB database in Mongo Atlas. Copy the connection string (with credentials 
+if needed) and fill in the `MONGODB_URI` variable in the `apps/multiverse-ui/.env` file.
 
 #### Secret keys
 

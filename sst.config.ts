@@ -3,7 +3,7 @@ import {
 } from "sst/constructs";
 import type { StackContext } from "sst/constructs";
 import type { SSTConfig } from "sst";
-import { ENV } from "./apps/multiverse-ui/src/lib/env";
+import { cronENV } from "./apps/multiverse-ui/src/lib/cronEnv";
 
 function MultiverseStack({ stack }: StackContext) {
 
@@ -21,14 +21,12 @@ function MultiverseStack({ stack }: StackContext) {
         runtime: "nodejs20.x",
     });
 
-    console.log(JSON.stringify(ENV, null, 2));
-
     const cron = new Cron(stack, "Cron", {
         schedule: "rate(1 hour)", // or (5 minutes). (1 minute) for testing
         // job: "apps/multiverse-ui/src/lib/statistics-processor/index.start",
         job: {
             function: {
-                environment: { ...ENV },
+                environment: { ...cronENV },
                 memorySize: "256 MB",
                 timeout: 20,
                 runtime: "nodejs20.x",
@@ -36,8 +34,7 @@ function MultiverseStack({ stack }: StackContext) {
             },
         },
     });
-
-    console.log(cron.jobFunction.env);
+    console.log("cronENV", JSON.stringify(cronENV, null, 2));
 
     stack.addOutputs({
         docsUrl: docsWeb.cdk?.distribution.distributionDomainName,
