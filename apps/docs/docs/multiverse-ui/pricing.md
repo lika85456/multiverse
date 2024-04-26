@@ -42,11 +42,13 @@ will cost you.
 You can copy the calculated values by clicking the "Copy calculated values" button. This will copy the values to your
 clipboard in a JSON format.
 
+![Pricing calculator](../../static/ui-docs-img/price-calculator.png)
+
 ## My Plan
 
-In this section you can view your current **real usage** and **costs** of the Multiverse. You can compare the real usage
-with the expected usage and see the difference in costs. This way you can easily see if you are overusing the Multiverse 
-and adjust your usage accordingly.
+If authenticated, in this section you can view your current **real usage** and **costs** of the Multiverse. You can 
+compare the real usage with the expected usage and see the difference in costs. This way you can easily see if you are 
+overusing the Multiverse and adjust your usage accordingly.
 
 Notice that you have to have your **AWS credentials** set up in the Multiverse to see the real usage and costs. To see the
 calculated costs, you have to **enable** the cost calculation in your account. The calculation is disabled by default to

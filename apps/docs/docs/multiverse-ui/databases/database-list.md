@@ -12,6 +12,8 @@ These statistics are a combining the statistics of all your databases from the s
 periodically updated, and you might not be able to see the real-time data. If you want to see the real-time data, you have
 to wait for the next update or refresh the statistics.
 
+![General statistics](../../../static/ui-docs-img/gen-stats.png)
+
 ### Total cost
 
 If you have **costs calculation** enabled, you will see the costs for all the databases summed up with other multiverse
@@ -39,6 +41,8 @@ Here you can see all the databases you have created. For each database you can s
 - **Dimensions**: The number of dimensions of the vectors stored in the database.
 - **Metrics**: The metric used to calculate the distance between vectors.
 
+![Database list](../../../static/ui-docs-img/db-list.png)
+
 ### View your database
 
 To view the database, click on the database in the list. You will be redirected to the database page where you can see the
@@ -53,3 +57,5 @@ them. You can reference to the created database in the Multiverse by the code na
 It might take a while to create the database. After you create it, you will have to wait until it is created to start using
 it. You can see the databases currently being created above the database list. If you delete a database (from the general section),
 it will be shown as well.
+
+![Create database](../../../static/ui-docs-img/create-db.png)

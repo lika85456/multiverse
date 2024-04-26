@@ -5,7 +5,9 @@ sidebar_position: 3
 # Database - Statistics
 
 In this section you can view the usage statistics of the database for the specified time period. To change the time
-period, use the date picker on the top right corner of the page. You can only select the time period in the past.
+period, use the date picker in the top right corner of the page. You can only select the time period in the past.
+
+![Period selector](../../../static/ui-docs-img/period-selector.png)
 
 You can copy each of the statistics data by clicking the `Copy data` button next to the statistic.
 

@@ -9,6 +9,8 @@ Multiverse UI allows you to log in using the following methods:
 - Google OAuth
 - GitHub OAuth
 
+![Login page](../../static/ui-docs-img/auth.png)
+
 ## SSO (Magic Link Login)
 
 On the Login page, enter your email address and click the Login button. Then check your email inbox and click the link

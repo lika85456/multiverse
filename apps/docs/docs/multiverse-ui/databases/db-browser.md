@@ -20,6 +20,8 @@ the vector.
 
 Metadata is optional object structure without strictly defined structure. You can store any data you want in the metadata.
 
+![Upsert vector](../../../static/ui-docs-img/upsert.png)
+
 You can randomize the vector data by clicking the `Randomize` button. This will replace the vector data with random values.
 
 ## Run query
@@ -27,16 +29,24 @@ You can randomize the vector data by clicking the `Randomize` button. This will 
 To run a query, click on the `Query` button. The query uses the Multiverse query method. By default, you have a query 
 vector set to the zero vector and k set to 30. You can change these values in the query header.
 
+![Query header](../../../static/ui-docs-img/query-header.png)
+
 If you are happy with the query parameters, click the `Run` button or copy the query request. After running a query you 
 will be shown the results of the query in a table. You will see the label, vector data and result distance against the 
 query vector. 
+
+![Query results](../../../static/ui-docs-img/query-result.png)
 
 You can then view the details of the vector by clicking on the `Details` button. This will show you the vector data in 
 a JSON format in text editor. You can copy the data by clicking the `Copy data` button. You can delete resulting vector
 from the database by clicking on the `Trash` button.
 
+![View vector](../../../static/ui-docs-img/view-vector.png)
+
 Query is not ran automatically, you have to click the `Run query` button every time you want to run the query. If you
 edit the data (upsert, remove) in the database, you have to run the query again to see the updated results.
+
+![Deleted vector](../../../static/ui-docs-img/deleted-vector.png)
 
 You can copy the result data by clicking the `Copy result` button. This will copy the data to your clipboard in a JSON 
 format. If you have deleted a vector, it will not be copied.
