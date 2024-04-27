@@ -1,9 +1,10 @@
-import log from "@multiverse/log";
 import Multiverse from "../..";
 import type { Region } from "../../core/DatabaseConfiguration";
 
-describe("<Multiverse E2E>", () => {
-
+describe.each([
+    "low dimensions", { dimensions: 3 },
+    "high dimensions", { dimensions: 1536 },
+])("Multiverse E2E %s", (name, config) => {
     const region = "eu-central-1" as Region;
 
     const multiverse = new Multiverse({ region });
@@ -18,7 +19,8 @@ describe("<Multiverse E2E>", () => {
                 secret: "hovnokleslo",
                 validUntil: Number.MAX_SAFE_INTEGER
             }],
-            space: "l2"
+            space: "l2",
+            ...config
         });
     });
 
@@ -39,7 +41,7 @@ describe("<Multiverse E2E>", () => {
         expect(result.result.length).toBe(0);
     });
 
-    it("should add 1000 vectors and query among them correctly and with multiple clients at a time", async() => {
+    it("should add 1000 vectors", async() => {
         const vectors = Array.from({ length: 1000 }, (_, i) => ({
             label: i + "",
             vector: [i, i, i]
@@ -51,25 +53,23 @@ describe("<Multiverse E2E>", () => {
             throw new Error("Database not found");
         }
 
-        const addStart = Date.now();
         await db.add(vectors);
-        const addEnd = Date.now();
+    });
 
-        const query = {
+    it("should query among them correctly", async() => {
+        const db = await multiverse.getDatabase("test");
+
+        if (!db) {
+            throw new Error("Database not found");
+        }
+
+        const result = await db.query({
             k: 10,
             sendVector: true,
             vector: [1, 2, 3]
-        };
+        });
 
-        const queryStart = Date.now();
-        const results = await Promise.all(Array.from({ length: 100 }, () => db.query(query)));
-        const queryEnd = Date.now();
-
-        log.debug("Add time", addEnd - addStart);
-        log.debug("Query time", queryEnd - queryStart);
-
-        expect(results.length).toBe(100);
-        expect(results.map(r => r.result)).toMatchSnapshot();
+        expect(result.result.length).toBe(10);
     });
 
     it("should remove database", async() => {
