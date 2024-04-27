@@ -22,7 +22,8 @@ const index = new HNSWIndex(env.DATABASE_CONFIG);
 const snapshotStorage = new S3SnapshotStorage({
     bucketName: env.SNAPSHOT_BUCKET,
     databaseId: env.DATABASE_IDENTIFIER,
-    downloadPath: "/tmp"
+    downloadPath: "/tmp",
+    awsToken: undefined as any
 });
 
 // TODO!: change size from ENV variables

@@ -55,8 +55,6 @@ export default class OrchestratorWorker implements Orchestrator {
             throw new Error(`Database ${this.options.databaseId.name} not found`);
         }
 
-        // TODO: create infrastructure if doesnt exist
-
         // todo implement partitions
         const workers = await this.getWorkers(infrastructure);
 

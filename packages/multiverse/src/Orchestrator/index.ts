@@ -18,17 +18,20 @@ const databaseConfiguration = ORCHESTRATOR_ENV.DATABASE_CONFIG;
 
 const changesStorage = new DynamoChangesStorage({
     tableName: ORCHESTRATOR_ENV.CHANGES_TABLE,
-    databaseId: ORCHESTRATOR_ENV.DATABASE_IDENTIFIER
+    databaseId: ORCHESTRATOR_ENV.DATABASE_IDENTIFIER,
+    awsToken: undefined as any
 });
 
 const infrastructureStorage = new InfrastructureStorage({
     tableName: ORCHESTRATOR_ENV.INFRASTRUCTURE_TABLE,
     region: ORCHESTRATOR_ENV.DATABASE_IDENTIFIER.region,
+    awsToken: undefined as any
 });
 
 const snapshotStorage = new S3SnapshotStorage({
     bucketName: ORCHESTRATOR_ENV.SNAPSHOT_BUCKET,
-    databaseId: ORCHESTRATOR_ENV.DATABASE_IDENTIFIER
+    databaseId: ORCHESTRATOR_ENV.DATABASE_IDENTIFIER,
+    awsToken: undefined as any
 });
 
 const orchestrator = new Orchestrator({
@@ -36,7 +39,8 @@ const orchestrator = new Orchestrator({
     databaseConfiguration,
     databaseId: ORCHESTRATOR_ENV.DATABASE_IDENTIFIER,
     infrastructureStorage,
-    snapshotStorage
+    snapshotStorage,
+    awsToken: undefined as any
 });
 
 orchestrator.initialize();
