@@ -3,7 +3,6 @@
 import { Button } from "@/components/ui/button";
 import { IoAdd, IoClose } from "react-icons/io5";
 import { Input } from "@/components/ui/input";
-import { FaRegCopy } from "react-icons/fa";
 import {
     Select,
     SelectContent,

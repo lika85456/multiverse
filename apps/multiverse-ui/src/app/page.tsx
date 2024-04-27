@@ -5,7 +5,7 @@ import SectionTitle from "@/app/layout/components/SectionTitle";
 export default async function Home() {
 
     // TODO - create overview page
-    return <div className="flex flex-col w-full">
+    return <div className="flex flex-col 2xl:mx-96">
         <PageTitle title={"Welcome to Multiverse"}/>
         <p className="mb-8 text-secondary-foreground">
             Dive into the world of vector databases.
