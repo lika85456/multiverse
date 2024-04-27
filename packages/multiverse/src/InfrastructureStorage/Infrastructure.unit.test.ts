@@ -7,7 +7,8 @@ describe.each([
     ["<MemoryInfrastructureStorage>", new MemoryInfrastructureStorage()],
     ["<DynamoInfrastructureStorage>", new DynamoInfrastructureStorage({
         region: "eu-central-1",
-        tableName: "multiverse-test-infrastructure-storage-" + Date.now()
+        tableName: "multiverse-test-infrastructure-storage-" + Date.now(),
+        awsToken: undefined as any
     })]
 ])("%s", (name, storage) => {
 

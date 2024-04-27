@@ -19,7 +19,8 @@ describe.each([
         databaseId: {
             name: "test",
             region: "eu-central-1"
-        }
+        },
+        awsToken: undefined as any
     })]
 ])("%s", (name, storage) => {
 

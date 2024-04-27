@@ -9,7 +9,7 @@ export default class SQSSStatisticsQueue implements StatisticsQueue {
     private sqs: SQS;
 
     constructor(private options: {
-        awsToken?: AwsToken
+        awsToken: AwsToken
         region: Region
         queueUrl?: string
         queueName?: string

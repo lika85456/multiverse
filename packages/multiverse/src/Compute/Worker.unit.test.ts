@@ -24,12 +24,14 @@ function initializeLambdaWorker({
 
     const worker = new LambdaWorker({
         lambdaName: "multiverse-lambda-worker-test-" + Math.random().toString(36).substring(7),
-        region: "eu-central-1"
+        region: "eu-central-1",
+        awsToken: undefined as any
     });
 
     const snapshotStorage = new S3SnapshotStorage({
         bucketName: snapshotBucketName,
-        databaseId
+        databaseId,
+        awsToken: undefined as any
     });
 
     const deploy = async() => {
@@ -97,7 +99,8 @@ function initializeLocalWorkerWithAWSStorages({
 
     const snapshotStorage = new S3SnapshotStorage({
         bucketName: snapshotBucketName,
-        databaseId
+        databaseId,
+        awsToken: undefined as any
     });
 
     const worker = new ComputeWorker({

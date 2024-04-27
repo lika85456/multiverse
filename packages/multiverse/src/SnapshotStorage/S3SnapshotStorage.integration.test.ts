@@ -9,7 +9,8 @@ describe("<S3SnapshotStorage>", () => {
 
     const deployer = new S3SnapshotStorageDeployer({
         bucketName,
-        region: "eu-central-1"
+        region: "eu-central-1",
+        awsToken: undefined as any
     });
 
     const snapshotStorage = new S3SnapshotStorage({
@@ -17,7 +18,8 @@ describe("<S3SnapshotStorage>", () => {
         databaseId: {
             region: "eu-central-1",
             name: "test"
-        }
+        },
+        awsToken: undefined as any
     });
 
     beforeAll(async() => {

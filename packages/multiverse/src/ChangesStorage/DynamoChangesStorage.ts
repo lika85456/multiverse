@@ -34,7 +34,7 @@ export class DynamoChangesStorageDeployer {
     constructor(private options: {
         region: string;
         tableName: string;
-        awsToken?: AwsToken
+        awsToken: AwsToken
     }) {
         this.dynamo = new DynamoDB({
             region: options.region,
@@ -139,7 +139,7 @@ export default class DynamoChangesStorage implements ChangesStorage {
     constructor(private options: {
         databaseId: DatabaseID;
         tableName: string;
-        awsToken?: AwsToken;
+        awsToken: AwsToken;
     }) {
         const db = new DynamoDB({
             region: options.databaseId.region,

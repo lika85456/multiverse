@@ -28,7 +28,7 @@ export default class LambdaOrchestrator implements Orchestrator {
     constructor(private options: {
         databaseId: DatabaseID;
         secretToken: string;
-        awsToken?: AwsToken
+        awsToken: AwsToken
     }) {
         this.lambda = new Lambda({
             region: options.databaseId.region,
@@ -311,7 +311,8 @@ export default class LambdaOrchestrator implements Orchestrator {
 
         const lambdaWorker = new LambdaWorker({
             lambdaName: this.lambdaWorkerName(partition, "primary"),
-            region: this.options.databaseId.region
+            region: this.options.databaseId.region,
+            awsToken: this.options.awsToken
         });
 
         await lambdaWorker.deploy({
@@ -335,7 +336,8 @@ export default class LambdaOrchestrator implements Orchestrator {
 
         const lambdaWorker = new LambdaWorker({
             lambdaName: this.lambdaWorkerName(partition, "primary"),
-            region: this.options.databaseId.region
+            region: this.options.databaseId.region,
+            awsToken: this.options.awsToken
         });
 
         await lambdaWorker.destroy();
@@ -354,7 +356,8 @@ export default class LambdaOrchestrator implements Orchestrator {
     }) {
         const infrastructureStorage = new DynamoInfrastructureStorage({
             region: this.options.databaseId.region,
-            tableName: infrastructureTable
+            tableName: infrastructureTable,
+            awsToken: this.options.awsToken
         });
 
         const infrastructure = await infrastructureStorage.get(this.options.databaseId.name);
