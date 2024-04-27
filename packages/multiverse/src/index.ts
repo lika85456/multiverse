@@ -53,7 +53,7 @@ export class MultiverseDatabase implements IMultiverseDatabase {
         name: string,
         region: Region,
         secretToken: string,
-        awsToken?: AwsToken
+        awsToken: AwsToken
     }) {
         this.orchestrator = new LambdaOrchestrator({
             databaseId: {
@@ -116,7 +116,7 @@ export default class Multiverse implements IMultiverse {
      */
     constructor(private options: {
         region: Region,
-        awsToken?: AwsToken,
+        awsToken: AwsToken,
     }) {
 
         this.infrastructureStorage = new DynamoInfrastructureStorage({
@@ -238,12 +238,14 @@ export default class Multiverse implements IMultiverse {
 
         const changesStorage = new DynamoChangesStorage({
             databaseId,
-            tableName: `multiverse-changes-${name}`
+            tableName: `multiverse-changes-${name}`,
+            awsToken: this.options.awsToken
         });
 
         const snapshotStorage = new S3SnapshotStorage({
             bucketName: `multiverse-snapshot-${name}`,
-            databaseId
+            databaseId,
+            awsToken: this.options.awsToken
         });
 
         const orchestrator = new LambdaOrchestrator({

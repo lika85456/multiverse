@@ -17,7 +17,7 @@ export class S3SnapshotStorageDeployer {
     constructor(private options: {
             bucketName: string;
             region: string;
-            awsToken?: AwsToken
+            awsToken: AwsToken
         }) {
         this.s3 = new S3({
             region: this.options.region,
@@ -92,7 +92,7 @@ export default class S3SnapshotStorage implements SnapshotStorage {
         bucketName: string;
         databaseId: DatabaseID;
         downloadPath?: string;
-        awsToken?: AwsToken
+        awsToken: AwsToken
     }) {
         this.s3 = new S3({
             region: options.databaseId.region,

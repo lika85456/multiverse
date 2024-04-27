@@ -4,7 +4,8 @@ import SQSSStatisticsQueue from "./SQSStatisticsQueue";
 describe("SQS Queue", () => {
     const q = new SQSSStatisticsQueue({
         region: "eu-central-1",
-        queueName: Math.random().toString(36).substring(7)
+        queueName: Math.random().toString(36).substring(7),
+        awsToken: undefined as any
     });
 
     beforeAll(async() => {

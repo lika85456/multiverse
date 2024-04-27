@@ -102,7 +102,8 @@ describe("<PartitionWorker>", () => {
             databaseName: "test",
             infrastructureStorage,
             partitionIndex: 0,
-            lambdaFactory: realLambdaFactory
+            lambdaFactory: realLambdaFactory,
+            awsToken: undefined as any
         });
 
         const result = await worker.query({
@@ -122,7 +123,8 @@ describe("<PartitionWorker>", () => {
             databaseName: "test",
             infrastructureStorage,
             partitionIndex: 0,
-            lambdaFactory: busyLambdaFactory
+            lambdaFactory: busyLambdaFactory,
+            awsToken: undefined as any
         });
 
         const result = worker.query({
@@ -141,7 +143,8 @@ describe("<PartitionWorker>", () => {
             databaseName: "test",
             infrastructureStorage,
             partitionIndex: 0,
-            lambdaFactory: nthSuccessLambdaFactory(1)
+            lambdaFactory: nthSuccessLambdaFactory(1),
+            awsToken: undefined as any
         });
 
         const result = await worker.query({
@@ -174,7 +177,8 @@ describe("<PartitionWorker>", () => {
             databaseName: "test",
             infrastructureStorage,
             partitionIndex: 0,
-            lambdaFactory: workerFactory
+            lambdaFactory: workerFactory,
+            awsToken: undefined as any
         });
 
         await worker.requestAll("loadLatestSnapshot", [], "all", scalingTargetConfiguration);

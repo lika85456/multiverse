@@ -27,22 +27,26 @@ describe("<LambdaOrchestrator>", () => {
 
     const changesStorage = new DynamoChangesStorage({
         databaseId,
-        tableName: "multiverse-changes-" + databaseId.name
+        tableName: "multiverse-changes-" + databaseId.name,
+        awsToken: undefined as any
     });
 
     const infrastructureStorage = new DynamoInfrastructureStorage({
         region: databaseId.region,
-        tableName: "multiverse-infrastructure-" + databaseId.name
+        tableName: "multiverse-infrastructure-" + databaseId.name,
+        awsToken: undefined as any
     });
 
     const snapshotStorage = new S3SnapshotStorage({
         bucketName: "multiverse-snapshot-" + databaseId.name,
-        databaseId
+        databaseId,
+        awsToken: undefined as any
     });
 
     const orchestrator = new LambdaOrchestrator({
         databaseId,
         secretToken: "hovnokleslo",
+        awsToken: undefined as any
     });
 
     beforeAll(async() => {

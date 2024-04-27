@@ -19,7 +19,7 @@ export class InfrastructureStorageDeployer {
     constructor(private options: {
         region: string;
         tableName: string;
-        awsToken?: AwsToken
+        awsToken: AwsToken
     }) {
         this.dynamo = new DynamoDB({
             region: options.region,
@@ -110,7 +110,7 @@ export default class DynamoInfrastructureStorage extends InfrastructureStorage {
     constructor(private options: {
         tableName: string;
         region: string;
-        awsToken?: AwsToken
+        awsToken: AwsToken
     }) {
         super();
         const db = new DynamoDBClient({

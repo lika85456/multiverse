@@ -30,7 +30,7 @@ export default class OrchestratorWorker implements Orchestrator {
         databaseId: DatabaseID;
         databaseConfiguration: DatabaseConfiguration;
         snapshotStorage: SnapshotStorage;
-        awsToken?: AwsToken;
+        awsToken: AwsToken;
 
         maxChangesCount?: number;
         lambdaFactory?: (name: string, region: Region) => Worker;
@@ -74,7 +74,8 @@ export default class OrchestratorWorker implements Orchestrator {
                 infrastructureStorage: this.options.infrastructureStorage,
                 partitionIndex: partition.partitionIndex,
                 databaseName: this.options.databaseId.name,
-                lambdaFactory: this.lambdaFactory
+                lambdaFactory: this.lambdaFactory,
+                awsToken: this.options.awsToken,
             });
         }
 

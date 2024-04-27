@@ -77,6 +77,7 @@ describe("<OrchestratorWorker>", () => {
             databaseId,
             infrastructureStorage,
             snapshotStorage,
+            awsToken: undefined as any,
 
             maxChangesCount: 10,
             lambdaFactory: realLambdaFactory

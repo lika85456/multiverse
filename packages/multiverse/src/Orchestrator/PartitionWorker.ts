@@ -12,6 +12,7 @@ import type InfrastructureStorage from "../InfrastructureStorage";
 import LambdaWorker from "../Compute/LambdaWorker";
 import logger from "@multiverse/log";
 import type { StoredVectorChange } from "../ChangesStorage/StoredVector";
+import type { AwsToken } from "../core/AwsToken";
 
 const log = logger.getSubLogger({ name: "PartitionWorker" });
 
@@ -38,6 +39,7 @@ export default class PartitionWorker implements Worker {
         infrastructureStorage: InfrastructureStorage;
         partitionIndex: number;
         databaseName: string;
+        awsToken: AwsToken;
 
         lambdaFactory?: (name: string, region: Region, waitTime: number) => Worker;
         infrastructure?: Infrastructure;
@@ -49,7 +51,8 @@ export default class PartitionWorker implements Worker {
         // injected for testing
         this.lambdaFactory = options.lambdaFactory || ((name, region) => new LambdaWorker({
             lambdaName: name,
-            region
+            region,
+            awsToken: options.awsToken
         }));
 
         this.partition = (

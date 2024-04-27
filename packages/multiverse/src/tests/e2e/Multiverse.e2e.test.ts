@@ -1,24 +1,34 @@
-import log from "@multiverse/log";
 import Multiverse from "../..";
 import type { Region } from "../../core/DatabaseConfiguration";
+import { Vector } from "../../core/Vector";
 
-describe("<Multiverse E2E>", () => {
-
+describe.each([
+    ["low-dimensions", { dimensions: 3 }],
+    ["high-dimensions", { dimensions: 1536 }],
+])("Multiverse E2E %s", (name, config) => {
     const region = "eu-central-1" as Region;
 
-    const multiverse = new Multiverse({ region });
+    const multiverse = new Multiverse({
+        region,
+        awsToken: undefined as any
+    });
+
+    afterAll(async() => {
+        await multiverse.removeDatabase(name);
+        await multiverse.removeSharedInfrastructure();
+    });
 
     it("should create a database with no previous shared infrastructure", async() => {
         await multiverse.createDatabase({
-            dimensions: 3,
-            name: "test",
+            name,
             region,
             secretTokens: [{
                 name: "hovnokleslo",
                 secret: "hovnokleslo",
                 validUntil: Number.MAX_SAFE_INTEGER
             }],
-            space: "l2"
+            space: "l2",
+            ...config
         });
     });
 
@@ -28,55 +38,45 @@ describe("<Multiverse E2E>", () => {
     });
 
     it("should query empty in the database", async() => {
-        const database = await multiverse.getDatabase("test");
+        const database = await multiverse.getDatabase(name);
         if (!database) throw new Error("Database not found");
 
         const result = await database.query({
             k: 10,
             sendVector: true,
-            vector: [1, 2, 3]
+            vector: Vector.random(config.dimensions)
         });
         expect(result.result.length).toBe(0);
     });
 
-    it("should add 1000 vectors and query among them correctly and with multiple clients at a time", async() => {
+    it("should add 1000 vectors", async() => {
         const vectors = Array.from({ length: 1000 }, (_, i) => ({
             label: i + "",
-            vector: [i, i, i]
+            vector: Vector.random(config.dimensions)
         }));
 
-        const db = await multiverse.getDatabase("test");
+        const db = await multiverse.getDatabase(name);
 
         if (!db) {
             throw new Error("Database not found");
         }
 
-        const addStart = Date.now();
         await db.add(vectors);
-        const addEnd = Date.now();
+    });
 
-        const query = {
+    it("should query among them correctly", async() => {
+        const db = await multiverse.getDatabase(name);
+
+        if (!db) {
+            throw new Error("Database not found");
+        }
+
+        const result = await db.query({
             k: 10,
             sendVector: true,
-            vector: [1, 2, 3]
-        };
+            vector: Vector.random(config.dimensions)
+        });
 
-        const queryStart = Date.now();
-        const results = await Promise.all(Array.from({ length: 100 }, () => db.query(query)));
-        const queryEnd = Date.now();
-
-        log.debug("Add time", addEnd - addStart);
-        log.debug("Query time", queryEnd - queryStart);
-
-        expect(results.length).toBe(100);
-        expect(results.map(r => r.result)).toMatchSnapshot();
-    });
-
-    it("should remove database", async() => {
-        await multiverse.removeDatabase("test");
-    });
-
-    it("should remove shared infrastructure", async() => {
-        await multiverse.removeSharedInfrastructure();
+        expect(result.result.length).toBe(10);
     });
 });

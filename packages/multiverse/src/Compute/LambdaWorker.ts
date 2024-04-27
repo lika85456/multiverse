@@ -23,7 +23,7 @@ export default class LambdaWorker implements Worker {
         lambdaName: string;
         region: Region;
         waitTime?: number;
-        awsToken?: AwsToken
+        awsToken: AwsToken
     }) {
         this.lambda = new Lambda({
             region: options.region,
