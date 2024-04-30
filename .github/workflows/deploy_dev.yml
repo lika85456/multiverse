@@ -1,0 +1,79 @@
+name: Deploy Dev
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+
+      NODE_ENV: development
+
+      NEXTAUTH_SECRET_KEY: ${{ secrets.NEXTAUTH_SECRET_KEY }}
+      NEXTAUTH_URL: ${{ vars.NEXTAUTH_URL }}
+
+      DOCS_URL: ${{ vars.DOCS_URL }}
+
+      SECRET_KEY: ${{ secrets.SECRET_KEY }}
+
+      GOOGLE_ID: ${{ secrets.GOOGLE_ID }}
+      GOOGLE_SECRET: ${{ secrets.GOOGLE_SECRET }}
+
+      GITHUB_ID: ${{ secrets.MULTIVERSE_GITHUB_ID }}
+      GITHUB_SECRET: ${{ secrets.MULTIVERSE_GITHUB_SECRET }}
+
+      EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+      SMTP_USER: ${{ secrets.SMTP_USER }}
+      SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+      SMTP_HOST: ${{ secrets.SMTP_HOST }}
+      SMTP_PORT: ${{ secrets.SMTP_PORT }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 19
+
+      - uses: pnpm/action-setup@v2
+        name: Install pnpm
+        id: pnpm-install
+        with:
+          version: 7
+          run_install: false
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - uses: actions/cache@v3
+        name: Setup pnpm cache
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Configure AWS credentials
+        run: aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }} && aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }} && aws configure set region ${{ secrets.AWS_REGION }}
+
+      - name: Deploy DB
+        run: pnpm deploy:db
+
+      - name: Build orchestrator
+        run: pnpm build:orchestrator
+
+      - name: Deploy to production
+        run: pnpm deploy:dev
