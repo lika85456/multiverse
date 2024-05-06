@@ -67,14 +67,14 @@ jobs:
       #   run: pnpm install
       
       - name: Env test
-        run: echo "|${{ vars.AWS_REGION }}|${{ vars.DOCS_URL }}"
+        run: echo "|${{ vars.AWS_REGION }}|${{ vars.DOCS_URL }}|${{ secrets.AWS_ACCESS_KEY_ID }}"
 
-      - uses: aws-actions/configure-aws-credentials@v4
-        name: AWS Credentials
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ vars.AWS_REGION }}
+      # - uses: aws-actions/configure-aws-credentials@v4
+      #   name: AWS Credentials
+      #   with:
+      #     aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      #     aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      #     aws-region: ${{ vars.AWS_REGION }}
 
 
       # - name: Deploy DB
