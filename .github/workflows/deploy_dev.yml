@@ -14,6 +14,8 @@ jobs:
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_REGION: ${{ vars.AWS_REGION }}
 
+      MONGODB_URI: ${{ secrets.MONGODB_URI }}
+
       NODE_ENV: development
 
       NEXTAUTH_SECRET_KEY: ${{ secrets.NEXTAUTH_SECRET_KEY }}
