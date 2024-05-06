@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { DatabaseGet } from "@/lib/mongodb/collections/database";
+import type { Database } from "@/server/procedures/database";
 
 export default function DatabaseSectionNavigation({ database, }: {
-  database: DatabaseGet;
+  database: Database;
 }) {
     const pathName = usePathname();
 

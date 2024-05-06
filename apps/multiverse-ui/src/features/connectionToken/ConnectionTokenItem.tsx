@@ -6,7 +6,7 @@ import { IoEyeOutline } from "react-icons/io5";
 import { IoEyeOffOutline } from "react-icons/io5";
 import { CopyIcon } from "lucide-react";
 import DeleteConnectionTokenModal from "@/features/connectionToken/DeleteConnectionTokenModal";
-import type { SecretToken } from "@/lib/mongodb/collections/database";
+import type { SecretToken } from "@/server/procedures/database";
 import { UTCDate } from "@date-fns/utc";
 import { customToast } from "@/features/fetching/CustomToast";
 

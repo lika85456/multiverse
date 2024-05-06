@@ -1,8 +1,8 @@
-import type { DatabaseGet } from "@/lib/mongodb/collections/database";
 import { customToast } from "@/features/fetching/CustomToast";
+import type { Database } from "@/server/procedures/database";
 
 export default function DatabaseInfo({ database }: {
-    database: DatabaseGet;
+    database: Database;
 }) {
     const handleCopyData = async(value: string) => {
         try {
