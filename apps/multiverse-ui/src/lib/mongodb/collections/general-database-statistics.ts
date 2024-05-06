@@ -6,7 +6,7 @@ import log from "@multiverse/log";
 
 export const collectionName = "general_database_statistics";
 
-export interface GeneralDatabaseStatisticsGet{
+export interface GeneralDatabaseStatisticsFind {
     _id: ObjectId;
     // unique, identifies general statistics for a database
     databaseName: string;
@@ -28,15 +28,15 @@ export interface GeneralDatabaseStatisticsInsert{
 /**
  * Get general statistics for a database
  * @param databaseName - name of the database to get statistics for
- * @returns {GeneralDatabaseStatisticsGet} - the general statistics
+ * @returns {GeneralDatabaseStatisticsFind} - the general statistics
  * @returns {undefined} - if the general statistics do not exist
  */
-export const getGeneralDatabaseStatistics = async(databaseName: string): Promise<GeneralDatabaseStatisticsGet | undefined> => {
+export const getGeneralDatabaseStatistics = async(databaseName: string): Promise<GeneralDatabaseStatisticsFind | undefined> => {
     try {
         const client = await clientPromise;
         const db = client.db();
 
-        const result = await db.collection<GeneralDatabaseStatisticsGet>(collectionName).findOne({ databaseName });
+        const result = await db.collection<GeneralDatabaseStatisticsFind>(collectionName).findOne({ databaseName });
 
         if (!result) {
             log.debug(`General database statistics for database ${databaseName} not found in mongodb`);
@@ -85,7 +85,7 @@ export const addGeneralDatabaseStatistics = async(statistics: GeneralDatabaseSta
         // general statistics exist for this database
         if (statistics.updated.getTime() > getStatisticsResult.updated.getTime()) {
             // update if the latest write event is newer
-            await db.collection<GeneralDatabaseStatisticsGet>(collectionName)
+            await db.collection<GeneralDatabaseStatisticsFind>(collectionName)
                 .updateOne({ databaseName: statistics.databaseName }, { $set: statistics });
             log.info(`Updated general database statistics for database ${statistics.databaseName} in mongodb`);
 
@@ -109,7 +109,7 @@ export const removeGeneralDatabaseStatistics = async(databaseName: string): Prom
         const client = await clientPromise;
         const db = client.db();
 
-        const result = await db.collection<GeneralDatabaseStatisticsGet>(collectionName).deleteOne({ databaseName });
+        const result = await db.collection<GeneralDatabaseStatisticsFind>(collectionName).deleteOne({ databaseName });
         if (!result.acknowledged) {
             throw new Error("General database statistics not removed");
         }

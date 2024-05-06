@@ -1,4 +1,4 @@
-import type { DailyStatisticsAdd } from "@/lib/mongodb/collections/daily-statistics";
+import type { DailyStatisticsInsert } from "@/lib/mongodb/collections/daily-statistics";
 import { addDailyStatistics } from "@/lib/mongodb/collections/daily-statistics";
 import { convertToISODate } from "@/lib/mongodb/collections/daily-statistics";
 import { getDailyStatisticsForDates } from "@/lib/mongodb/collections/daily-statistics";
@@ -138,7 +138,7 @@ export class StatisticsProcessor {
      * @param innit - the initial daily statistics
      * @private
      */
-    private applyStatistics(events: StatisticsEvent[], innit: DailyStatisticsAdd): DailyStatisticsAdd {
+    private applyStatistics(events: StatisticsEvent[], innit: DailyStatisticsInsert): DailyStatisticsInsert {
         // calculate statistics from events and set resulting daily statistics
         const result = events.reduce((acc, event) => {
             if (event.type === "add") {
@@ -177,7 +177,7 @@ export class StatisticsProcessor {
 
             if (filteredStatistics.length === 0) {
                 // if there are no statistics for the date, create new statistics
-                const innit: DailyStatisticsAdd = {
+                const innit: DailyStatisticsInsert = {
                     date: format(new UTCDate(date), "yyyy-MM-dd"),
                     databaseName: databaseName,
                     writeCount: 0,
@@ -194,7 +194,7 @@ export class StatisticsProcessor {
             } else if (filteredStatistics.length === 1) {
                 // if there are statistics for the date, update existing statistics
                 const statistics = filteredStatistics[0];
-                const innit: DailyStatisticsAdd = {
+                const innit: DailyStatisticsInsert = {
                     date: format(new UTCDate(date), "yyyy-MM-dd"),
                     databaseName: databaseName,
                     writeCount: statistics.writeCount,
@@ -203,9 +203,7 @@ export class StatisticsProcessor {
                     totalCost: statistics.totalCost
                 };
                 // apply statistics to the innit object constructed from the existing statistics
-                await addDailyStatistics(this.applyStatistics(events, innit)).then(() => {
-                    // log.debug(`Statistics for database ${databaseName} and date ${date} processed`);
-                });
+                await addDailyStatistics(this.applyStatistics(events, innit));
 
                 //update general statistics
                 await this.applyGeneralStatistics(databaseName, events);

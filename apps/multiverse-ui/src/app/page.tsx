@@ -3,8 +3,6 @@ import PageTitle from "@/app/layout/components/PageTitle";
 import SectionTitle from "@/app/layout/components/SectionTitle";
 
 export default async function Home() {
-
-    // TODO - create overview page
     return <div className="flex flex-col 2xl:mx-96">
         <PageTitle title={"Welcome to Multiverse"}/>
         <p className="mb-8 text-secondary-foreground">
@@ -19,7 +17,8 @@ export default async function Home() {
         <p className="mb-8 text-secondary-foreground">
             To get started, you need to create an account. After creating an account, you can create your first database.
             To create a database, you need to provide an AWS Token. The token is used to create and manage your databases,
-            right inside your AWS account. You can find out more on our <a className="text-contrast_primary" href="/docs">documentation</a> page.
+            right inside your AWS account. You can find out more on our <a className="text-contrast_primary" href="/docs" target="_blank">
+            documentation</a> page.
         </p>
         <SectionTitle title={"Pricing"}/>
         <p className="mb-8 text-secondary-foreground">

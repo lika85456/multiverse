@@ -1,13 +1,13 @@
 import { publicProcedure, router } from "@/server/trpc";
 import z from "zod";
-import type { DatabaseFindMongoDb, DatabaseGet } from "@/lib/mongodb/collections/database";
+import type { DatabaseFind } from "@/lib/mongodb/collections/database";
 import {
-    createDatabase, deleteDatabase, EDatabaseState, getDatabase
+    createDatabase, deleteDatabase, getDatabase
 } from "@/lib/mongodb/collections/database";
 import { vector } from "@/server/procedures/vector";
 import { secretToken } from "@/server/procedures/secretToken";
 import { TRPCError } from "@trpc/server";
-import type { UserGet } from "@/lib/mongodb/collections/user";
+import type { UserFind } from "@/lib/mongodb/collections/user";
 import {
     addDatabaseToBeCreatedToUser,
     addDatabaseToBeDeletedToUser,
@@ -21,6 +21,28 @@ import { generateHex, handleError } from "@/server";
 import type { ObjectId } from "mongodb";
 import { getGeneralDatabaseStatistics } from "@/lib/mongodb/collections/general-database-statistics";
 import type { MultiverseDatabaseConfiguration } from "@multiverse/multiverse/src";
+
+export enum EDatabaseState {
+    CREATED = "created",
+    CREATING = "creating",
+    DELETING = "deleting",
+}
+
+export interface SecretToken {
+    name: string;
+    secret: string;
+    validUntil: number;
+}
+
+export interface Database {
+    codeName: string;
+    name: string;
+    region: string;
+    records: number;
+    dimensions: number;
+    space: "l2" | "cosine" | "ip";
+    secretTokens: SecretToken[];
+}
 
 export const MAX_DB_CODE_NAME_LENGTH = 24;
 export const MAX_DB_NAME_LENGTH = 64;
@@ -51,7 +73,7 @@ export const normalizeString = (str: string, length = MAX_DB_NAME_LENGTH): strin
  * @param str
  */
 const stringToAlphaNumeric = (str: string): string => {
-    const noSpaces = str.trim().split(" ").join("_");
+    const noSpaces = str.trim().split(" ").join("-");
     if (noSpaces.length === 0) {
         log.error("Cannot convert to alpha numeric, invalid string provided");
         throw new TRPCError({
@@ -60,7 +82,9 @@ const stringToAlphaNumeric = (str: string): string => {
         });
     }
 
-    return noSpaces.replace(/[^0-9a-z_]/gi, "").toLowerCase();
+    return noSpaces
+        .replace(/_/g, "-").toLowerCase()
+        .replace(/[^0-9a-z-]/gi, "").toLowerCase();
 };
 
 /**
@@ -79,8 +103,8 @@ const generateDatabaseCodeName = (name: string): string => {
  * @param databaseCodeName
  */
 export const checkAccessToDatabase = async(databaseCodeName: string): Promise<{
-    sessionUser: UserGet,
-    database: DatabaseFindMongoDb
+    sessionUser: UserFind,
+    database: DatabaseFind
 }> => {
     const database = await getDatabase(databaseCodeName);
     if (!database) {
@@ -141,7 +165,7 @@ export const getRelatedDatabase = async(codeName: string) => {
  * @throws {TRPCError} - if the user is not found or the database could not be created
  * @param configuration
  */
-const storeDatabase = async(configuration: MultiverseDatabaseConfiguration): Promise<DatabaseGet> => {
+const storeDatabase = async(configuration: MultiverseDatabaseConfiguration): Promise<Database> => {
     const sessionUser = await getSessionUser();
     if (!sessionUser) {
         log.error("User is not authenticated");
@@ -198,7 +222,7 @@ const storeDatabase = async(configuration: MultiverseDatabaseConfiguration): Pro
     };
 };
 
-const filterDefaultToken = (database: DatabaseGet): DatabaseGet => {
+const filterDefaultToken = (database: Database): Database => {
     return {
         ...database,
         secretTokens: database.secretTokens.filter(token => token.name !== "default")
@@ -211,10 +235,10 @@ export const database = router({
      * First, the databases are obtained from the multiverse,
      * then the databases are checked if they are defined in the mongodb.
      * Missing databases are added to the mongodb with name and codeName set to multiverse database name.
-     * @returns {DatabaseGet[]} - list of databases
+     * @returns {Database[]} - list of databases
      */
     list: publicProcedure.query(async(): Promise<{
-        databases: DatabaseGet[],
+        databases: Database[],
         dbsToBeCreated: string[],
         dbsToBeDeleted: string[]
     }> => {
@@ -233,7 +257,7 @@ export const database = router({
             const multiverse = await (new MultiverseFactory()).getMultiverse();
             const listedDatabases = await multiverse.listDatabases();
 
-            const databases = (await Promise.all(listedDatabases.map(async(database): Promise<(DatabaseGet | undefined)> => {
+            const databases = (await Promise.all(listedDatabases.map(async(database): Promise<(Database | undefined)> => {
                 const configuration = await database.getConfiguration();
 
                 // check if database is being created or deleted
@@ -254,7 +278,7 @@ export const database = router({
 
                 // guaranteed that the database is stored in the mongodb
                 return filterDefaultToken(storedDatabase);
-            }))).filter(database => database !== undefined) as DatabaseGet[];
+            }))).filter(database => database !== undefined) as Database[];
 
             return {
                 databases: databases,
@@ -274,12 +298,12 @@ export const database = router({
      * Get a database by codeName(== multiverse database name).
      * If the database is not found in the multiverse, return undefined.
      * If the database is found, return the database.
-     * @returns {DatabaseGet | undefined} - database
+     * @returns {Database | undefined} - database
      */
     get: publicProcedure
         .input(z.string())
         .query(async(opts): Promise<{
-            database: DatabaseGet | undefined,
+            database: Database | undefined,
             state: EDatabaseState
         }> => {
             try {

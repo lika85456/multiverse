@@ -32,7 +32,7 @@ export default function ConnectionTokenItem({ token, }: ConnectionTokenItemProps
         <div className="flex fex-row h-10 rouanded-xl border-b boarder-border items-center hover:bg-secondary transition-all">
             <div className="flex w-full justify-between items-center mx-4">
                 <div className="w-48 font-bold select-none truncate">{token.name}</div>
-                <div className="flex flex-row text-sm text-accent_light-foreground font-mono h-6 tracking-[0.1rem] items-center bg-accent_light rounded-full px-2 mx-4 my-1">
+                <div className="flex flex-row text-sm text-accent_light-foreground font-mono h-6 tracking-[0.1rem] items-center bg-accent_light rounded-lg px-2 mx-4 my-1">
                     {tokenVisible && (
                         <div className="flex flex-row items-center select-none">
                             {token.secret}

@@ -1,7 +1,7 @@
 import { publicProcedure, router } from "@/server/trpc";
 import z from "zod";
 import { getGeneralDatabaseStatistics, } from "@/lib/mongodb/collections/general-database-statistics";
-import type { DailyStatisticsGet } from "@/lib/mongodb/collections/daily-statistics";
+import type { DailyStatisticsFind } from "@/lib/mongodb/collections/daily-statistics";
 import { convertToISODate, getDailyStatisticsInterval } from "@/lib/mongodb/collections/daily-statistics";
 import { TRPCError } from "@trpc/server";
 import { getSessionUser } from "@/lib/mongodb/collections/user";
@@ -82,7 +82,7 @@ const dateIntervalISO = (from: string | UTCDate, to: string | UTCDate): { fromIS
  * Extract reads and writes from daily statistics
  * @param dailyStatistics
  */
-const extractReadsWrites = (dailyStatistics: DailyStatisticsGet[]): { reads: number, writes: number } => {
+const extractReadsWrites = (dailyStatistics: DailyStatisticsFind[]): { reads: number, writes: number } => {
     return dailyStatistics.reduce((acc, curr) => {
         return {
             reads: acc.reads + curr.readCount,

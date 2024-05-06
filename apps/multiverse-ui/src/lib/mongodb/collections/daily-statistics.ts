@@ -6,7 +6,7 @@ import log from "@multiverse/log";
 
 export const collectionName = "daily_statistics";
 
-export interface DailyStatisticsGet {
+export interface DailyStatisticsFind {
     _id: ObjectId;
     // unique identifies statistics for a database and day
     date: string; // round to a date
@@ -18,7 +18,7 @@ export interface DailyStatisticsGet {
     totalCost: number;
 }
 
-export interface DailyStatisticsAdd {
+export interface DailyStatisticsInsert {
     // unique identifies statistics for a database and day
     date: string; // round to a date
     databaseName: string;
@@ -39,13 +39,13 @@ export const convertToISODate = (date: UTCDate | string): string => {
  * @param dates - list of dates to get statistics for
  * @param databaseName - name of the database to get statistics for
  */
-export const getDailyStatisticsForDates = async(dates: string[], databaseName: string): Promise<DailyStatisticsGet[]> => {
+export const getDailyStatisticsForDates = async(dates: string[], databaseName: string): Promise<DailyStatisticsFind[]> => {
     const client = await clientPromise;
     const db = client.db();
 
     // log.debug(`Getting daily statistics for dates ${JSON.stringify(dates, null, 2)} for ${databaseName} `);
     try {
-        const result = await db.collection<DailyStatisticsGet>(collectionName).find({
+        const result = await db.collection<DailyStatisticsFind>(collectionName).find({
             date: dates.map((date) => convertToISODate(date)),
             databaseName
         }).toArray();
@@ -78,11 +78,11 @@ export const getDailyStatisticsInterval = async(
     databaseName: string,
     dateFrom: string,
     dateTo: string,
-): Promise<DailyStatisticsGet[]> => {
+): Promise<DailyStatisticsFind[]> => {
     try {
         const client = await clientPromise;
         const db = client.db();
-        const result = await db.collection<DailyStatisticsGet>(collectionName).find({
+        const result = await db.collection<DailyStatisticsFind>(collectionName).find({
             date: {
                 $gte: convertToISODate(dateFrom),
                 $lte: convertToISODate(dateTo)
@@ -114,17 +114,17 @@ export const getDailyStatisticsInterval = async(
  * If the statistics for the date does not exist, the values are set to the new values
  * @param statistics
  */
-export const addDailyStatistics = async(statistics: DailyStatisticsAdd): Promise<void> => {
+export const addDailyStatistics = async(statistics: DailyStatisticsInsert): Promise<void> => {
     const client = await clientPromise;
     const db = client.db();
 
     try {
-        const result = await db.collection<DailyStatisticsAdd>(collectionName).findOne({
+        const result = await db.collection<DailyStatisticsInsert>(collectionName).findOne({
             date: convertToISODate(statistics.date),
             databaseName: statistics.databaseName
         });
 
-        const statisticsData: DailyStatisticsAdd = result ? {
+        const statisticsData: DailyStatisticsInsert = result ? {
             ...statistics,
             date: convertToISODate(statistics.date),
             writeCount: statistics.writeCount + result.writeCount,
@@ -162,7 +162,7 @@ export const removeAllDailyStatisticsForDatabase = async(databaseName: string): 
 
     log.info(`Removing all daily statistics for database ${databaseName}`);
     try {
-        await db.collection<DailyStatisticsGet>(collectionName).deleteMany({ databaseName });
+        await db.collection<DailyStatisticsFind>(collectionName).deleteMany({ databaseName });
         log.info(`Removed all daily statistics for database ${databaseName}`);
     } catch (error) {
         log.error(error);

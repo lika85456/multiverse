@@ -5,7 +5,7 @@ import { getAwsTokenById } from "@/lib/mongodb/collections/aws-token";
 import log from "@multiverse/log";
 import { authOptions } from "@/lib/auth/auth";
 
-export interface UserGet {
+export interface UserFind {
     _id: ObjectId;
     name?: string;
     email: string;
@@ -34,7 +34,7 @@ export interface UserInsert {
  * Make sure all fields are present in the user object
  * @param user - the user object
  */
-const normalizeUser = (user: UserGet): UserGet => {
+const normalizeUser = (user: UserFind): UserFind => {
     return {
         _id: user._id,
         name: user.name ?? undefined,
@@ -46,19 +46,19 @@ const normalizeUser = (user: UserGet): UserGet => {
         dbsToBeDeleted: user.dbsToBeDeleted ?? [],
         dbsToBeCreated: user.dbsToBeCreated ?? [],
         acceptedCostsGeneration: user.acceptedCostsGeneration ?? false,
-    } as UserGet;
+    } as UserFind;
 };
 
 /**
  * Get a user by its email
  * @param email - the email of the user
- * @returns {UserGet} - the user
+ * @returns {UserFind} - the user
  * @returns {undefined} - if the user does not exist
  */
-export const getUserByEmail = async(email: string,): Promise<UserGet | undefined> => {
+export const getUserByEmail = async(email: string,): Promise<UserFind | undefined> => {
     try {
         const db = (await clientPromise).db();
-        const result = await db.collection<UserGet>("users").findOne({ email });
+        const result = await db.collection<UserFind>("users").findOne({ email });
         if (!result) {
             return undefined;
         }
@@ -73,13 +73,13 @@ export const getUserByEmail = async(email: string,): Promise<UserGet | undefined
 /**
  * Get a user by its id
  * @param userId
- * @returns {UserGet} - the user
+ * @returns {UserFind} - the user
  * @returns {undefined} - if the user does not exist
  */
-export const getUserById = async(userId: ObjectId): Promise<UserGet | undefined> => {
+export const getUserById = async(userId: ObjectId): Promise<UserFind | undefined> => {
     try {
         const db = (await clientPromise).db();
-        const result = await db.collection<UserGet>("users").findOne({ _id: userId });
+        const result = await db.collection<UserFind>("users").findOne({ _id: userId });
         if (!result) {
             return undefined;
         }
@@ -106,17 +106,17 @@ export const updateUser = async(
 ): Promise<void> => {
     try {
         const db = (await clientPromise).db();
-        const result = await db.collection<UserGet>("users").findOne({ _id: userId });
+        const result = await db.collection<UserFind>("users").findOne({ _id: userId });
         if (!result) {
             throw new Error("User not found");
         }
-        const updatedUser: UserGet = {
+        const updatedUser: UserFind = {
             _id: result._id,
             ...userData,
         };
 
         const updatedUserResult = await db
-            .collection<UserGet>("users")
+            .collection<UserFind>("users")
             .updateOne({ _id: userId }, { $set: updatedUser });
 
         if (!updatedUserResult.acknowledged) {
@@ -137,7 +137,7 @@ export const changeUserAcceptedCostsGeneration = async(userId: ObjectId, accepte
         }
 
         const updatedUserResult = await db
-            .collection<UserGet>("users")
+            .collection<UserFind>("users")
             .updateOne(
                 { _id: userId },
                 { $set: { acceptedCostsGeneration } }
@@ -163,14 +163,14 @@ export const changeUserAcceptedCostsGeneration = async(userId: ObjectId, accepte
 export const addDatabaseToUser = async(user: ObjectId, database: string): Promise<void> => {
     try {
         const db = (await clientPromise).db();
-        const result = await db.collection<UserGet>("users").findOne({ _id: user });
+        const result = await db.collection<UserFind>("users").findOne({ _id: user });
         if (!result) {
             throw new Error("User not found");
         }
         const databases = result.databases ? [...result.databases, database] : [database];
 
         const updatedUserResult = await db
-            .collection<UserGet>("users")
+            .collection<UserFind>("users")
             .updateOne(
                 { _id: user },
                 { $set: { databases } }
@@ -196,7 +196,7 @@ export const removeDatabaseFromUser = async(ownerId: ObjectId, codeName: string)
     const db = (await clientPromise).db();
 
     try {
-        const result = await db.collection<UserGet>("users").findOne({ _id: ownerId });
+        const result = await db.collection<UserFind>("users").findOne({ _id: ownerId });
         if (!result) {
             throw new Error("User not found");
         }
@@ -205,7 +205,7 @@ export const removeDatabaseFromUser = async(ownerId: ObjectId, codeName: string)
         const newDatabases: string[] = oldDatabases.filter((db) => db !== codeName);
 
         const updatedUserResult = await db
-            .collection<UserGet>("users")
+            .collection<UserFind>("users")
             .updateOne(
                 { _id: ownerId },
                 { $set: { databases: newDatabases } }
@@ -224,14 +224,14 @@ export const removeDatabaseFromUser = async(ownerId: ObjectId, codeName: string)
 export const addDatabaseToBeDeletedToUser = async(ownerId: ObjectId, codeName: string): Promise<void> => {
     try {
         const db = (await clientPromise).db();
-        const result = await db.collection<UserGet>("users").findOne({ _id: ownerId });
+        const result = await db.collection<UserFind>("users").findOne({ _id: ownerId });
         if (!result) {
             throw new Error("User not found");
         }
         const dbsToBeDeleted = result.dbsToBeDeleted ? [...result.dbsToBeDeleted, codeName] : [codeName];
 
         const updatedUserResult = await db
-            .collection<UserGet>("users")
+            .collection<UserFind>("users")
             .updateOne(
                 { _id: ownerId },
                 { $set: { dbsToBeDeleted } }
@@ -264,7 +264,7 @@ export const addDatabaseToBeDeletedToUser = async(ownerId: ObjectId, codeName: s
 export const removeDatabaseToBeDeletedFromUser = async(ownerId: ObjectId, codeName: string): Promise<void> => {
     try {
         const db = (await clientPromise).db();
-        const result = await db.collection<UserGet>("users").findOne({ _id: ownerId });
+        const result = await db.collection<UserFind>("users").findOne({ _id: ownerId });
         if (!result) {
             throw new Error("User not found");
         }
@@ -273,7 +273,7 @@ export const removeDatabaseToBeDeletedFromUser = async(ownerId: ObjectId, codeNa
         const newDbsToBeDeleted: string[] = oldDbsToBeDeleted.filter((db) => db !== codeName);
 
         const updatedUserResult = await db
-            .collection<UserGet>("users")
+            .collection<UserFind>("users")
             .updateOne(
                 { _id: ownerId },
                 { $set: { dbsToBeDeleted: newDbsToBeDeleted } }
@@ -291,14 +291,14 @@ export const removeDatabaseToBeDeletedFromUser = async(ownerId: ObjectId, codeNa
 export const addDatabaseToBeCreatedToUser = async(ownerId: ObjectId, codeName: string): Promise<void> => {
     try {
         const db = (await clientPromise).db();
-        const result = await db.collection<UserGet>("users").findOne({ _id: ownerId });
+        const result = await db.collection<UserFind>("users").findOne({ _id: ownerId });
         if (!result) {
             throw new Error("User not found");
         }
         const dbsToBeCreated = result.dbsToBeCreated ? [...result.dbsToBeCreated, codeName] : [codeName];
 
         const updatedUserResult = await db
-            .collection<UserGet>("users")
+            .collection<UserFind>("users")
             .updateOne(
                 { _id: ownerId },
                 { $set: { dbsToBeCreated } }
@@ -331,7 +331,7 @@ export const addDatabaseToBeCreatedToUser = async(ownerId: ObjectId, codeName: s
 export const removeDatabaseToBeCreatedFromUser = async(ownerId: ObjectId, codeName: string): Promise<void> => {
     try {
         const db = (await clientPromise).db();
-        const result = await db.collection<UserGet>("users").findOne({ _id: ownerId });
+        const result = await db.collection<UserFind>("users").findOne({ _id: ownerId });
         if (!result) {
             throw new Error("User not found");
         }
@@ -340,7 +340,7 @@ export const removeDatabaseToBeCreatedFromUser = async(ownerId: ObjectId, codeNa
         const newDbsToBeCreated: string[] = oldDbsToBeCreated.filter((db) => db !== codeName);
 
         const updatedUserResult = await db
-            .collection<UserGet>("users")
+            .collection<UserFind>("users")
             .updateOne(
                 { _id: ownerId },
                 { $set: { dbsToBeCreated: newDbsToBeCreated } }
@@ -364,12 +364,12 @@ export const removeDatabaseToBeCreatedFromUser = async(ownerId: ObjectId, codeNa
 export const removeAllDatabaseFromUser = async(user: ObjectId): Promise<void> => {
     try {
         const db = (await clientPromise).db();
-        const result = await db.collection<UserGet>("users").findOne({ _id: user });
+        const result = await db.collection<UserFind>("users").findOne({ _id: user });
         if (!result) {
             throw new Error("User not found");
         }
         const updatedUserResult = await db
-            .collection<UserGet>("users")
+            .collection<UserFind>("users")
             .updateOne(
                 { _id: user },
                 { $set: { databases: [] } }
@@ -395,7 +395,7 @@ export const addQueueToUser = async(ownerId: ObjectId, queue: string): Promise<v
 
     try {
         const db = (await clientPromise).db();
-        const result = await db.collection<UserGet>("users").findOne({ _id: ownerId });
+        const result = await db.collection<UserFind>("users").findOne({ _id: ownerId });
         if (!result) {
             throw new Error("User not found");
         }
@@ -403,7 +403,7 @@ export const addQueueToUser = async(ownerId: ObjectId, queue: string): Promise<v
             throw new Error("User already has a queue");
         }
         const updatedUserResult = await db
-            .collection<UserGet>("users")
+            .collection<UserFind>("users")
             .updateOne(
                 { _id: ownerId },
                 { $set: { sqsQueue: queue } }
@@ -427,12 +427,12 @@ export const addQueueToUser = async(ownerId: ObjectId, queue: string): Promise<v
 export const removeQueueFromUser = async(ownerId: ObjectId): Promise<void> => {
     try {
         const db = (await clientPromise).db();
-        const result = await db.collection<UserGet>("users").findOne({ _id: ownerId });
+        const result = await db.collection<UserFind>("users").findOne({ _id: ownerId });
         if (!result) {
             throw new Error("User not found");
         }
         const updatedUserResult = await db
-            .collection<UserGet>("users")
+            .collection<UserFind>("users")
             .updateOne(
                 { _id: result._id },
                 { $set: { sqsQueue: undefined } }
@@ -456,7 +456,7 @@ export const removeQueueFromUser = async(ownerId: ObjectId): Promise<void> => {
 export const getAllQueuesWithCredentials = async(): Promise<{sqs: string, accessKeyId: string, secretAccessKey: string}[]> => {
     try {
         const db = (await clientPromise).db();
-        const result = await db.collection<UserGet>("users").find().toArray();
+        const result = await db.collection<UserFind>("users").find().toArray();
 
         const credentialsList = await Promise.all(result.map(async(user) => {
             if (!user.awsToken) {
@@ -491,11 +491,11 @@ export const getAllQueuesWithCredentials = async(): Promise<{sqs: string, access
 
 /**
  * Get the user of the current session
- * @returns {UserGet} - the user
+ * @returns {UserFind} - the user
  * @returns {undefined} - if the user does not exist
  * @throws {Error} - if the session user could not be retrieved
  */
-export const getSessionUser = async(): Promise<UserGet | undefined> => {
+export const getSessionUser = async(): Promise<UserFind | undefined> => {
     try {
         const session = await getServerSession(authOptions);
         const sessionUser = session?.user;

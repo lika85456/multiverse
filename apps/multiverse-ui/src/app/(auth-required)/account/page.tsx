@@ -11,6 +11,8 @@ export default async function Account() {
         return redirect("/login");
     }
 
+    //TODO - loading state for adding and deleting tokens, error handling
+
     return (
         <>
             <PageTitle title={`${sessionUser.name ?? sessionUser?.email?.split("@")[0]} - account`} />

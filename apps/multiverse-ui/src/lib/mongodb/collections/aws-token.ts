@@ -4,7 +4,7 @@ import { getUserById, updateUser } from "@/lib/mongodb/collections/user";
 import { decryptSecretAccessKey, encryptSecretAccessKey } from "@/lib/encryption/aws-token";
 import log from "@multiverse/log";
 
-export interface AwsTokenGet {
+export interface AwsTokenFind {
   _id: ObjectId;
   accessKeyId: string;
   secretAccessKey: string;
@@ -24,7 +24,7 @@ export interface AwsTokenInsert {
  * @returns {accessKeyId: string, ownerId: string} - the aws token
  * @param tokenData
  */
-export const addAwsToken = async(tokenData: AwsTokenInsert,): Promise<AwsTokenGet> => {
+export const addAwsToken = async(tokenData: AwsTokenInsert,): Promise<AwsTokenFind> => {
     const owner = await getUserById(tokenData.ownerId);
     if (!owner) {
         throw new Error("User not found");
@@ -76,10 +76,10 @@ export const addAwsToken = async(tokenData: AwsTokenInsert,): Promise<AwsTokenGe
  * @returns {accessKeyId: string, ownerId: string} - the aws token
  * @param tokenId - the token id
  */
-export const getAwsTokenById = async(tokenId: ObjectId): Promise<AwsTokenGet | undefined> => {
+export const getAwsTokenById = async(tokenId: ObjectId): Promise<AwsTokenFind | undefined> => {
     try {
         const db = (await clientPromise).db();
-        const result = await db.collection<AwsTokenGet>("aws_tokens").findOne({ _id: tokenId });
+        const result = await db.collection<AwsTokenFind>("aws_tokens").findOne({ _id: tokenId });
 
         if (!result) {
             return undefined;
@@ -101,10 +101,10 @@ export const getAwsTokenById = async(tokenId: ObjectId): Promise<AwsTokenGet | u
  * Get the AWS token by the access key id.
  * @param accessKeyId
  */
-export const getAwsTokenByAccessKeyId = async(accessKeyId: string,): Promise<AwsTokenGet | undefined> => {
+export const getAwsTokenByAccessKeyId = async(accessKeyId: string,): Promise<AwsTokenFind | undefined> => {
     try {
         const db = (await clientPromise).db();
-        const result = await db.collection<AwsTokenGet>("aws_tokens").findOne({ accessKeyId });
+        const result = await db.collection<AwsTokenFind>("aws_tokens").findOne({ accessKeyId });
 
         if (!result) {
             return undefined;
@@ -128,15 +128,15 @@ export const getAwsTokenByAccessKeyId = async(accessKeyId: string,): Promise<Aws
  * @returns {accessKeyId: string, ownerId: string} - the aws token
  * @returns {null} - if the token does not exist
  */
-export const getAwsTokenByOwner = async(ownerId: ObjectId,): Promise<AwsTokenGet | undefined> => {
+export const getAwsTokenByOwner = async(ownerId: ObjectId,): Promise<AwsTokenFind | undefined> => {
     try {
         const db = (await clientPromise).db();
-        const result = await db.collection<AwsTokenGet>("aws_tokens").findOne({ ownerId });
+        const result = await db.collection<AwsTokenFind>("aws_tokens").findOne({ ownerId });
 
         if (!result) {
             return undefined;
         }
-        const awsToken: AwsTokenGet = {
+        const awsToken: AwsTokenFind = {
             _id: result._id,
             accessKeyId: result.accessKeyId,
             secretAccessKey: decryptSecretAccessKey(result.accessKeyId, result.secretAccessKey),
@@ -168,7 +168,7 @@ export const removeAwsToken = async(userId: ObjectId): Promise<void> => {
             }
 
             const result = await db
-                .collection<AwsTokenGet>("aws_tokens")
+                .collection<AwsTokenFind>("aws_tokens")
                 .deleteOne({ ownerId: user._id });
             if (!result.acknowledged) {
                 throw new Error("AWS token not removed");

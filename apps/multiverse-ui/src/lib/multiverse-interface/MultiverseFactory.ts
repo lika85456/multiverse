@@ -3,13 +3,13 @@ import type { IMultiverse } from "@multiverse/multiverse";
 import Multiverse from "@multiverse/multiverse";
 // import Multiverse from "@multiverse/multiverse";
 import { MultiverseMock } from "@/lib/multiverse-interface/MultiverseMock";
-import type { UserGet } from "@/lib/mongodb/collections/user";
+import type { UserFind } from "@/lib/mongodb/collections/user";
 import { getSessionUser } from "@/lib/mongodb/collections/user";
 import { getAwsTokenByOwner } from "@/lib/mongodb/collections/aws-token";
 import { ENV } from "@/lib/env";
 
 export class MultiverseFactory {
-    private readonly user: Promise<UserGet | undefined>;
+    private readonly user: Promise<UserFind | undefined>;
     private readonly multiverse: Promise<IMultiverse>;
 
     public constructor() {
