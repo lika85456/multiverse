@@ -65,6 +65,9 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install
+      
+      - name: Env test
+        run: echo "|${{ vars.AWS_REGION }}|"
 
       - uses: aws-actions/configure-aws-credentials@v4
         name: AWS Credentials
