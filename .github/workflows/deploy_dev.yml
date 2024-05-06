@@ -37,37 +37,37 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Install Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 19
+      # - name: Install Node.js
+      #   uses: actions/setup-node@v3
+      #   with:
+      #     node-version: 19
 
-      - uses: pnpm/action-setup@v2
-        name: Install pnpm
-        id: pnpm-install
-        with:
-          version: 8
-          run_install: false
+      # - uses: pnpm/action-setup@v2
+      #   name: Install pnpm
+      #   id: pnpm-install
+      #   with:
+      #     version: 8
+      #     run_install: false
 
-      - name: Get pnpm store directory
-        id: pnpm-cache
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+      # - name: Get pnpm store directory
+      #   id: pnpm-cache
+      #   shell: bash
+      #   run: |
+      #     echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
 
-      - uses: actions/cache@v3
-        name: Setup pnpm cache
-        with:
-          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store
+      # - uses: actions/cache@v3
+      #   name: Setup pnpm cache
+      #   with:
+      #     path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+      #     key: ${{ runner.os }}-pnpm
+      #     restore-keys: |
+      #       ${{ runner.os }}-pnpm-store
 
-      - name: Install dependencies
-        run: pnpm install
+      # - name: Install dependencies
+      #   run: pnpm install
       
       - name: Env test
-        run: echo "|${{ vars.AWS_REGION }}|"
+        run: echo "|${{ vars.AWS_REGION }}|${{ vars.DOCS_URL }}"
 
       - uses: aws-actions/configure-aws-credentials@v4
         name: AWS Credentials
@@ -77,11 +77,11 @@ jobs:
           aws-region: ${{ vars.AWS_REGION }}
 
 
-      - name: Deploy DB
-        run: pnpm deploy:db
+      # - name: Deploy DB
+      #   run: pnpm deploy:db
 
-      - name: Build orchestrator
-        run: pnpm build:orchestrator
+      # - name: Build orchestrator
+      #   run: pnpm build:orchestrator
 
-      - name: Deploy to production
-        run: pnpm deploy:dev
+      # - name: Deploy to production
+      #   run: pnpm deploy:dev
