@@ -387,7 +387,7 @@ export const database = router({
                 {
                     name: "default",
                     secret: generateHex(16),
-                    validUntil: Number.MAX_SAFE_INTEGER
+                    validUntil: 8.64e15, // max date, Number.MAX_SAFE_INTEGER too big
                 }
             ];
 

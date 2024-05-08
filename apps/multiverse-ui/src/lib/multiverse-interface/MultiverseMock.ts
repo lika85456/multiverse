@@ -128,6 +128,12 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
         return Promise.resolve();
     }
 
+    getTotalMetadataSize(vectors: NewVector[]): number {
+        return vectors.reduce((acc, vector) => {
+            return acc + (JSON.stringify(vector.metadata)?.length || 0);
+        }, 0);
+    }
+
     async add(vector: NewVector[]): Promise<void> {
         await loadJsonFile();
 
@@ -155,8 +161,10 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
             type: "add",
             vectorsAfter: newValue.vectors.length,
             count: 1,
-            dataSize: newValue.vectors.length * this.databaseConfiguration.dimensions * 4,
+            dataSize: newValue.vectors.length * this.databaseConfiguration.dimensions * 4 + this.getTotalMetadataSize(newValue.vectors),
         };
+
+        log.debug("Add event:", event);
 
         const sqs = new SQSSStatisticsQueue({
             awsToken: this.awsToken,
@@ -174,21 +182,22 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
             throw new Error(`Database ${this.databaseConfiguration.name} not found`);
         }
         const vectors = database.vectors;
-
-        databases.set(this.databaseConfiguration.name, {
+        const newValue: DatabaseWrapper = {
             multiverseDatabase: database.multiverseDatabase,
             vectors: vectors.filter((vector) => !label.includes(vector.label)),
-        });
+        };
+        databases.set(this.databaseConfiguration.name, newValue);
         await refresh();
 
         const event: RemoveEvent = {
             timestamp: UTCDate.now(),
             dbName: this.databaseConfiguration.name,
             type: "remove",
-            vectorsAfter: databases.get(this.databaseConfiguration.name)?.vectors.length || 0,
+            vectorsAfter: newValue.vectors.length,
             count: label.length,
-            dataSize: database.vectors.length * this.databaseConfiguration.dimensions * 4
+            dataSize: newValue.vectors.length * this.databaseConfiguration.dimensions * 4 + this.getTotalMetadataSize(newValue.vectors)
         };
+        log.debug("Remove event:", event);
 
         const sqs = new SQSSStatisticsQueue({
             awsToken: this.awsToken,

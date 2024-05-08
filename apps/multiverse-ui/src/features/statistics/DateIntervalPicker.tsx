@@ -85,12 +85,6 @@ export function DateIntervalPicker({
 
     const handlePredefinedOptionChoice = (option: PredefinedOptions) => {
         switch (option) {
-        // case PredefinedOptions.TODAY:
-        //     setNewDate({
-        //         from: new Date(),
-        //         to: new Date(),
-        //     });
-        //     break;
         case PredefinedOptions.LAST_WEEK:
             setNewDate({
                 from: addDays(new UTCDate(), -7),
@@ -151,12 +145,11 @@ export function DateIntervalPicker({
                     </Button>
                 </PopoverTrigger>
                 <PopoverContent
-                    className="flex flex-row border-0 w-auto p-0 bg-card rounded-xl"
+                    className="flex flex-row border-0 w-auto p-0 bg-card rounded-md"
                     align="end"
                 >
-                    <ul className="w-40 bg-grey30 p-2 rounded-l-xl space-y-2">
+                    <ul className="w-40 bg-grey30 p-2 rounded-l-md space-y-2">
                         {[
-                            // PredefinedOptions.TODAY,
                             PredefinedOptions.LAST_WEEK,
                             PredefinedOptions.THIS_MONTH,
                             PredefinedOptions.LAST_MONTH,
@@ -168,7 +161,7 @@ export function DateIntervalPicker({
                                 <li
                                     key={option}
                                     onClick={handlePredefinedOptionChoice.bind(null, option)}
-                                    className={`rounded-xl p-2 hover:bg-primary transition-all select-none cursor-pointer ${
+                                    className={`rounded-md p-2 hover:bg-primary transition-all select-none cursor-pointer ${
                                         newPredefinedChoice === option ? "bg-card" : "bg-inherit"
                                     }`}
                                 >
@@ -177,18 +170,18 @@ export function DateIntervalPicker({
                             );
                         })}
                     </ul>
-                    <div className="p-4 space-y-4">
+                    <div className="p-2 space-y-2">
                         <Calendar
                             initialFocus
                             mode="range"
                             defaultMonth={getDate()?.from}
                             selected={newDate}
-                            onSelect={(e) => {
+                            onSelect={(dateRange) => {
                                 handlePredefinedOptionChoice(PredefinedOptions.CUSTOM);
-                                setNewDate(e);
+                                setNewDate(dateRange);
                             }}
                             numberOfMonths={2}
-                            className="bg-primary rounded-xl"
+                            className="bg-primary rounded-md"
                         />
                         <div className="flex flex-row justify-end space-x-4">
                             <Button

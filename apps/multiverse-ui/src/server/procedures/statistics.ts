@@ -170,7 +170,7 @@ const mergeDailyStatisticsData = (data1: DailyStatisticsData, data2: DailyStatis
         writes,
         costs,
         totalResponseTime,
-        averageResponseTime: totalResponseTime / (reads)
+        averageResponseTime: reads === 0 ? 0 : totalResponseTime / (reads)
     };
 };
 
@@ -180,19 +180,16 @@ const mergeDailyStatisticsData = (data1: DailyStatisticsData, data2: DailyStatis
  * @param to
  */
 const constructInterval = (from: string, to: string): Map<string, DailyStatisticsData> => {
-    const { fromISO, toISO } = dateIntervalISO(from, to);
-
-    if (isAfter(new UTCDate(fromISO), new UTCDate(toISO))) {
-        log.error("Invalid date range", fromISO, toISO);
+    if (isAfter(new UTCDate(from), new UTCDate(to))) {
+        log.error("Invalid date range", from, to);
         throw new TRPCError({
             code: "BAD_REQUEST",
             message: "Invalid date range",
         });
     }
-
     const dates: UTCDate[] = eachDayOfInterval<UTCDate>({
-        start: fromISO,
-        end: toISO
+        start: new UTCDate(from),
+        end: new UTCDate(to),
     }, { step: 1 });
 
     const emptyInterval = new Map<string, DailyStatisticsData>();
@@ -262,13 +259,11 @@ const addCostsToDailyStatistics = (dailyStatistics: DailyStatisticsData[], costs
  * @param to
  */
 const calculateDailyStatistics = async(databaseName: string, from: string, to: string): Promise<DailyStatisticsData[]> => {
-    const { fromISO, toISO } = dateIntervalISO(from, to);
-
-    log.debug("Calculating daily statistics for the database", databaseName, "from", fromISO, "to", toISO);
-    const dailyStatistics = await getDailyStatisticsInterval(databaseName, fromISO, toISO);
+    log.debug("Calculating daily statistics for the database", databaseName, "from", from, "to", to);
+    const dailyStatistics = await getDailyStatisticsInterval(databaseName, from, to);
 
     // construct interval containing every day in the given period (from - to)
-    const interval = constructInterval(fromISO, toISO);
+    const interval = constructInterval(from, to);
 
     // replace empty daily statistics with actual daily statistics, others will be empty
     dailyStatistics.forEach((stat) => {
@@ -278,7 +273,7 @@ const calculateDailyStatistics = async(databaseName: string, from: string, to: s
             writes: stat.writeCount,
             costs: stat.totalCost,
             totalResponseTime: stat.totalResponseTime,
-            averageResponseTime: stat.totalResponseTime / (stat.readCount),
+            averageResponseTime: stat.readCount === 0 ? 0 : stat.totalResponseTime / (stat.readCount),
         });
     });
 

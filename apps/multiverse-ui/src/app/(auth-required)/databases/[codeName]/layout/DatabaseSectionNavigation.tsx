@@ -23,7 +23,7 @@ export default function DatabaseSectionNavigation({ database, }: {
             <li>
                 <Link
                     href={`/databases/${database.codeName}`}
-                    className={`text-sm tracking-[0.2rem] px-4 uppercase font-thin hover:underline hover:underline-offset-4 ${
+                    className={`text-sm tracking-[0.2rem] px-4 uppercase font-light hover:underline hover:underline-offset-4 ${
                         currentSection === "general"
                             ? "underline underline-offset-4 text-primary-foreground"
                             : "text-secondary-foreground"
@@ -35,7 +35,7 @@ export default function DatabaseSectionNavigation({ database, }: {
             <li>
                 <Link
                     href={`/databases/${database.codeName}/statistics`}
-                    className={`text-sm tracking-[0.2rem] px-4 uppercase font-thin hover:underline hover:underline-offset-4 ${
+                    className={`text-sm tracking-[0.2rem] px-4 uppercase font-light hover:underline hover:underline-offset-4 ${
                         currentSection === "statistics"
                             ? "underline underline-offset-4 text-primary-foreground"
                             : "text-secondary-foreground"
@@ -47,7 +47,7 @@ export default function DatabaseSectionNavigation({ database, }: {
             <li>
                 <Link
                     href={`/databases/${database.codeName}/browser`}
-                    className={`text-sm tracking-[0.2rem] px-4 uppercase font-thin hover:underline hover:underline-offset-4 ${
+                    className={`text-sm tracking-[0.2rem] px-4 uppercase font-light hover:underline hover:underline-offset-4 ${
                         currentSection === "browser"
                             ? "underline underline-offset-4 text-primary-foreground"
                             : "text-secondary-foreground"

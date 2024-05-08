@@ -31,15 +31,16 @@ import { trpc } from "@/lib/trpc/client";
 import { UTCDate } from "@date-fns/utc";
 import { customToast } from "@/features/fetching/CustomToast";
 import Spinner from "@/features/fetching/Spinner";
+import log from "@multiverse/log";
 
 export default function CreateConnectionTokenModal({ codeName }: {codeName: string}) {
     const {
         modalOpen, handleOpenModal, handleCloseModal
     } = useModal();
-    const [date, setDate] = React.useState<UTCDate>();
+    const [date, setDate] = React.useState<Date>();
     const [tokenName, setTokenName] = useState("");
     const [focused, setFocused] = useState(false);
-    const disabledSubmit = !(date && date > new UTCDate() && tokenName.length > 0);
+    const disabledSubmit = (date && date <= new Date()) || tokenName.length < 4;
     const [isProcessing, setIsProcessing] = useState(false);
 
     //TODO - fix chosen date
@@ -58,11 +59,12 @@ export default function CreateConnectionTokenModal({ codeName }: {codeName: stri
     const util = trpc.useUtils();
     const onConfirmCreate = async() => {
         setIsProcessing(true);
+        log.debug(date);
         await mutation.mutateAsync({
             codeName: codeName,
             secretToken: {
                 name: tokenName,
-                validUntil: date?.getTime() ?? 0,
+                validUntil: date ? date.getTime() : 8.64e15, // maximum date
             }
         });
     };
@@ -92,7 +94,7 @@ export default function CreateConnectionTokenModal({ codeName }: {codeName: stri
                     placeholder={"Token name"}
                     onChange={(e) => setTokenName(e.target.value)}
                     className={`bg-inherit hover:bg-primary focus:bg-primary ${
-                        focused && tokenName.length === 0 ? "border-destructive" : ""
+                        focused && tokenName.length < 4 ? "border-destructive" : ""
                     }`}
                 />
                 <Label>Validity</Label>
@@ -116,7 +118,7 @@ export default function CreateConnectionTokenModal({ codeName }: {codeName: stri
                         <Calendar
                             mode="single"
                             selected={date}
-                            onSelect={(d) => setDate(d ? new UTCDate(d) : undefined)}
+                            onSelect={(d) => setDate(d)}
                             initialFocus
                         />
                     </PopoverContent>

@@ -4,7 +4,6 @@ import {
     AlertDialog,
     AlertDialogContent,
     AlertDialogDescription,
-    AlertDialogFooter,
     AlertDialogHeader,
     AlertDialogTitle,
     AlertDialogTrigger,
@@ -98,7 +97,7 @@ export default function DeleteDatabaseModal() {
                             : "text-primary-foreground"
                     }`}
                 />
-                <AlertDialogFooter>
+                <div className="flex flex-row justify-end">
                     <Button
                         disabled={typedDatabaseName !== codeName || isProcessing}
                         className="bg-destructive text-destructive-foreground hover:bg-destructive_light disabled:cursor-not-allowed"
@@ -111,7 +110,7 @@ export default function DeleteDatabaseModal() {
                         </div>}
             Delete database
                     </Button>
-                </AlertDialogFooter>
+                </div>
             </AlertDialogContent>
         </AlertDialog>
     );

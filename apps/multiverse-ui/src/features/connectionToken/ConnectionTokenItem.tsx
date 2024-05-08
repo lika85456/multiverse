@@ -60,8 +60,12 @@ export default function ConnectionTokenItem({ token, }: ConnectionTokenItemProps
                     <div className="text-secondary-foreground mr-2 select-none">
             Valid until
                     </div>
-                    <div className="font-bold select-none">
-                        {new UTCDate(token.validUntil).toDateString()}
+                    <div className="font-bold select-none w-40">
+                        {new Date(token.validUntil).toLocaleDateString("en-US", {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                        })}
                     </div>
                 </div>
             </div>

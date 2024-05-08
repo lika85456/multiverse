@@ -20,6 +20,7 @@ import { useParams } from "next/navigation";
 import { customToast } from "@/features/fetching/CustomToast";
 import Spinner from "@/features/fetching/Spinner";
 import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
 
 export default function DeleteConnectionTokenModal({ token }: {token: SecretToken}) {
     const {
@@ -73,14 +74,14 @@ export default function DeleteConnectionTokenModal({ token }: {token: SecretToke
                 </AlertDialogHeader>
 
                 <AlertDialogFooter>
-                    <AlertDialogCancel
+                    <Button
                         onClick={handleCloseModal}
                         className="flex flex-row w-full justify-center bg-inherit hover:bg-primary "
                     >
                         <IoClose className="w-6 h-6" />
             Cancel
-                    </AlertDialogCancel>
-                    <AlertDialogAction
+                    </Button>
+                    <Button
                         onClick={handleDeleteToken}
                         className="flex flex-row w-full justify-center bg-destructive text-destructive-foreground hover:bg-destructive_light"
                         disabled={isProcessing}
@@ -91,7 +92,7 @@ export default function DeleteConnectionTokenModal({ token }: {token: SecretToke
                         </div>}
 
             Delete
-                    </AlertDialogAction>
+                    </Button>
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>

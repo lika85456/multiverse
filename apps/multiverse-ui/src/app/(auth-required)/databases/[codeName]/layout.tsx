@@ -17,6 +17,9 @@ export default async function DatabaseViewLayout({
     if (!sessionUser.awsToken) {
         redirect("/account");
     }
+    if (!sessionUser.databases.includes(params.codeName)) {
+        return redirect("/databases");
+    }
 
     return (
         <div className="flex w-full flex-col">

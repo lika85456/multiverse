@@ -19,6 +19,8 @@ import {
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { customToast } from "@/features/fetching/CustomToast";
+import { useState } from "react";
+import Spinner from "@/features/fetching/Spinner";
 
 const AwsTokenSchema = z.object({
     accessKeyId: z.string().min(8).max(256),
@@ -26,21 +28,24 @@ const AwsTokenSchema = z.object({
 });
 
 export default function AddAWSTokenModal() {
+    const [isProcessing, setIsProcessing] = useState(false);
+    const {
+        modalOpen, handleOpenModal, handleCloseModal
+    } = useModal();
+
     const refetchToken = trpc.useUtils().awsToken.get.refetch;
     const mutation = trpc.awsToken.post.useMutation({
         onSuccess: async() => {
             try {
                 await refetchToken();
-                // customToast.success("AWS Token added");
+                handleCloseModal();
+                setIsProcessing(false);
             } catch (error) {
                 customToast.error("Error adding AWS Token");
+                setIsProcessing(false);
             }
         }
     });
-
-    const {
-        modalOpen, handleOpenModal, handleCloseModal
-    } = useModal();
 
     const form = useForm<z.infer<typeof AwsTokenSchema>>({
         resolver: zodResolver(AwsTokenSchema),
@@ -51,6 +56,7 @@ export default function AddAWSTokenModal() {
     });
 
     async function onSubmit(values: z.infer<typeof AwsTokenSchema>) {
+        setIsProcessing(true);
         await mutation.mutateAsync({
             accessKeyId: values.accessKeyId,
             secretAccessKey: values.secretAccessKey,
@@ -114,10 +120,11 @@ export default function AddAWSTokenModal() {
 
                             )}
                         />
-                        <AlertDialogFooter className="pt-8">
+                        <div className="flex flex-row pt-8 space-x-4">
                             <Button
-                                className="flex w-full bg-inherit hover:bg-primary border border-border"
+                                className="flex w-full bg-inherit hover:bg-primary"
                                 onClick={handleCloseModal}
+                                disabled={isProcessing}
                             >
                                 <IoClose className="w-6 h-6 mr-2" />
                             Cancel
@@ -125,11 +132,14 @@ export default function AddAWSTokenModal() {
                             <Button
                                 type="submit"
                                 className="flex w-full text-accent-foreground bg-accent hover:bg-accent_light"
-                            >
-                                <IoCheckmark className="w-6 h-6 mr-2" />
-                            Add Token
+                                disabled={isProcessing}
+                            >{!isProcessing && <IoCheckmark className="w-6 h-6 mr-2" />}
+                                {isProcessing && <div className="mr-2">
+                                    <Spinner/>
+                                </div>}
+                                Add Token
                             </Button>
-                        </AlertDialogFooter>
+                        </div>
                     </form>
                 </Form>
             </AlertDialogContent>

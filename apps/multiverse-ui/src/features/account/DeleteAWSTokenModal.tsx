@@ -84,7 +84,7 @@ export function DeleteAWSTokenModal({ accessKeyId }: {accessKeyId: string}) {
                             : "text-primary-foreground"
                     }`}
                 />
-                <AlertDialogFooter>
+                <div className="flex flex-row space-x-4">
                     <Button
                         className="flex w-full bg-inherit hover:bg-primary"
                         onClick={handleCloseModal}
@@ -103,7 +103,7 @@ export function DeleteAWSTokenModal({ accessKeyId }: {accessKeyId: string}) {
                         </div>}
             Delete
                     </Button>
-                </AlertDialogFooter>
+                </div>
             </AlertDialogContent>
         </AlertDialog>
     );
