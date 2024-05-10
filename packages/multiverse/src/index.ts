@@ -98,8 +98,6 @@ export class MultiverseDatabase implements IMultiverseDatabase {
     }
 }
 
-// TODO!: library /src imports!
-
 /**
  * This is the entry for the whole Multiverse library.
  * From here you can manipulate databases. It needs to be initialized with the region and secret token.
@@ -171,6 +169,7 @@ export default class Multiverse implements IMultiverse {
             region: options.region
         };
 
+        // todo changes storage should be shared
         const changesStorage = new DynamoChangesStorage({
             databaseId,
             tableName: `multiverse-changes-${options.name}`,

@@ -112,6 +112,11 @@ export class DynamoChangesStorageDeployer {
                 },
             ],
             BillingMode: "PAY_PER_REQUEST",
+            // BillingMode: "PROVISIONED",
+            // ProvisionedThroughput: {
+            //     ReadCapacityUnits: 25,
+            //     WriteCapacityUnits: 25
+            // },
         });
 
         logger.info(`Dynamo ${this.options.tableName} initialized`);
