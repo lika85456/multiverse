@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import clientPromise from "@/lib/mongodb/mongodb";
 import { getAwsTokenById } from "@/lib/mongodb/collections/aws-token";
 import log from "@multiverse/log";
-import { authOptions } from "@/lib/auth/auth";
+import { authOptions } from "@/lib/auth/options";
 
 export interface UserFind {
     _id: ObjectId;

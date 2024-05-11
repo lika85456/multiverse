@@ -5,7 +5,7 @@ import PriceCalculator from "@/features/statistics/calculator/PriceCalculator";
 import * as React from "react";
 import { getSessionUser } from "@/lib/mongodb/collections/user";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth/auth";
+import { authOptions } from "@/lib/auth/options";
 
 export default async function Pricing() {
     const session = await getServerSession(authOptions);

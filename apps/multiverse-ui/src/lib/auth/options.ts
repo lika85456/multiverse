@@ -34,5 +34,5 @@ export const authOptions: AuthOptions = {
         },
     },
     adapter: MongoDBAdapter(clientPromise) as Adapter,
-    secret: ENV.SECRET_KEY,
+    secret: ENV.NEXTAUTH_SECRET_KEY,
 };

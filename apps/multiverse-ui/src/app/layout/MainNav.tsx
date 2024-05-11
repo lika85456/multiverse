@@ -5,7 +5,7 @@ import NavigationOptions from "@/app/layout/NavigationOptions";
 import ThemePicker from "@/app/layout/ThemePicker";
 import LoginOptions from "@/app/layout/LoginOptions";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth/auth";
+import { authOptions } from "@/lib/auth/options";
 import { ENV } from "@/lib/env";
 
 export default async function MainNav() {
