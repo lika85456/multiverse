@@ -24,6 +24,7 @@ const log = logger.getSubLogger({ name: "LambdaOrchestrator" });
 export default class LambdaOrchestrator implements Orchestrator {
 
     private lambda: Lambda;
+    private MAXIMUM_PAYLOAD_SIZE = 3 * 1024 * 1024;
 
     constructor(private options: {
         databaseId: DatabaseID;
@@ -79,6 +80,26 @@ export default class LambdaOrchestrator implements Orchestrator {
     }
 
     public async addVectors(vectors: NewVector[]): Promise<void> {
+        const payloadByteSize = JSON.stringify(vectors).length;
+
+        if (payloadByteSize > this.MAXIMUM_PAYLOAD_SIZE) {
+            // split into multiple addVector calls and return a promise.all
+            const callsToMake = Math.ceil(payloadByteSize / this.MAXIMUM_PAYLOAD_SIZE);
+            const vectorChunkSize = Math.ceil(vectors.length / callsToMake);
+
+            const promises = [];
+            for (let i = 0; i < callsToMake; i++) {
+                const start = i * vectorChunkSize;
+                const end = Math.min((i + 1) * vectorChunkSize, vectors.length);
+
+                promises.push(this.request("addVectors", [vectors.slice(start, end)]));
+            }
+
+            await Promise.all(promises);
+
+            return;
+        }
+
         return this.request("addVectors", [vectors]);
     }
 
