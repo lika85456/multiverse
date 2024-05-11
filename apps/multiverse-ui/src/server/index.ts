@@ -41,7 +41,7 @@ export const handleError = ({
     let throwee: TRPCError;
 
     // type-check error and set correct throwee
-    // TODO - add parsing multiverse and other errors
+    // TODO - add parsing multiverse and other errors, if provided from Multiverse library
     if (error instanceof TRPCError) {
         throwee = error;
     } else if (error instanceof Error) {

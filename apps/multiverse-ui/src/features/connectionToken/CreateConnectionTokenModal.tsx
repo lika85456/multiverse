@@ -43,7 +43,6 @@ export default function CreateConnectionTokenModal({ codeName }: {codeName: stri
     const disabledSubmit = (date && date <= new Date()) || tokenName.length < 4;
     const [isProcessing, setIsProcessing] = useState(false);
 
-    //TODO - fix chosen date
     const mutation = trpc.database.secretToken.post.useMutation({
         onSuccess: async() => {
             await util.database.invalidate();
