@@ -78,6 +78,11 @@ AWS Token when using the application. All users will have to generate their own 
 Create ECR repository for the compute lambda image and name it `multiverse-compute`. Then copy the repository URI and delete
 the postfix /multiverse-compute. Fill in the `AWS_ECR` key in both `.env` files.
 
+#### Orchestrator source bucket
+
+First, the whole application has to be deployed and then the generated S3 bucket has to be replaced in the environment
+variables. Fill in the `ORCHESTRATOR_SOURCE_BUCKET` key in both `.env` files.
+
 #### AWS Region
 
 Fill this variable as "eu-central-1" in both `.env` files.
@@ -157,7 +162,8 @@ Make sure to set the `NODE_ENV` variable to `production` in the related `.env` f
 to running production database instance. Set other keys as well.
 
 ```bash
-pnpm build:orchestrator # in the root of the project
+pnpm i # in the root of the project
+pnpm build:orchestrator
 pnpm deploy:orchestrator
 pnpm deploy:db
 cd apps/multiverse-ui
@@ -200,7 +206,7 @@ pnpm sst deploy --stage prod
 After the deployment is done, you will see the URL of the deployed application and URL of the deployed documentation. 
 Open it in your browser to see the result. As you might notice, the application is not fully functional yet. 
 You will need to provide the domain of the deployed application to the environment variables and `authorize the domain` 
-in ALL providers (Google, GitHub).
+in ALL providers (Google, GitHub). The orchestrator source bucket must be filled as well.
 
 After doing so, redeploy the application:
 
