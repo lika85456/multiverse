@@ -1,9 +1,9 @@
 {
     "$schema": "https://turbo.build/schema.json",
     "globalEnv": [
-        "NODE_ENV",
-        "CHANGES_TABLE",
-        "SNAPSHOT_BUCKET"
+        "AWS_ECR",
+        "AWS_REGION",
+        "NODE_ENV"
     ],
     "pipeline": {
         "build": {

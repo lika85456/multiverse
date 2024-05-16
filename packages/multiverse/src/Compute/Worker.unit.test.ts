@@ -141,7 +141,7 @@ describe.each([
         } = initializeWorker({
             databaseId: {
                 name: Math.random().toString(36).substring(7),
-                region: "eu-central-1"
+                region: "us-east-1"
             },
             config: {
                 dimensions: 3,
