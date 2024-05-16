@@ -4,21 +4,22 @@
   "private": true,
   "scripts": {
     "dev": "turbo dev",
+
     "build": "turbo build",
-    "build:orchestrator": "tsup packages/multiverse/src/Orchestrator/index.ts --dts --format cjs --minify --clean --legacy-output --target es2020 --outDir packages/multiverse/src/Orchestrator/dist",
-    "build:db": "tsup packages/multiverse/src/Compute/index.ts --dts --format cjs --minify --clean --sourcemap --target es2020 --outDir packages/multiverse/src/Compute/dist",
+    "build:tsdocs": "typedoc --options packages/config/typedoc.json",
+    
     "NEED_HELP_WITH_DEPLOYING": "https://stackoverflow.com/questions/76109195/how-to-fix-docker-login-error-error-saving-credentials",
     "deploy:db": "aws ecr get-login-password --region eu-central-1 | docker login --username AWS --password-stdin 529734186765.dkr.ecr.eu-central-1.amazonaws.com && DOCKER_BUILDKIT=1 docker build -t multiverse . && docker tag multiverse:latest 529734186765.dkr.ecr.eu-central-1.amazonaws.com/multiverse:latest && docker push 529734186765.dkr.ecr.eu-central-1.amazonaws.com/multiverse:latest",
+    "deploy:dev": "sst deploy --stage=dev",
+    
     "run:db": "DOCKER_BUILDKIT=1 docker build -t multiverse . && docker run -p 9000:8080 multiverse",
     "start:docs": "cd apps/docs && pnpm start",
-    "build:tsdocs": "typedoc --options packages/config/typedoc.json",
-    "test": "vitest run",
-    "test:watch": "vitest",
+    
+    "test": "turbo test",
+    "test:watch": "vitest run --watch --exclude e2e,integration",
     "test:coverage": "vitest run --coverage",
-    "lint": "turbo lint",
-    "console": "turbo console",
-    "typecheck": "tsc --noEmit",
-    "deploy:dev": "sst deploy --stage=dev"
+    
+    "lint": "turbo lint"
   },
   "devDependencies": {
     "@types/jest": "^29.5.2",

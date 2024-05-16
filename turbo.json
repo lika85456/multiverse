@@ -1,17 +1,38 @@
 {
     "$schema": "https://turbo.build/schema.json",
     "globalEnv": [
-        "NODE_ENV",
-        "CHANGES_TABLE",
-        "SNAPSHOT_BUCKET"
     ],
     "pipeline": {
+        "build:db": {
+            "outputs": [
+                "packages/multiverse/src/Compute/dist/**"
+            ]
+        },
+        "build:orchestrator":{
+            "dependsOn": [
+            ],
+            "outputs": [
+                "packages/multiverse/src/Orchestrator/dist/**"
+            ]
+        },
         "build": {
             "dependsOn": [
+                "build:db",
+                "build:orchestrator",
                 "^build"
             ],
             "outputs": [
-                "dist/**"
+                "apps/multiverse-ui/dist/**",
+                "apps/multiverse-ui/.next/**",
+                "apps/multiverse-ui/.open-next/**"
+            ]
+        },
+        "test": {
+            "inputs": [
+                "src/**/*.tsx",
+                "src/**/*.ts",
+                "test/**/*.ts",
+                "test/**/*.tsx"
             ]
         },
         "deploy": {
@@ -19,17 +40,9 @@
                 "build",
                 "test",
                 "lint"
-            ]
-        },
-        "test": {
-            "dependsOn": [
-                "build"
             ],
-            "inputs": [
-                "src/**/*.tsx",
-                "src/**/*.ts",
-                "test/**/*.ts",
-                "test/**/*.tsx"
+            "outputs": [
+                ".sst/**"
             ]
         },
         "lint": {},

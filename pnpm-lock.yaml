@@ -413,8 +413,11 @@ importers:
         specifier: workspace:*
         version: link:../env
       '@multiverse/log':
-        specifier: workspace:^
+        specifier: workspace:*
         version: link:../log
+      '@multiverse/vitest-config':
+        specifier: workspace:*
+        version: link:../config/vitest
       '@trpc/client':
         specifier: ^10.37.1
         version: 10.45.2(@trpc/server@10.45.2)
@@ -476,9 +479,6 @@ importers:
       tsup:
         specifier: ^7.1.0
         version: 7.3.0(typescript@5.4.5)
-      vitest:
-        specifier: ^0.32.2
-        version: 0.32.4
 
 packages:
 
@@ -4368,7 +4368,7 @@ packages:
     peerDependencies:
       react: '*'
     dependencies:
-      '@types/react': 18.2.79
+      '@types/react': 18.3.1
       prop-types: 15.8.1
       react: 18.2.0
 
@@ -8014,7 +8014,6 @@ packages:
     dependencies:
       '@types/prop-types': 15.7.12
       csstype: 3.1.3
-    dev: false
 
   /@types/retry@0.12.0:
     resolution: {integrity: sha512-wWKOClTTiizcZhXnPY4wikVAwmdYHp8q6DmC+EJUzAMsycb7HB32Kh9RN4+0gExjmPmZSAQjgURXIGATPegAvA==}

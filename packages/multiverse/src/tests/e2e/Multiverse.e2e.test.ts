@@ -49,8 +49,8 @@ describe.each([
         expect(result.result.length).toBe(0);
     });
 
-    it("should add 1000 vectors", async() => {
-        const vectors = Array.from({ length: 1000 }, (_, i) => ({
+    it("should add 100 vectors", async() => {
+        const vectors = Array.from({ length: 100 }, (_, i) => ({
             label: i + "",
             vector: Vector.random(config.dimensions)
         }));

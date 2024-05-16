@@ -5,15 +5,14 @@
       "importHelpers": false,
       "module": "commonjs",
       "outDir": "dist",
-      "rootDir": "src",
-      "strict": true,
+      "rootDir": "src  "strict": true,
       "target": "ES6",
       "lib": ["esnext"],
       "types": ["node", "vitest/globals", "jest"],
       "allowJs": true,
     },
     "include": [
-      "src/**/*", "example.ts",
+      ".turbo/src/**/*mple.ts",
     ],
     "exclude": ["dist", "build", "node_modules"],
   }

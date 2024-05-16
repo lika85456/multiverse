@@ -1,5 +1,5 @@
 import z from "zod";
-import { prettifyIssues } from "@multiverse/env";
+import { prettifyIssues } from "@multiverse/env/.turbo/src";
 import { config } from "dotenv";
 
 config({ path: "./apps/multiverse-ui/.env", }); // __dirname is not available for cron environment
