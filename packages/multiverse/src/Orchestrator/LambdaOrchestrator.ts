@@ -281,7 +281,7 @@ export default class LambdaOrchestrator implements Orchestrator {
                     Role: await this.lambdaRoleARN(),
                     Runtime: Runtime.nodejs18x,
                     Architectures: [Architecture.arm64],
-                    Handler: "packages/multiverse/Orchestrator/dist/index.handler",
+                    Handler: "index.handler",
                     Timeout: 60,
                     Environment: {
                         Variables: {
