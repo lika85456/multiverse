@@ -66,7 +66,7 @@ Configuration of each variable is described below.
 
 To generate `accessKeyId` and `secretAccessKey` (`awsToken` for short), you will need to have an [Amazon Web Services (AWS)](https://aws.amazon.com/) account.
 From the [IAM](https://console.aws.amazon.com/iam/) navigate to `Manage access keys -> Access keys` and create a new access key.
-Save your generated credentials in a safe place. Fill in the `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` in the root `.env` file.
+Save your generated credentials in a safe place. Fill in the `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` in both `.env` files.
 
 This AWS Token will be used to deploy the application with the [SST](https://sst.dev/).
 
@@ -76,11 +76,11 @@ AWS Token when using the application. All users will have to generate their own 
 #### ECR repository
 
 Create ECR repository for the compute lambda image and name it `multiverse-compute`. Then copy the repository URI and delete
-the postfix /multiverse-compute. Fill in the `AWS_ECR` key in the root `.env` file.
+the postfix /multiverse-compute. Fill in the `AWS_ECR` key in both `.env` files.
 
 #### AWS Region
 
-Fill this variable as "eu-central-1" in the root `.env` file.
+Fill this variable as "eu-central-1" in both `.env` files.
 
 #### Google
 
@@ -158,9 +158,8 @@ to running production database instance. Set other keys as well.
 
 ```bash
 pnpm build:orchestrator # in the root of the project
+pnpm deploy:orchestrator
 pnpm deploy:db
-mkdir -p apps/multiverse-ui/src/lib/orchestrator/
-cp packages/multiverse/src/Orchestrator/dist/* apps/multiverse-ui/src/lib/orchestrator/
 cd apps/multiverse-ui
 pnpm i
 pnpm build
@@ -183,9 +182,8 @@ leave any variable with value related to the development environment. Switch to 
 ```bash
 pnpm i
 pnpm build:orchestrator
+pnpm deploy:orchestrator
 pnpm deploy:db
-mkdir -p apps/multiverse-ui/src/lib/orchestrator/
-cp packages/multiverse/src/Orchestrator/dist/* apps/multiverse-ui/src/lib/orchestrator/
 ```
 After that, you can deploy the application do dev stage with the following command:
 
@@ -240,10 +238,9 @@ Some of the most common issues encountered during the development and deployment
 - `...[fn] is not a function...`? remove all node_modules you can find in the project and run:
 
 ```bash
-pnpm i;
-pnpm build:orchestrator;
-mkdir -p apps/multiverse-ui/src/lib/orchestrator/;
-cp packages/multiverse/src/Orchestrator/dist/* apps/multiverse-ui/src/lib/orchestrator/;
+pnpm i
+pnpm build:orchestrator
+pnpm deploy:orchestrator
 pnpm sst deploy # (--stage prod) if you are deploying to the prod stage
 ```
 - if the problem persists, also remove package-lock.yaml and reinstall the packages with `pnpm i` 
@@ -256,8 +253,7 @@ pnpm sst deploy # (--stage prod) if you are deploying to the prod stage
     
 ```bash
 pnpm build:orchestrator
-mkdir -p apps/multiverse-ui/src/lib/orchestrator/;
-cp packages/multiverse/src/Orchestrator/dist/* apps/multiverse-ui/src/lib/orchestrator/;
+pnpm deploy:orchestrator
 ```
 
 #### Other issues
