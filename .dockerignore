@@ -19,9 +19,9 @@
 apps
 dist
 .turbo
+.sst
 node_modules
 **/node_modules
-Dockerfile
 
 # *
 # !pnpm-lock.yaml

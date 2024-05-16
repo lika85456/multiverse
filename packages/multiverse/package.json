@@ -7,12 +7,18 @@
     "typecheck": "tsc -noEmit",
 
     "build:orchestrator": "tsup src/Orchestrator/index.ts --dts --format cjs --minify --clean --legacy-output --target es2020 --outDir src/Orchestrator/dist",
-    "build:db": "tsup src/Compute/index.ts --dts --format cjs --minify --clean --sourcemap --target es2020 --outDir src/Compute/dist"
+    "build:db": "tsup src/Compute/index.ts --dts --format cjs --minify --clean --sourcemap --target es2020 --outDir src/Compute/dist",
+  
+    "run:db": "DOCKER_BUILDKIT=1 docker build -t multiverse-compute -f Dockerfile.compute ../../ && docker run -p 9000:8080 multiverse-compute",
+
+    "NEED_HELP_WITH_DEPLOYING": "https://stackoverflow.com/questions/76109195/how-to-fix-docker-login-error-error-saving-credentials",
+    "deploy:db": "aws ecr get-login-password --region eu-central-1 | docker login --username AWS --password-stdin 529734186765.dkr.ecr.eu-central-1.amazonaws.com && DOCKER_BUILDKIT=1 docker build -t multiverse-compute -f Dockerfile.compute ../../ && docker tag multiverse-compute:latest 529734186765.dkr.ecr.eu-central-1.amazonaws.com/multiverse-compute:latest && docker push 529734186765.dkr.ecr.eu-central-1.amazonaws.com/multiverse-compute:latest"
   },
   "devDependencies": {
     "@types/jest": "^29.5.2",
     "@types/node": "^20.3.1",
     "tsconfig": "workspace:*",
+    "@multiverse/vitest-config": "workspace:*",
     "tsup": "^7.1.0"
   },
   "dependencies": {
@@ -29,7 +35,6 @@
     "@isaacs/ttlcache": "^1.4.1",
     "@multiverse/env": "workspace:*",
     "@multiverse/log": "workspace:*",
-    "@multiverse/vitest-config": "workspace:*",
     "@trpc/client": "^10.37.1",
     "@trpc/server": "^10.37.1",
     "@types/adm-zip": "^0.5.0",
@@ -39,12 +44,10 @@
     "aws-lambda": "^1.0.7",
     "dotenv": "^16.3.1",
     "electrodb": "^2.9.3",
-    "faiss-node": "^0.4.1",
-    "i": "^0.3.7",
     "node-os-utils": "^1.3.7",
-    "npm": "^10.5.2",
     "sqs-consumer": "^9.1.0",
     "sst": "2.40.3",
-    "zod": "^3.21.4"
+    "zod": "^3.21.4",
+    "hnswlib-node": "^3.0.0"
   }
 }

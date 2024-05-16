@@ -168,7 +168,7 @@ export default class LambdaWorker implements Worker {
 
         const result = await this.lambda.createFunction({
             FunctionName: this.options.lambdaName,
-            Code: { ImageUri: "529734186765.dkr.ecr.eu-central-1.amazonaws.com/multiverse:latest" },
+            Code: { ImageUri: "529734186765.dkr.ecr.eu-central-1.amazonaws.com/multiverse-compute:latest" },
             Role: await this.lambdaRoleARN(),
             PackageType: "Image",
             Timeout: 900,

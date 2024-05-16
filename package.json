@@ -8,18 +8,23 @@
     "build": "turbo build",
     "build:tsdocs": "typedoc --options packages/config/typedoc.json",
     
-    "NEED_HELP_WITH_DEPLOYING": "https://stackoverflow.com/questions/76109195/how-to-fix-docker-login-error-error-saving-credentials",
-    "deploy:db": "aws ecr get-login-password --region eu-central-1 | docker login --username AWS --password-stdin 529734186765.dkr.ecr.eu-central-1.amazonaws.com && DOCKER_BUILDKIT=1 docker build -t multiverse . && docker tag multiverse:latest 529734186765.dkr.ecr.eu-central-1.amazonaws.com/multiverse:latest && docker push 529734186765.dkr.ecr.eu-central-1.amazonaws.com/multiverse:latest",
     "deploy:dev": "sst deploy --stage=dev",
-    
-    "run:db": "DOCKER_BUILDKIT=1 docker build -t multiverse . && docker run -p 9000:8080 multiverse",
+    "deploy:db": "turbo deploy:db",
+
     "start:docs": "cd apps/docs && pnpm start",
     
     "test": "turbo test",
     "test:watch": "vitest run --watch --exclude e2e,integration",
     "test:coverage": "vitest run --coverage",
     
-    "lint": "turbo lint"
+    "lint": "turbo lint",
+
+    "clear:node_modules": "rm -rf node_modules && find . -name node_modules -type d -prune -exec rm -rf {} \\;",
+    "clear:turbo": "rm -rf .turbo && find . -name .turbo -type d -prune -exec rm -rf {} \\;",
+    "clear:dist": "rm -rf dist && find . -name dist -type d -prune -exec rm -rf {} \\;",
+    "clear:next": "rm -rf .next && find . -name .next -type d -prune -exec rm -rf {} \\;",
+    "clear:open-next": "rm -rf .open-next && find . -name .open-next -type d -prune -exec rm -rf {} \\;",
+    "clear": "pnpm run clear:node_modules && pnpm run clear:turbo && pnpm run clear:dist && pnpm run clear:next && pnpm run clear:open-next"
   },
   "devDependencies": {
     "@types/jest": "^29.5.2",
@@ -46,6 +51,5 @@
     "apps/*"
   ],
   "dependencies": {
-    "hnswlib-node": "^3.0.0"
   }
 }

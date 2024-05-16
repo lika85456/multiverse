@@ -3,8 +3,8 @@
  * This is the entry point for Compute lambda.
  */
 
-import log from "@multiverse/log";
 import type { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
+import log from "@multiverse/log";
 import HNSWIndex from "../Index/HNSWIndex";
 import S3SnapshotStorage from "../SnapshotStorage/S3SnapshotStorage";
 import type { Worker } from "./Worker";

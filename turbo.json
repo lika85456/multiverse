@@ -35,15 +35,16 @@
                 "test/**/*.tsx"
             ]
         },
+        "deploy:db": {
+            "cache": false
+        },
         "deploy": {
             "dependsOn": [
                 "build",
                 "test",
                 "lint"
             ],
-            "outputs": [
-                ".sst/**"
-            ]
+            "cache": false
         },
         "lint": {},
         "dev": {
