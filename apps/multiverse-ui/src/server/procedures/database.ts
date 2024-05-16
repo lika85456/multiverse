@@ -258,26 +258,32 @@ export const database = router({
             const listedDatabases = await multiverse.listDatabases();
 
             const databases = (await Promise.all(listedDatabases.map(async(database): Promise<(Database | undefined)> => {
-                const configuration = await database.getConfiguration();
+                try {
+                    const configuration = await database.getConfiguration();
 
-                // check if database is being created or deleted
-                if (dbsToBeCreated.includes(configuration.name)) {
+                    // check if database is being created or deleted
+                    if (dbsToBeCreated.includes(configuration.name)) {
+                        return undefined;
+                    }
+                    if (dbsToBeDeleted.includes(configuration.name)) {
+                        return undefined;
+                    }
+
+                    if (configuration.statisticsQueueName === undefined) {
+                        log.info(`Setting queue ${sessionUser.sqsQueue} to the existing database ${configuration.name}`);
+                        configuration.statisticsQueueName = sessionUser.sqsQueue;
+                        await database.updateConfiguration(configuration);
+                    }
+
+                    const storedDatabase = await storeDatabase(configuration);
+
+                    // guaranteed that the database is stored in the mongodb
+                    return filterDefaultToken(storedDatabase);
+                } catch (error) {
+                    log.error("Error getting configuration for database: ", error);
+
                     return undefined;
                 }
-                if (dbsToBeDeleted.includes(configuration.name)) {
-                    return undefined;
-                }
-
-                if (configuration.statisticsQueueName === undefined) {
-                    log.info(`Setting queue ${sessionUser.sqsQueue} to the existing database ${configuration.name}`);
-                    configuration.statisticsQueueName = sessionUser.sqsQueue;
-                    await database.updateConfiguration(configuration);
-                }
-
-                const storedDatabase = await storeDatabase(configuration);
-
-                // guaranteed that the database is stored in the mongodb
-                return filterDefaultToken(storedDatabase);
             }))).filter(database => database !== undefined) as Database[];
 
             return {
