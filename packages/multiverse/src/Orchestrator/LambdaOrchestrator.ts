@@ -226,6 +226,12 @@ export default class LambdaOrchestrator implements Orchestrator {
             RoleName: roleName
         }));
 
+        // add sqs policy
+        log.debug(await iam.attachRolePolicy({
+            PolicyArn: "arn:aws:iam::aws:policy/AmazonSQSFullAccess",
+            RoleName: roleName
+        }));
+
         log.debug("Created role", { result, });
 
         const roleARN = result.Role?.Arn;
