@@ -40,8 +40,9 @@ It also add extra features, like AWS Token management and usage statistics.
 ## Running Multiverse UI
 
 To run Multiverse UI, you need to have installed `Node.js (v20)` and `pnpm`. You will also need a `Docker` with `MongoDB`.
-Before running the application, there are some steps you will need to take. First, you need to install all dependencies.
-Fill in the `.env` file with your configuration. Then you can run the application. 
+`AWS CLI` is also required for deployment.Before running the application, there are some steps you will need to take. 
+First, you need to install all dependencies. Fill in the `.env` file with your configuration. Then you can run the 
+application. 
 
 NOTE: Root `.env` file is used for the deployment of the application. The `apps/multiverse-ui/.env` file is used for running the application locally.
 
@@ -163,13 +164,19 @@ application, it is not possible to provide them at first deployment. After deplo
 into your environment variables and don't forget to `authorize the domain` in all providers (Google, GitHub).
 
 Deploying is done from the root of the project. You will need to have the `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`
-variables set in the root `.env` file.Make sure to provide all other keys as well. At second deployment, make sure to not
+variables set in the root `.env` file. Make sure to provide all other keys as well. At second deployment, make sure to not
 leave any variable with value related to the development environment. Switch to the production environment by setting the 
 `NODE_ENV` variable to `production`.
 
 ```bash
 pnpm i
 pnpm build:orchestrator
+mkdir -p apps/multiverse-ui/src/lib/orchestrator/
+cp packages/multiverse/src/Orchestrator/dist/* apps/multiverse-ui/src/lib/orchestrator/
+```
+After that, you can deploy the application do dev stage with the following command:
+
+```bash
 pnpm sst deploy # by default it deploys to the `dev` stage
 ```
 
@@ -220,8 +227,10 @@ Some of the most common issues encountered during the development and deployment
 - `...[fn] is not a function...`? remove all node_modules you can find in the project and run:
 
 ```bash
-pnpm i
-pnpm build:orchestrator
+pnpm i;
+pnpm build:orchestrator;
+mkdir -p apps/multiverse-ui/src/lib/orchestrator/;
+cp packages/multiverse/src/Orchestrator/dist/* apps/multiverse-ui/src/lib/orchestrator/;
 pnpm sst deploy # (--stage prod) if you are deploying to the prod stage
 ```
 - if the problem persists, also remove package-lock.yaml and reinstall the packages with `pnpm i` 
@@ -234,6 +243,8 @@ pnpm sst deploy # (--stage prod) if you are deploying to the prod stage
     
 ```bash
 pnpm build:orchestrator
+mkdir -p apps/multiverse-ui/src/lib/orchestrator/;
+cp packages/multiverse/src/Orchestrator/dist/* apps/multiverse-ui/src/lib/orchestrator/;
 ```
 
 #### Other issues

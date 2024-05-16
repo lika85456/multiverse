@@ -7,7 +7,8 @@ const config = {
   ],
 
   ignorePatterns: [
-      "src/components"
+      "src/components",
+      "src/lib/orchestrator"
   ]
 };
 
