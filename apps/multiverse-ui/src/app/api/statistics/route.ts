@@ -1,7 +1,7 @@
 import { ENV } from "@/lib/env";
 import { start } from "@/lib/statistics-processor";
 
-export const handler = async() => {
+const handler = async() => {
     if (ENV.NODE_ENV !== "development") {
         return new Response("Not found", { status: 404 });
     }

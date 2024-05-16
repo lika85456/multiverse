@@ -7,7 +7,6 @@ import { IoEyeOffOutline } from "react-icons/io5";
 import { CopyIcon } from "lucide-react";
 import DeleteConnectionTokenModal from "@/features/connectionToken/DeleteConnectionTokenModal";
 import type { SecretToken } from "@/server/procedures/database";
-import { UTCDate } from "@date-fns/utc";
 import { customToast } from "@/features/fetching/CustomToast";
 
 export interface ConnectionTokenItemProps {

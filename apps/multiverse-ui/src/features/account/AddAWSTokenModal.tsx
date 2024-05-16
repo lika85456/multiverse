@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import useModal from "@/features/modal/use-modal";
 import {
     AlertDialog,
-    AlertDialogContent, AlertDialogFooter,
+    AlertDialogContent,
     AlertDialogHeader,
     AlertDialogTitle,
     AlertDialogTrigger
