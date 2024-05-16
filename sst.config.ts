@@ -17,6 +17,7 @@ function MultiverseStack({ stack }: StackContext) {
     const nextSite = new NextjsSite(stack, "app", {
         path: "./apps/multiverse-ui",
         timeout: 60,
+        environment: cronENV,
         memorySize: "256 MB",
         runtime: "nodejs20.x",
     });
@@ -26,7 +27,7 @@ function MultiverseStack({ stack }: StackContext) {
         // job: "apps/multiverse-ui/src/lib/statistics-processor/index.start",
         job: {
             function: {
-                environment: { ...cronENV },
+                environment: cronENV,
                 memorySize: "256 MB",
                 timeout: 20,
                 runtime: "nodejs20.x",
