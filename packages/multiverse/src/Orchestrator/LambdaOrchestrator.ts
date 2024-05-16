@@ -135,6 +135,8 @@ export default class LambdaOrchestrator implements Orchestrator {
         const buildFolderPaths = [
             "../../packages/multiverse/src/Orchestrator/dist",
             "packages/multiverse/src/Orchestrator/dist",
+            "apps/multiverse-ui/src/lib/orchestrator",
+            "../../apps/multiverse-ui/src/lib/orchestrator"
         ];
 
         // check which build folder path contains the build (contains index.js file)
