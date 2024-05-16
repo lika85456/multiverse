@@ -256,22 +256,6 @@ export default class LambdaOrchestrator implements Orchestrator {
 
         orchestratorEnvSchema.parse(variables);
 
-        // const result = await this.lambda.createFunction({
-        //     Code: { ZipFile: await this.build(), },
-        //     FunctionName: this.lambdaName(),
-        //     Role: await this.lambdaRoleARN(),
-        //     Runtime: Runtime.nodejs18x,
-        //     Architectures: [Architecture.arm64],
-        //     Handler: "packages/multiverse/Orchestrator/dist/index.handler",
-        //     Timeout: 60,
-        //     Environment: {
-        //         Variables: {
-        //             NODE_ENV: process.env.NODE_ENV ?? "development",
-        //             VARIABLES: JSON.stringify(variables),
-        //         }
-        //     }
-        // });
-
         let result;
         let tries = 0;
         while (tries < 3) {
@@ -387,6 +371,41 @@ export default class LambdaOrchestrator implements Orchestrator {
             throw new Error("Infrastructure already exists");
         }
 
+        const errors: Error[] = [];
+
+        await Promise.all([
+            this.deployOrchestratorLambda({
+                changesTable,
+                snapshotBucket,
+                infrastructureTable,
+                databaseConfiguration
+            }).catch(e => errors.push(e)),
+            this.deployPartition({
+                snapshotBucket,
+                env: "production",
+                partition: 0,
+                databaseConfiguration
+            }).catch(e => errors.push(e)),
+        ]);
+
+        if (errors.length > 0) {
+            log.error("Failed to deploy orchestrator. Destroying created resources", { errors });
+
+            await Promise.allSettled([
+                this.destroyPartition({ partition: 0 }).catch(e => e),
+                (async() => {
+                    try {
+                        await this.lambda.deleteFunction({ FunctionName: this.lambdaName(), });
+                        log.debug("Deleted orchestrator lambda");
+                    } catch (e) {
+                        log.error("Failed to delete orchestrator lambda", { error: e });
+                    }
+                })()
+            ]);
+
+            throw new Error(`Failed to deploy orchestrator: ${errors.map(e => e.message).join(", ")}`);
+        }
+
         await infrastructureStorage.set(this.options.databaseId.name, {
             configuration: databaseConfiguration,
             databaseId: this.options.databaseId,
@@ -428,27 +447,6 @@ export default class LambdaOrchestrator implements Orchestrator {
             }],
             scalingTargetConfiguration
         });
-
-        const errors: Error[] = [];
-
-        await Promise.all([
-            this.deployOrchestratorLambda({
-                changesTable,
-                snapshotBucket,
-                infrastructureTable,
-                databaseConfiguration
-            }).catch(e => errors.push(e)),
-            this.deployPartition({
-                snapshotBucket,
-                env: "production",
-                partition: 0,
-                databaseConfiguration
-            }).catch(e => errors.push(e)),
-        ]);
-
-        if (errors.length > 0) {
-            throw new Error(`Failed to deploy orchestrator: ${errors.map(e => e.message).join(", ")}`);
-        }
     }
 
     public async updateCode() {

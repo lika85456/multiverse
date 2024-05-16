@@ -255,13 +255,24 @@ export default class Multiverse implements IMultiverse {
 
         log.info(`Removing database ${name}`);
 
-        await Promise.all([
-            changesStorage.destroy(),
-            snapshotStorage.destroy(),
-            orchestrator.destroy()
-        ]);
+        const oldInfrastructure = await this.infrastructureStorage.get(name);
+        if (!oldInfrastructure) {
+            throw new Error(`Database ${name} not found`);
+        }
 
         await this.infrastructureStorage.remove(name);
+
+        try {
+
+            await Promise.all([
+                changesStorage.destroy(),
+                snapshotStorage.destroy(),
+                orchestrator.destroy()
+            ]);
+        } catch (e) {
+            log.error(e);
+            await this.infrastructureStorage.set(name, oldInfrastructure);
+        }
     }
 
     /**
@@ -271,20 +282,25 @@ export default class Multiverse implements IMultiverse {
      */
     public async getDatabase(name: string): Promise<MultiverseDatabase | undefined> {
         await this.deploySharedInfrastructure();
+        try {
+            const databaseConfiguration = await this.infrastructureStorage.get(name);
 
-        const databaseConfiguration = await this.infrastructureStorage.get(name);
+            if (!databaseConfiguration) {
+                return undefined;
+            }
 
-        if (!databaseConfiguration) {
-            return undefined;
+            return new MultiverseDatabase({
+                name,
+                region: this.options.region,
+                // TODO: find better way to obtain a token?
+                secretToken: databaseConfiguration.configuration.secretTokens[0].secret,
+                awsToken: this.options.awsToken
+            });
+        } catch (e) {
+            log.error(e);
         }
 
-        return new MultiverseDatabase({
-            name,
-            region: this.options.region,
-            // TODO: find better way to obtain a token?
-            secretToken: databaseConfiguration.configuration.secretTokens[0].secret,
-            awsToken: this.options.awsToken
-        });
+        return undefined;
     }
 
     public async listDatabases(): Promise<MultiverseDatabase[]> {
