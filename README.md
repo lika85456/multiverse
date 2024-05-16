@@ -73,6 +73,15 @@ This AWS Token will be used to deploy the application with the [SST](https://sst
 You may generate up to 2 active access keys per account. You can use the same access key for deployment and for the user's
 AWS Token when using the application. All users will have to generate their own AWS Token and provide it in the application.
 
+#### ECR repository
+
+Create ECR repository for the compute lambda image and name it `multiverse-compute`. Then copy the repository URI and delete
+the postfix /multiverse-compute. Fill in the `AWS_ECR` key in the root `.env` file.
+
+#### AWS Region
+
+Fill this variable as "eu-central-1" in the root `.env` file.
+
 #### Google
 
 In your [google cloud console](`https://console.cloud.google.com/apis/credentials`) create a new project Multiverse.
@@ -149,6 +158,9 @@ to running production database instance. Set other keys as well.
 
 ```bash
 pnpm build:orchestrator # in the root of the project
+pnpm deploy:db
+mkdir -p apps/multiverse-ui/src/lib/orchestrator/
+cp packages/multiverse/src/Orchestrator/dist/* apps/multiverse-ui/src/lib/orchestrator/
 cd apps/multiverse-ui
 pnpm i
 pnpm build
@@ -171,6 +183,7 @@ leave any variable with value related to the development environment. Switch to 
 ```bash
 pnpm i
 pnpm build:orchestrator
+pnpm deploy:db
 mkdir -p apps/multiverse-ui/src/lib/orchestrator/
 cp packages/multiverse/src/Orchestrator/dist/* apps/multiverse-ui/src/lib/orchestrator/
 ```

@@ -10,6 +10,7 @@ import { UTCDate } from "@date-fns/utc";
 import log from "@multiverse/log";
 import type { StatisticsEvent } from "@multiverse/multiverse/src/core/Events";
 import { format } from "date-fns";
+import { getDatabase } from "@/lib/mongodb/collections/database";
 
 export class StatisticsProcessor {
 
@@ -226,6 +227,11 @@ export class StatisticsProcessor {
         // start processing events for each database
         await Promise.all(Array.from(eventsByDbName, async([dbName, events]) => {
             try {
+                const db = await getDatabase(dbName);
+                if (!db) {
+                    return;
+                }
+
                 return await this.processEventsForDatabase(dbName, events);
             } catch (error) {
                 log.error(`Error processing statistics for database ${dbName}: ${error}`);
