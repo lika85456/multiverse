@@ -1,9 +1,9 @@
 import {
-    Cron, NextjsSite, StaticSite
+    Cron, NextjsSite, StaticSite, Bucket
 } from "sst/constructs";
 import type { StackContext } from "sst/constructs";
 import type { SSTConfig } from "sst";
-import { cronENV } from "./apps/multiverse-ui/src/lib/cronEnv";
+import { sstENV } from "./apps/multiverse-ui/src/lib/sstEnv";
 
 function MultiverseStack({ stack }: StackContext) {
 
@@ -14,12 +14,15 @@ function MultiverseStack({ stack }: StackContext) {
         buildCommand: "pnpm run build"
     });
 
+    const orchestratorSourceBucket = new Bucket(stack, "OrchestratorSourceBucket");
+
     const nextSite = new NextjsSite(stack, "app", {
         path: "./apps/multiverse-ui",
         timeout: 60,
-        environment: cronENV,
+        environment: sstENV,
         memorySize: "256 MB",
         runtime: "nodejs20.x",
+        bind: [orchestratorSourceBucket]
     });
 
     const cron = new Cron(stack, "Cron", {
@@ -27,7 +30,7 @@ function MultiverseStack({ stack }: StackContext) {
         // job: "apps/multiverse-ui/src/lib/statistics-processor/index.start",
         job: {
             function: {
-                environment: cronENV,
+                environment: sstENV,
                 memorySize: "256 MB",
                 timeout: 20,
                 runtime: "nodejs20.x",
@@ -35,13 +38,14 @@ function MultiverseStack({ stack }: StackContext) {
             },
         },
     });
-    console.log("cronENV", JSON.stringify(cronENV, null, 2));
+    console.log("cronENV", JSON.stringify(sstENV, null, 2));
 
     stack.addOutputs({
         docsUrl: docsWeb.cdk?.distribution.distributionDomainName,
         appUrl: nextSite.url,
         serverLambda: nextSite.cdk?.function?.functionName,
         cron: cron.cdk.rule.ruleName,
+        orchestratorSourceBucket: orchestratorSourceBucket.bucketName,
     });
 }
 

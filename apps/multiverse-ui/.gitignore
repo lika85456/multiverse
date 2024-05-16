@@ -4,7 +4,6 @@
 .idea
 
 # build orchestrator
-/src/lib/orchestrator
 
 # dependencies
 /node_modules

@@ -135,8 +135,10 @@ export default class LambdaOrchestrator implements Orchestrator {
         const buildFolderPaths = [
             "../../packages/multiverse/src/Orchestrator/dist",
             "packages/multiverse/src/Orchestrator/dist",
-            "apps/multiverse-ui/src/lib/orchestrator",
-            "../../apps/multiverse-ui/src/lib/orchestrator"
+            "apps/multiverse-ui/public/orchestrator",
+            "../../apps/multiverse-ui/public/orchestrator",
+            "public/orchestrator",
+            "src/lib/orchestrator"
         ];
 
         // check which build folder path contains the build (contains index.js file)
@@ -269,7 +271,12 @@ export default class LambdaOrchestrator implements Orchestrator {
         while (tries < 3) {
             try {
                 result = await this.lambda.createFunction({
-                    Code: { ZipFile: await this.build(), },
+                    // Code: { ZipFile: await this.build(), },
+                    Code: {
+                        // eslint-disable-next-line turbo/no-undeclared-env-vars
+                        S3Bucket: process.env.ORCHESTRATOR_SOURCE_BUCKET,
+                        S3Key: "orchestrator.zip"
+                    },
                     FunctionName: this.lambdaName(),
                     Role: await this.lambdaRoleARN(),
                     Runtime: Runtime.nodejs18x,
