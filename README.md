@@ -247,6 +247,7 @@ Some of the most common issues encountered during the development and deployment
 pnpm i
 pnpm build:orchestrator
 pnpm deploy:orchestrator
+pnpm deploy:db
 pnpm sst deploy # (--stage prod) if you are deploying to the prod stage
 ```
 - if the problem persists, also remove package-lock.yaml and reinstall the packages with `pnpm i` 
