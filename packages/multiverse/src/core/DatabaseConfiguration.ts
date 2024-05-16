@@ -1,11 +1,11 @@
 import { z } from "zod";
 
 export type IndexSpace = "l2" | "cosine" | "ip";
-export type Region = "eu-central-1";
+export type Region = "eu-central-1" | "us-east-1";
 
 export const databaseId = z.object({
     name: z.string(),
-    region: z.enum(["eu-central-1"]) as z.ZodType<Region>,
+    region: z.enum(["eu-central-1", "us-east-1"]) as z.ZodType<Region>,
 });
 
 export type DatabaseID = z.infer<typeof databaseId>;

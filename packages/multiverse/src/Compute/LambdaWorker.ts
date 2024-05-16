@@ -166,9 +166,13 @@ export default class LambdaWorker implements Worker {
 
         databaseEnvSchema.parse(variables);
 
+        if (!process.env.AWS_ECR) {
+            throw new Error("AWS_ECR environment variable is not set");
+        }
+
         const result = await this.lambda.createFunction({
             FunctionName: this.options.lambdaName,
-            Code: { ImageUri: "529734186765.dkr.ecr.eu-central-1.amazonaws.com/multiverse:latest" },
+            Code: { ImageUri: process.env.AWS_ECR + "/multiverse-compute:latest" },
             Role: await this.lambdaRoleARN(),
             PackageType: "Image",
             Timeout: 900,

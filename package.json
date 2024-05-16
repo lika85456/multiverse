@@ -8,7 +8,7 @@
     "build:orchestrator": "tsup packages/multiverse/src/Orchestrator/index.ts --dts --format cjs --minify --clean --legacy-output --target es2020 --outDir packages/multiverse/src/Orchestrator/dist",
     "build:db": "tsup packages/multiverse/src/Compute/index.ts --dts --format cjs --minify --clean --sourcemap --target es2020 --outDir packages/multiverse/src/Compute/dist",
     "NEED_HELP_WITH_DEPLOYING": "https://stackoverflow.com/questions/76109195/how-to-fix-docker-login-error-error-saving-credentials",
-    "deploy:db": "aws ecr get-login-password --region eu-central-1 | docker login --username AWS --password-stdin 529734186765.dkr.ecr.eu-central-1.amazonaws.com && DOCKER_BUILDKIT=1 docker build -t multiverse . && docker tag multiverse:latest 529734186765.dkr.ecr.eu-central-1.amazonaws.com/multiverse:latest && docker push 529734186765.dkr.ecr.eu-central-1.amazonaws.com/multiverse:latest",
+    "deploy:db": "dotenv -- cross-var \"aws ecr get-login-password --region %AWS_REGION% | docker login --username AWS --password-stdin %AWS_ECR% && DOCKER_BUILDKIT=1 docker build -t multiverse-compute . && docker tag multiverse-compute:latest %AWS_ECR%/multiverse-compute:latest && docker push %AWS_ECR%/multiverse-compute:latest\"",
     "run:db": "DOCKER_BUILDKIT=1 docker build -t multiverse . && docker run -p 9000:8080 multiverse",
     "start:docs": "cd apps/docs && pnpm start",
     "build:tsdocs": "typedoc --options packages/config/typedoc.json",
@@ -45,6 +45,8 @@
     "apps/*"
   ],
   "dependencies": {
+    "cross-var": "^1.1.0",
+    "dotenv-cli": "^7.4.2",
     "hnswlib-node": "^3.0.0"
   }
 }
