@@ -3,25 +3,26 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "turbo dev",
-    "build": "turbo build",
-    "build:orchestrator": "tsup packages/multiverse/src/Orchestrator/index.ts --dts --format cjs --minify --clean --legacy-output --target es2020 --outDir packages/multiverse/src/Orchestrator/dist",
-    "build:db": "tsup packages/multiverse/src/Compute/index.ts --dts --format cjs --minify --clean --sourcemap --target es2020 --outDir packages/multiverse/src/Compute/dist",
     "NEED_HELP_WITH_DEPLOYING": "https://stackoverflow.com/questions/76109195/how-to-fix-docker-login-error-error-saving-credentials",
-    "deploy:db": "dotenv -- cross-var \"aws ecr get-login-password --region %AWS_REGION% | docker login --username AWS --password-stdin %AWS_ECR% && DOCKER_BUILDKIT=1 docker build -t multiverse-compute . && docker tag multiverse-compute:latest %AWS_ECR%/multiverse-compute:latest && docker push %AWS_ECR%/multiverse-compute:latest\"",
-    "run:db": "DOCKER_BUILDKIT=1 docker build -t multiverse . && docker run -p 9000:8080 multiverse",
-    "deploy:orchestrator": "dotenv -- cross-var \"cd packages/multiverse/src/Orchestrator/dist && zip -r orchestrator.zip . && aws s3 cp orchestrator.zip s3://%ORCHESTRATOR_SOURCE_BUCKET%\"",
-    "start:docs": "cd apps/docs && pnpm start",
+    "build": "turbo build",
+    "build:db": "tsup packages/multiverse/src/Compute/index.ts --dts --format cjs --minify --clean --sourcemap --target es2020 --outDir packages/multiverse/src/Compute/dist",
+    "build:orchestrator": "tsup packages/multiverse/src/Orchestrator/index.ts --dts --format cjs --minify --clean --legacy-output --target es2020 --outDir packages/multiverse/src/Orchestrator/dist",
     "build:tsdocs": "typedoc --options packages/config/typedoc.json",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage",
-    "lint": "turbo lint",
     "console": "turbo console",
-    "typecheck": "tsc --noEmit",
-    "deploy:dev": "sst deploy --stage=dev"
+    "deploy:db": "dotenv -- cross-var \"aws ecr get-login-password --region %AWS_REGION% | docker login --username AWS --password-stdin %AWS_ECR% \u0026\u0026 DOCKER_BUILDKIT=1 docker build -t multiverse-compute . \u0026\u0026 docker tag multiverse-compute:latest %AWS_ECR%/multiverse-compute:latest \u0026\u0026 docker push %AWS_ECR%/multiverse-compute:latest\"",
+    "deploy:dev": "sst deploy --stage=dev",
+    "deploy:orchestrator": "dotenv -- cross-var \"cd packages/multiverse/src/Orchestrator/dist \u0026\u0026 zip -r orchestrator.zip . \u0026\u0026 aws s3 cp orchestrator.zip s3://%ORCHESTRATOR_SOURCE_BUCKET%\"",
+    "dev": "turbo dev",
+    "lint": "turbo lint",
+    "run:db": "DOCKER_BUILDKIT=1 docker build -t multiverse . \u0026\u0026 docker run -p 9000:8080 multiverse",
+    "start:docs": "cd apps/docs \u0026\u0026 pnpm start",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
+    "@types/aws-lambda": "8.10.138",
     "@types/jest": "^29.5.2",
     "@typescript-eslint/eslint-plugin": "^5.59.7",
     "@vitest/coverage-v8": "^0.34.2",
@@ -30,7 +31,6 @@
     "eslint": "^8.41.0",
     "eslint-config-custom": "workspace:*",
     "jsdoc": "^4.0.2",
-    "sst": "2.41.5",
     "tsconfig": "workspace:*",
     "tsup": "^7.1.0",
     "tsx": "^3.12.7",
@@ -48,6 +48,7 @@
   "dependencies": {
     "cross-var": "^1.1.0",
     "dotenv-cli": "^7.4.2",
-    "hnswlib-node": "^3.0.0"
+    "hnswlib-node": "^3.0.0",
+    "sst": "ion"
   }
 }
