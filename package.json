@@ -9,13 +9,13 @@
     "build:orchestrator": "tsup packages/multiverse/src/Orchestrator/index.ts --dts --format cjs --minify --clean --legacy-output --target es2020 --outDir packages/multiverse/src/Orchestrator/dist",
     "build:tsdocs": "typedoc --options packages/config/typedoc.json",
     "console": "turbo console",
-    "deploy:db": "dotenv -- cross-var \"aws ecr get-login-password --region %AWS_REGION% | docker login --username AWS --password-stdin %AWS_ECR% \u0026\u0026 DOCKER_BUILDKIT=1 docker build -t multiverse-compute . \u0026\u0026 docker tag multiverse-compute:latest %AWS_ECR%/multiverse-compute:latest \u0026\u0026 docker push %AWS_ECR%/multiverse-compute:latest\"",
+    "deploy:db": "dotenv -- cross-var \"aws ecr get-login-password --region %AWS_REGION% | docker login --username AWS --password-stdin %AWS_ECR% && DOCKER_BUILDKIT=1 docker build -t multiverse-compute . && docker tag multiverse-compute:latest %AWS_ECR%/multiverse-compute:latest && docker push %AWS_ECR%/multiverse-compute:latest\"",
     "deploy:dev": "sst deploy --stage=dev",
-    "deploy:orchestrator": "dotenv -- cross-var \"cd packages/multiverse/src/Orchestrator/dist \u0026\u0026 zip -r orchestrator.zip . \u0026\u0026 aws s3 cp orchestrator.zip s3://%ORCHESTRATOR_SOURCE_BUCKET%\"",
+    "deploy:orchestrator": "dotenv -- cross-var \"cd packages/multiverse/src/Orchestrator/dist && zip -r orchestrator.zip . && aws s3 cp orchestrator.zip s3://%ORCHESTRATOR_SOURCE_BUCKET%\"",
     "dev": "turbo dev",
     "lint": "turbo lint",
-    "run:db": "DOCKER_BUILDKIT=1 docker build -t multiverse . \u0026\u0026 docker run -p 9000:8080 multiverse",
-    "start:docs": "cd apps/docs \u0026\u0026 pnpm start",
+    "run:db": "DOCKER_BUILDKIT=1 docker build -t multiverse . && docker run -p 9000:8080 multiverse",
+    "start:docs": "cd apps/docs && pnpm start",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
@@ -48,7 +48,6 @@
   "dependencies": {
     "cross-var": "^1.1.0",
     "dotenv-cli": "^7.4.2",
-    "hnswlib-node": "^3.0.0",
-    "sst": "ion"
+    "hnswlib-node": "^3.0.0"
   }
 }
