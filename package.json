@@ -10,7 +10,7 @@
     "build:tsdocs": "typedoc --options packages/config/typedoc.json",
     "console": "turbo console",
     "deploy:db": "dotenv -- cross-var \"aws ecr get-login-password --region %AWS_REGION% | docker login --username AWS --password-stdin %AWS_ECR% && DOCKER_BUILDKIT=1 docker build -t multiverse-compute . && docker tag multiverse-compute:latest %AWS_ECR%/multiverse-compute:latest && docker push %AWS_ECR%/multiverse-compute:latest\"",
-    "deploy:dev": "sst deploy --stage=dev",
+    "deploy:dev": "sst deploy --stage=dev --verbose",
     "deploy:orchestrator": "dotenv -- cross-var \"cd packages/multiverse/src/Orchestrator/dist && zip -r orchestrator.zip . && aws s3 cp orchestrator.zip s3://%ORCHESTRATOR_SOURCE_BUCKET%\"",
     "dev": "turbo dev",
     "lint": "turbo lint",
