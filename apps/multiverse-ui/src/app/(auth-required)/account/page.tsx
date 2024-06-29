@@ -20,3 +20,5 @@ export default async function Account() {
         </>
     );
 }
+
+export const dynamic = "force-dynamic";
