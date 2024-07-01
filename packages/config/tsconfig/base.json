@@ -16,8 +16,7 @@
     "skipLibCheck": true,
     "strict": true,
     "types": [
-      "vitest/globals",
-      "jest"
+      "vitest/globals"
     ]
   },
   "exclude": [
