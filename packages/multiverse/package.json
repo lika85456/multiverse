@@ -9,8 +9,6 @@
   "devDependencies": {
     "@types/jest": "^29.5.2",
     "@types/node": "^20.3.1",
-    "tsconfig": "workspace:*",
-    "tsup": "^7.1.0",
     "vitest": "^0.32.2"
   },
   "dependencies": {
@@ -19,6 +17,8 @@
     "@aws-sdk/client-ecr": "^3.413.0",
     "@aws-sdk/client-iam": "^3.410.0",
     "@aws-sdk/client-lambda": "^3.363.0",
+    "tsup": "^7.1.0",
+    "tsconfig": "workspace:*",
     "@aws-sdk/client-s3": "^3.362.0",
     "@aws-sdk/client-sqs": "^3.552.0",
     "@aws-sdk/lib-dynamodb": "^3.388.0",
