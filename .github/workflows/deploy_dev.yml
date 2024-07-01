@@ -17,7 +17,7 @@ jobs:
 
       MONGODB_URI: ${{ secrets.MONGODB_URI }}
 
-      NODE_ENV: development
+      NODE_ENV: production
 
       NEXTAUTH_SECRET_KEY: ${{ secrets.NEXTAUTH_SECRET_KEY }}
       NEXTAUTH_URL: ${{ vars.NEXTAUTH_URL }}
