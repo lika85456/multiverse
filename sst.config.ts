@@ -29,6 +29,7 @@ export default $config({
                 server: {
                     memory: "256 MB",
                     runtime: "nodejs20.x",
+                    timeout: "300 seconds",
                 }
             }
         });
