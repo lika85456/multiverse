@@ -70,7 +70,7 @@ jobs:
             ${{ runner.os }}-pnpm-store
 
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --prod=false
       
       - uses: aws-actions/configure-aws-credentials@v4
         name: AWS Credentials
