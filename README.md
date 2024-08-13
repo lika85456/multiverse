@@ -4,7 +4,7 @@ This project is a bachelor thesis of Michal Kornúc (Multiverse UI part) and Voj
 The consulter and leader of this project is Ing. Jan Blizničenko from the 
 [Faculty of Information Technology at Czech Technical University in Prague](https://fit.cvut.cz/cs).
 
-App is deployed at [d2l3pgy3g16qpx.cloudfront.net](https://d2l3pgy3g16qpx.cloudfront.net/). 
+App is deployed at [d36ck4qv0u2klv.cloudfront.net](https://d36ck4qv0u2klv.cloudfront.net/). 
 If the page is not available, it was probably taken down due to the costs of running the application.
 
 Multiverse is a platform for managing and querying vector data. It is a platform that allows users to store, manage, and
