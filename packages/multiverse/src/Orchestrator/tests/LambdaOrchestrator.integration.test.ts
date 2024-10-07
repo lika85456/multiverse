@@ -1,11 +1,11 @@
-import DynamoChangesStorage from "../ChangesStorage/DynamoChangesStorage";
-import type { DatabaseID, StoredDatabaseConfiguration } from "../core/DatabaseConfiguration";
-import { Vector } from "../core/Vector";
-import type { NewVector } from "../core/Vector";
-import LocalIndex from "../Index/LocalIndex";
-import DynamoInfrastructureStorage from "../InfrastructureStorage/DynamoInfrastructureStorage";
-import S3SnapshotStorage from "../SnapshotStorage/S3SnapshotStorage";
-import LambdaOrchestrator from "./LambdaOrchestrator";
+import DynamoChangesStorage from "../../ChangesStorage/DynamoChangesStorage";
+import type { DatabaseID, StoredDatabaseConfiguration } from "../../core/DatabaseConfiguration";
+import type { NewVector } from "../../core/Vector";
+import { Vector } from "../../core/Vector";
+import LocalIndex from "../../Index/LocalIndex";
+import DynamoInfrastructureStorage from "../../InfrastructureStorage/DynamoInfrastructureStorage";
+import S3SnapshotStorage from "../../SnapshotStorage/S3SnapshotStorage";
+import LambdaOrchestrator from "../LambdaOrchestrator";
 
 // ! DID YOU COMPILE ?
 describe("<LambdaOrchestrator>", () => {

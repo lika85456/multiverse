@@ -1,5 +1,8 @@
 /// <reference types="vitest" />
-import { defineWorkspace } from 'vitest/config'
+import { defineWorkspace } from 'vitest/config';
+import { config } from "dotenv";
+
+config();
 
 export default defineWorkspace([
   {
@@ -15,6 +18,8 @@ export default defineWorkspace([
       }),
       hookTimeout: 60000,
       testTimeout: 20000,
+      // @ts-ignore
+      env:process.env
     }
   },
   {
@@ -26,6 +31,8 @@ export default defineWorkspace([
       globals: true,
       hookTimeout: 60000,
       testTimeout: 60000,
+      // @ts-ignore
+      env:process.env
     }
   },
   {
@@ -40,7 +47,9 @@ export default defineWorkspace([
         maxThreads: 4
       }),
       hookTimeout: 180000,
-      testTimeout: 180000
+      testTimeout: 180000,
+      // @ts-ignore
+      env:process.env
     }
   },
   {
@@ -55,7 +64,9 @@ export default defineWorkspace([
         maxThreads: 4
       }),
       hookTimeout: 180000,
-      testTimeout: 180000
+      testTimeout: 180000,
+      // @ts-ignore
+      env:process.env
     }
   }
 ])

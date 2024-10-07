@@ -17,6 +17,9 @@ importers:
       cross-var:
         specifier: ^1.1.0
         version: 1.1.0
+      dotenv:
+        specifier: ^16.3.1
+        version: 16.4.5
       dotenv-cli:
         specifier: ^7.4.2
         version: 7.4.2

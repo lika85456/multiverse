@@ -1,16 +1,16 @@
-import MemoryChangesStorage from "../ChangesStorage/MemoryChangesStorage";
-import ComputeWorker from "../Compute/ComputeWorker";
-import type { Worker } from "../Compute/Worker";
+import MemoryChangesStorage from "../../ChangesStorage/MemoryChangesStorage";
+import ComputeWorker from "../../Compute/ComputeWorker";
+import type { Worker } from "../../Compute/Worker";
 import type {
-    DatabaseID, Region,
-    StoredDatabaseConfiguration
-} from "../core/DatabaseConfiguration";
-import type { Query } from "../core/Query";
-import LocalIndex from "../Index/LocalIndex";
-import MemoryInfrastructureStorage from "../InfrastructureStorage/MemoryInfrastructureStorage";
-import LocalSnapshotStorage from "../SnapshotStorage/LocalSnapshotStorage";
-import mockWorkerFactory from "./MockWorkerFactory";
-import Orchestrator from "./OrchestratorWorker";
+    DatabaseID, StoredDatabaseConfiguration, Region
+} from "../../core/DatabaseConfiguration";
+import type { Query } from "../../core/Query";
+import LocalIndex from "../../Index/LocalIndex";
+import MemoryInfrastructureStorage from "../../InfrastructureStorage/MemoryInfrastructureStorage";
+import LocalSnapshotStorage from "../../SnapshotStorage/LocalSnapshotStorage";
+import mockWorkerFactory from "../MockWorkerFactory";
+import type Orchestrator from "../Orchestrator";
+import OrchestratorWorker from "../OrchestratorWorker";
 
 describe("<OrchestratorWorker>", () => {
 
@@ -71,7 +71,7 @@ describe("<OrchestratorWorker>", () => {
             }
         });
 
-        orchestrator = new Orchestrator({
+        orchestrator = new OrchestratorWorker({
             changesStorage,
             databaseConfiguration,
             databaseId,

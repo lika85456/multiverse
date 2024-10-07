@@ -11,6 +11,7 @@ import logger from "@multiverse/log";
 import DynamoChangesStorage from "./ChangesStorage/DynamoChangesStorage";
 import S3SnapshotStorage from "./SnapshotStorage/S3SnapshotStorage";
 import type { AwsToken } from "./core/AwsToken";
+import { S3 } from "@aws-sdk/client-s3";
 
 const log = logger.getSubLogger({ name: "Multiverse" });
 
@@ -104,23 +105,31 @@ export class MultiverseDatabase implements IMultiverseDatabase {
  */
 export default class Multiverse implements IMultiverse {
 
-    private INFRASTRUCTURE_TABLE_NAME = "multiverse-infrastructure-storage";
-
     private infrastructureStorage: InfrastructureStorage;
+    private s3: S3;
 
     /**
      * Either set the AWS credentials in the environment or provide them here.
      * @param options
+     * @param options.region AWS region for primary database
+     * @param options.awsToken AWS credentials
+     * @param options.name Name of the Multiverse. It will be used as a prefix for all the resources. Useful for staging
      */
     constructor(private options: {
         region: Region,
         awsToken: AwsToken,
+        name: string
     }) {
 
         this.infrastructureStorage = new DynamoInfrastructureStorage({
             region: options.region,
-            tableName: this.INFRASTRUCTURE_TABLE_NAME,
+            tableName: `multiverse-infrastructure-storage-${options.name}`,
             awsToken: this.options.awsToken
+        });
+
+        this.s3 = new S3({
+            region: this.options.region,
+            credentials: this.options.awsToken
         });
     }
 
@@ -130,8 +139,16 @@ export default class Multiverse implements IMultiverse {
         }
 
         log.info("Deploying shared infrastructure");
+        const orchestratorSourceBucket = `multiverse-orchestrator-source-${this.options.name}`;
 
-        await this.infrastructureStorage.deploy();
+        await Promise.allSettled([
+            this.infrastructureStorage.deploy(),
+            // create orchestrator lambda source code bucket
+            this.s3.createBucket({ Bucket: orchestratorSourceBucket })
+        ]);
+
+        // TODO build and upload orchestrator source to s3
+        // TODO chybí tady způsob jak dostat jméno bucketu do LambdaOrchestratoru
     }
 
     public async removeSharedInfrastructure() {
@@ -141,7 +158,10 @@ export default class Multiverse implements IMultiverse {
 
         log.info("Removing shared infrastructure");
 
-        await this.infrastructureStorage.destroy();
+        await Promise.allSettled([
+            this.infrastructureStorage.destroy(),
+            this.s3.deleteBucket({ Bucket: `multiverse-orchestrator-source-${this.options.name}` })
+        ]);
     }
 
     /**

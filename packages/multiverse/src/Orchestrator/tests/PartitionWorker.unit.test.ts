@@ -1,11 +1,11 @@
-import ComputeWorker from "../Compute/ComputeWorker";
-import type { Region, StoredDatabaseConfiguration } from "../core/DatabaseConfiguration";
-import { Vector } from "../core/Vector";
-import LocalIndex from "../Index/LocalIndex";
-import MemoryInfrastructureStorage from "../InfrastructureStorage/MemoryInfrastructureStorage";
-import LocalSnapshotStorage from "../SnapshotStorage/LocalSnapshotStorage";
-import mockWorkerFactory from "./MockWorkerFactory";
-import PartitionWorker from "./PartitionWorker";
+import ComputeWorker from "../../Compute/ComputeWorker";
+import type { StoredDatabaseConfiguration, Region } from "../../core/DatabaseConfiguration";
+import { Vector } from "../../core/Vector";
+import LocalIndex from "../../Index/LocalIndex";
+import MemoryInfrastructureStorage from "../../InfrastructureStorage/MemoryInfrastructureStorage";
+import LocalSnapshotStorage from "../../SnapshotStorage/LocalSnapshotStorage";
+import mockWorkerFactory from "../MockWorkerFactory";
+import PartitionWorker from "../PartitionWorker";
 
 describe("<PartitionWorker>", () => {
 

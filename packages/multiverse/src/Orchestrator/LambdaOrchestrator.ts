@@ -57,7 +57,7 @@ export default class LambdaOrchestrator implements Orchestrator {
             Payload: JSON.stringify({ body: JSON.stringify(eventPayload) })
         });
 
-        const uintPayload = new Uint8Array(result.Payload as ArrayBuffer);
+        const uintPayload = new Uint8Array(result.Payload as unknown as ArrayBuffer);
         const payloadString = Buffer.from(uintPayload).toString("utf-8");
         const parsedPayload = JSON.parse(payloadString);
 
@@ -124,10 +124,27 @@ export default class LambdaOrchestrator implements Orchestrator {
     }
 
     /**
-     * TODO! run build only on test environment.
-     * Builds the orchestrator lambda function and zips it.
+     * Builds the orchestrator lambda function and uploads it to s3 source bucket
      */
-    public async build(): Promise<Uint8Array> {
+    public async build(orchestratorSourceCodeBucket: string) {
+        // 1. build the orchestrator (run pnpm build:orchestrator)
+        const { exec } = await import("child_process");
+
+        await new Promise((resolve, reject) => {
+            exec("pnpm build:orchestrator", (error, stdout, stderr) => {
+                if (error) {
+                    reject(error);
+
+                    return;
+                }
+
+                log.debug(stdout);
+                log.debug(stderr);
+
+                resolve(undefined);
+            });
+        });
+
         // 2. zip the build folder using adm
         const { default: AdmZip } = await import("adm-zip");
         const zip = new AdmZip();
@@ -163,7 +180,20 @@ export default class LambdaOrchestrator implements Orchestrator {
 
         log.debug("Zip created");
 
-        return buffer;
+        // return buffer;
+
+        // upload to s3
+        const { S3, PutObjectCommand } = await import("@aws-sdk/client-s3");
+        const s3 = new S3({
+            region: this.options.databaseId.region,
+            credentials: this.options.awsToken
+        });
+
+        await s3.send(new PutObjectCommand({
+            Bucket: orchestratorSourceCodeBucket,
+            Key: "orchestrator.zip",
+            Body: buffer
+        }));
     }
 
     public lambdaName() {
@@ -292,8 +322,8 @@ export default class LambdaOrchestrator implements Orchestrator {
                 });
 
                 break;
-            } catch (e) {
-                log.error("Failed to create orchestrator lambda", { error: e });
+            } catch (e: any) {
+                log.error(`Failed to create orchestrator lambda: ${e.message}`);
                 tries++;
             }
 
@@ -464,10 +494,12 @@ export default class LambdaOrchestrator implements Orchestrator {
         });
     }
 
-    public async updateCode() {
+    public async updateCode(orchestratorSourceCodeBucket: string) {
         const result = await this.lambda.updateFunctionCode({
             FunctionName: this.lambdaName(),
-            ZipFile: await this.build(),
+            // ZipFile: await this.build(),
+            S3Bucket: orchestratorSourceCodeBucket,
+            S3Key: "orchestrator.zip"
         });
 
         log.debug("Updated lambda function code", { result, });

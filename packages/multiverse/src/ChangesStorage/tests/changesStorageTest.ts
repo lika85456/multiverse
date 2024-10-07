@@ -1,6 +1,5 @@
-import DynamoChangesStorage from "./DynamoChangesStorage";
-import MemoryChangesStorage from "./MemoryChangesStorage";
-import type { StoredVectorChange } from "./StoredVector";
+import type ChangesStorage from "..";
+import type { StoredVectorChange } from "../StoredVector";
 
 async function readWholeIterator<T>(iterator: AsyncGenerator<T, void, unknown>): Promise<T[]> {
     const result = [];
@@ -12,17 +11,7 @@ async function readWholeIterator<T>(iterator: AsyncGenerator<T, void, unknown>):
     return result;
 }
 
-describe.each([
-    ["<MemoryChangesStorage>", new MemoryChangesStorage()],
-    ["<DynamoChangesStorage>", new DynamoChangesStorage({
-        tableName: "multiverse-test-changes-storage-" + Date.now(),
-        databaseId: {
-            name: "test",
-            region: "eu-central-1"
-        },
-        awsToken: undefined as any
-    })]
-])("%s", (name, storage) => {
+export default function changesStorageTest(storage: ChangesStorage) {
 
     beforeAll(async() => {
         await storage.deploy();
@@ -137,4 +126,4 @@ describe.each([
         // @ts-ignore
         expect(readChanges[0].vector.vector).toEqual(vector.vector.map((v) => expect.closeTo(v)));
     });
-});
+}

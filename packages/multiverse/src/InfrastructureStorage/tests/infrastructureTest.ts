@@ -1,16 +1,8 @@
-import type { Infrastructure } from ".";
-import type { WorkerState } from "../Compute/Worker";
-import DynamoInfrastructureStorage from "./DynamoInfrastructureStorage";
-import MemoryInfrastructureStorage from "./MemoryInfrastructureStorage";
+import type { Infrastructure } from "..";
+import type InfrastructureStorage from "..";
+import type { WorkerState } from "../../Compute/Worker";
 
-describe.each([
-    ["<MemoryInfrastructureStorage>", new MemoryInfrastructureStorage()],
-    ["<DynamoInfrastructureStorage>", new DynamoInfrastructureStorage({
-        region: "eu-central-1",
-        tableName: "multiverse-test-infrastructure-storage-" + Date.now(),
-        awsToken: undefined as any
-    })]
-])("%s", (name, storage) => {
+export default function(storage: InfrastructureStorage) {
 
     beforeAll(async() => {
         await storage.deploy();
@@ -160,4 +152,4 @@ describe.each([
     it.skip("should not overwrite the rest of the data when updating state of an instance", async() => {
 
     });
-});
+}
