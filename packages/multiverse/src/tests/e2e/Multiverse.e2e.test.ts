@@ -15,7 +15,7 @@ describe.each([
 
     afterAll(async() => {
         await multiverse.removeDatabase(name);
-        await multiverse.removeSharedInfrastructure();
+        await multiverse.destroySharedInfrastructure();
     });
 
     it("should create a database with no previous shared infrastructure", async() => {

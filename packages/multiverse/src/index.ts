@@ -43,7 +43,7 @@ export interface IMultiverse {
 
     listDatabases(): Promise<IMultiverseDatabase[]>;
 
-    removeSharedInfrastructure(): Promise<void>;
+    destroySharedInfrastructure(): Promise<void>;
 }
 
 export class MultiverseDatabase implements IMultiverseDatabase {
@@ -148,10 +148,9 @@ export default class Multiverse implements IMultiverse {
         ]);
 
         // TODO build and upload orchestrator source to s3
-        // TODO chybí tady způsob jak dostat jméno bucketu do LambdaOrchestratoru
     }
 
-    public async removeSharedInfrastructure() {
+    public async destroySharedInfrastructure() {
         if (!(await this.infrastructureStorage.exists())) {
             return;
         }
@@ -213,11 +212,11 @@ export default class Multiverse implements IMultiverse {
         const promises = [
             changesStorage.deploy(),
             snapshotStorage.deploy(),
-            orchestrator.deploy({
-                changesTable: `multiverse-changes-${options.name}`,
-                snapshotBucket: `multiverse-snapshot-${options.name}`,
+            orchestrator.deploy({ // names should be defined at one place
+                changesTable: `mv-changes-${this.options.name}-${options.name}`,
+                snapshotBucket: `mv-snapshot-${this.options.name}-${options.name}`,
                 databaseConfiguration: options,
-                infrastructureTable: this.INFRASTRUCTURE_TABLE_NAME,
+                infrastructureTable: `mv-infra-storage-${this.options.name}-${options.name}`,
                 scalingTargetConfiguration: {
                     warmPrimaryInstances: 10,
                     warmRegionalInstances: 0,
