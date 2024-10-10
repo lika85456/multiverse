@@ -108,6 +108,9 @@ export default class Multiverse implements IMultiverse {
     private infrastructureStorage: InfrastructureStorage;
     private s3: S3;
 
+    private infrastructureStorageName: string;
+    private orchestratorSourceBucket: string;
+
     /**
      * Either set the AWS credentials in the environment or provide them here.
      * @param options
@@ -121,9 +124,12 @@ export default class Multiverse implements IMultiverse {
         name: string
     }) {
 
+        this.infrastructureStorageName = `mv-infra-${options.name}`;
+        this.orchestratorSourceBucket = `mv-build-${this.options.name}`;
+
         this.infrastructureStorage = new DynamoInfrastructureStorage({
             region: options.region,
-            tableName: `multiverse-infrastructure-storage-${options.name}`,
+            tableName: this.infrastructureStorageName,
             awsToken: this.options.awsToken
         });
 
@@ -139,12 +145,10 @@ export default class Multiverse implements IMultiverse {
         }
 
         log.info("Deploying shared infrastructure");
-        const orchestratorSourceBucket = `multiverse-orchestrator-source-${this.options.name}`;
 
         await Promise.allSettled([
             this.infrastructureStorage.deploy(),
-            // create orchestrator lambda source code bucket
-            this.s3.createBucket({ Bucket: orchestratorSourceBucket })
+            this.s3.createBucket({ Bucket: this.orchestratorSourceBucket })
         ]);
 
         // TODO build and upload orchestrator source to s3
@@ -159,7 +163,7 @@ export default class Multiverse implements IMultiverse {
 
         await Promise.allSettled([
             this.infrastructureStorage.destroy(),
-            this.s3.deleteBucket({ Bucket: `multiverse-orchestrator-source-${this.options.name}` })
+            this.s3.deleteBucket({ Bucket: this.orchestratorSourceBucket })
         ]);
     }
 
@@ -231,12 +235,12 @@ export default class Multiverse implements IMultiverse {
             await Promise.all(promises);
         } catch (e) {
             // wait untill all finished but catch
-            await Promise.all(promises.map(p => p.catch(() => null)));
+            await Promise.all(promises.map(p => p.catch((e) => log.error(e))));
 
             await Promise.all([
-                changesStorage.destroy().catch(() => null),
-                snapshotStorage.destroy().catch(() => null),
-                orchestrator.destroy().catch(() => null)
+                changesStorage.destroy().catch((e) => log.error(e)),
+                snapshotStorage.destroy().catch((e) => log.error(e)),
+                orchestrator.destroy().catch((e) => log.error(e))
             ]);
 
             throw e;
