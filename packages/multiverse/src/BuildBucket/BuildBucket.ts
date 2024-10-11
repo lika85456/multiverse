@@ -15,6 +15,10 @@ export default class BuildBucket {
         });
     }
 
+    public getResourceName() {
+        return this.name;
+    }
+
     async deploy() {
         await this.s3.createBucket({ Bucket: this.name });
     }
@@ -33,23 +37,23 @@ export default class BuildBucket {
         }
     }
 
-    async uploadLatestBuild(zipPath: string) {
+    async uploadLatestBuild(buffer: Buffer) {
         const key = "latest.zip";
 
         await this.s3.putObject({
             Bucket: this.name,
             Key: key,
-            Body: zipPath
+            Body: buffer
         });
     }
 
     async getLatestBuildKey(): Promise<{
-        bucket: string,
-        key: string
+        S3Bucket: string,
+        S3Key: string
     }> {
         return {
-            bucket: this.name,
-            key: "latest.zip"
+            S3Bucket: this.name,
+            S3Key: "latest.zip"
         };
     }
 }

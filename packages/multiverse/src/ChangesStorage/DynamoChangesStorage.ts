@@ -321,4 +321,8 @@ export default class DynamoChangesStorage implements ChangesStorage {
         await this.deployer.destroy();
         logger.info("Dynamo changes storage destroyed");
     }
+
+    public getResourceName(): string {
+        return this.options.tableName;
+    }
 }

@@ -11,7 +11,7 @@ import logger from "@multiverse/log";
 import DynamoChangesStorage from "./ChangesStorage/DynamoChangesStorage";
 import S3SnapshotStorage from "./SnapshotStorage/S3SnapshotStorage";
 import type { AwsToken } from "./core/AwsToken";
-import { S3 } from "@aws-sdk/client-s3";
+import BuildBucket from "./BuildBucket/BuildBucket";
 
 const log = logger.getSubLogger({ name: "Multiverse" });
 
@@ -106,10 +106,7 @@ export class MultiverseDatabase implements IMultiverseDatabase {
 export default class Multiverse implements IMultiverse {
 
     private infrastructureStorage: InfrastructureStorage;
-    private s3: S3;
-
-    private infrastructureStorageName: string;
-    private orchestratorSourceBucket: string;
+    private buildBucket: BuildBucket;
 
     /**
      * Either set the AWS credentials in the environment or provide them here.
@@ -123,19 +120,15 @@ export default class Multiverse implements IMultiverse {
         awsToken: AwsToken,
         name: string
     }) {
-
-        this.infrastructureStorageName = `mv-infra-${options.name}`;
-        this.orchestratorSourceBucket = `mv-build-${this.options.name}`;
-
         this.infrastructureStorage = new DynamoInfrastructureStorage({
             region: options.region,
-            tableName: this.infrastructureStorageName,
+            tableName: `mv-infra-${options.name}`,
             awsToken: this.options.awsToken
         });
 
-        this.s3 = new S3({
+        this.buildBucket = new BuildBucket(`mv-build-${this.options.name}`, {
             region: this.options.region,
-            credentials: this.options.awsToken
+            awsToken: this.options.awsToken
         });
     }
 
@@ -148,7 +141,7 @@ export default class Multiverse implements IMultiverse {
 
         await Promise.allSettled([
             this.infrastructureStorage.deploy(),
-            this.s3.createBucket({ Bucket: this.orchestratorSourceBucket })
+            this.buildBucket.deploy()
         ]);
 
         // TODO build and upload orchestrator source to s3
@@ -163,7 +156,7 @@ export default class Multiverse implements IMultiverse {
 
         await Promise.allSettled([
             this.infrastructureStorage.destroy(),
-            this.s3.deleteBucket({ Bucket: this.orchestratorSourceBucket })
+            this.buildBucket.destroy()
         ]);
     }
 
@@ -195,12 +188,12 @@ export default class Multiverse implements IMultiverse {
         // todo changes storage should be shared
         const changesStorage = new DynamoChangesStorage({
             databaseId,
-            tableName: `multiverse-changes-${options.name}`,
+            tableName: `mv-changes-${options.name}`,
             awsToken: this.options.awsToken
         });
 
         const snapshotStorage = new S3SnapshotStorage({
-            bucketName: `multiverse-snapshot-${options.name}`,
+            bucketName: `mv-snapshot-${options.name}`,
             databaseId,
             awsToken: this.options.awsToken
         });
@@ -216,11 +209,12 @@ export default class Multiverse implements IMultiverse {
         const promises = [
             changesStorage.deploy(),
             snapshotStorage.deploy(),
-            orchestrator.deploy({ // names should be defined at one place
-                changesTable: `mv-changes-${this.options.name}-${options.name}`,
-                snapshotBucket: `mv-snapshot-${this.options.name}-${options.name}`,
+            orchestrator.deploy({
+                changesTable: changesStorage.getResourceName(),
+                snapshotBucket: snapshotStorage.getResourceName(),
+                buildBucket: this.buildBucket.getResourceName(),
                 databaseConfiguration: options,
-                infrastructureTable: `mv-infra-storage-${this.options.name}-${options.name}`,
+                infrastructureTable: this.infrastructureStorage.getResourceName(),
                 scalingTargetConfiguration: {
                     warmPrimaryInstances: 10,
                     warmRegionalInstances: 0,
@@ -260,12 +254,12 @@ export default class Multiverse implements IMultiverse {
 
         const changesStorage = new DynamoChangesStorage({
             databaseId,
-            tableName: `multiverse-changes-${name}`,
+            tableName: `mv-changes-${name}`,
             awsToken: this.options.awsToken
         });
 
         const snapshotStorage = new S3SnapshotStorage({
-            bucketName: `multiverse-snapshot-${name}`,
+            bucketName: `mv-snapshot-${name}`,
             databaseId,
             awsToken: this.options.awsToken
         });

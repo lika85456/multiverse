@@ -1,3 +1,4 @@
+import BuildBucket from "../../BuildBucket/BuildBucket";
 import DynamoChangesStorage from "../../ChangesStorage/DynamoChangesStorage";
 import type { DatabaseID, StoredDatabaseConfiguration } from "../../core/DatabaseConfiguration";
 import type { NewVector } from "../../core/Vector";
@@ -7,8 +8,7 @@ import DynamoInfrastructureStorage from "../../InfrastructureStorage/DynamoInfra
 import S3SnapshotStorage from "../../SnapshotStorage/S3SnapshotStorage";
 import LambdaOrchestrator from "../LambdaOrchestrator";
 
-// ! DID YOU COMPILE ?
-describe("<LambdaOrchestrator>", () => {
+describe.only("<LambdaOrchestrator>", () => {
 
     const databaseId: DatabaseID = {
         name: Math.random().toString(36).substring(7),
@@ -49,24 +49,34 @@ describe("<LambdaOrchestrator>", () => {
         awsToken: undefined as any
     });
 
+    const buildBucket = new BuildBucket("multiverse-build-" + databaseId.name, {
+        region: "eu-central-1",
+        awsToken: undefined as any
+    });
+
     beforeAll(async() => {
-        await Promise.all([
+        await Promise.allSettled([
             changesStorage.deploy(),
             infrastructureStorage.deploy(),
-            snapshotStorage.deploy()
+            snapshotStorage.deploy(),
+            buildBucket.deploy()
         ]);
 
+        // build orchestrator
+        await orchestrator.build(buildBucket);
+
         await orchestrator.deploy({
-            changesTable: "multiverse-changes-" + databaseId.name,
-            infrastructureTable: "multiverse-infrastructure-" + databaseId.name,
-            snapshotBucket: "multiverse-snapshot-" + databaseId.name,
+            changesTable: changesStorage.getResourceName(),
+            infrastructureTable: infrastructureStorage.getResourceName(),
+            snapshotBucket: snapshotStorage.getResourceName(),
+            buildBucket: buildBucket.getResourceName(),
             databaseConfiguration,
             scalingTargetConfiguration: {
-                outOfRegionFallbacks: 0,
-                secondaryFallbacks: 0,
                 warmPrimaryInstances: 5,
                 warmRegionalInstances: 0,
-                warmSecondaryInstances: 0
+                warmSecondaryInstances: 0,
+                outOfRegionFallbacks: 0,
+                secondaryFallbacks: 0,
             }
         });
     });

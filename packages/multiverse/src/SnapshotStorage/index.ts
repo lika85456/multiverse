@@ -12,4 +12,6 @@ export default interface SnapshotStorage {
 
     deploy(): Promise<void>;
     destroy(): Promise<void>;
+
+    getResourceName(): string;
 }

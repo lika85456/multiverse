@@ -60,6 +60,8 @@ export default abstract class InfrastructureStorage {
     abstract destroy(): Promise<void>;
     abstract exists(): Promise<boolean>;
 
+    abstract getResourceName(): string;
+
     private trimOldInstances(infrastructure: Infrastructure) {
         const now = Date.now();
         for (const partition of infrastructure.partitions) {

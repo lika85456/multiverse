@@ -40,4 +40,8 @@ export default class MemoryChangesStorage implements ChangesStorage {
     destroy(): Promise<void> {
         return Promise.resolve();
     }
+
+    public getResourceName(): string {
+        return "Memory";
+    }
 }

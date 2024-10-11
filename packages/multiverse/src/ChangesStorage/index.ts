@@ -9,4 +9,6 @@ export default interface ChangesStorage {
 
     deploy(): Promise<void>;
     destroy(): Promise<void>;
+
+    getResourceName(): string;
 }

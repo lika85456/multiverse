@@ -250,4 +250,8 @@ export default class S3SnapshotStorage implements SnapshotStorage {
     public async destroy(): Promise<void> {
         await this.deployer.destroy();
     }
+
+    public getResourceName() {
+        return this.options.bucketName;
+    }
 }

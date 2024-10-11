@@ -1,88 +1,31 @@
-// import { S3 } from "@aws-sdk/client-s3";
-// import type { AwsToken } from "..";
+import BuildBucket from "./BuildBucket";
 
-// export default class BuildBucket {
+describe("<BuildBucket>", () => {
+    const bucketName = "mv-test-bucket-" + Math.random().toString(36).substring(7);
 
-//     private s3: S3;
+    const bucket = new BuildBucket(bucketName, {
+        region: "eu-central-1",
+        awsToken: undefined as unknown as any
+    });
 
-//     constructor(public name: string, private options: {
-//         region: string;
-//         awsToken: AwsToken;
-//     }) {
-//         this.s3 = new S3({
-//             region: this.options.region,
-//             credentials: this.options.awsToken
-//         });
-//     }
+    afterAll(async() => {
+        await bucket.destroy();
+    });
 
-//     async deploy() {
-//         await this.s3.createBucket({ Bucket: this.name });
-//     }
-
-//     async destroy() {
-//         await this.s3.deleteBucket({ Bucket: this.name });
-//     }
-
-//     async exists() {
-//         try {
-//             await this.s3.headBucket({ Bucket: this.name });
-
-//             return true;
-//         } catch (e) {
-//             return false;
-//         }
-//     }
-
-//     async uploadLatestBuild(zipPath: string) {
-//         const key = "latest.zip";
-
-//         await this.s3.putObject({
-//             Bucket: this.name,
-//             Key: key,
-//             Body: zipPath
-//         });
-//     }
-
-//     async getLatestBuildKey(): Promise<{
-//         bucket: string,
-//         key: string
-//     }> {
-//         return {
-//             bucket: this.name,
-//             key: "latest.zip"
-//         };
-//     }
-// }
-
-describe('<BuildBucket>', () => {
-    const bucketName = 'mv-test-bucket-'+Math.random().toString(36).substring(7);
-
-    it('should deploy a bucket', async () => {
-        const bucket = new BuildBucket(bucketName, {
-            region: 'us-west-1',
-            awsToken: new AwsToken({
-                accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-                secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!
-            })
-        });
-
+    it("should deploy a bucket", async() => {
         await bucket.deploy();
 
         const exists = await bucket.exists();
         expect(exists).toBe(true);
     });
 
-    it('should upload a build', async () => {
-        const bucket = new BuildBucket(bucketName, {
-            region: 'us-west-1',
-            awsToken: new AwsToken({
-                accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-                secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!
-            })
-        });
-
-        await bucket.uploadLatestBuild('./latest.zip');
+    it("should upload a build", async() => {
+        await bucket.uploadLatestBuild(Buffer.from("test"));
     });
 
-    
+    it("should get the latest build key", async() => {
+        const key = await bucket.getLatestBuildKey();
+        expect(key.S3Bucket).toBe(bucketName);
+        expect(key.S3Key).toBe("latest.zip");
+    });
 });

@@ -126,6 +126,10 @@ export default class DynamoInfrastructureStorage extends InfrastructureStorage {
         });
     }
 
+    public getResourceName(): string {
+        return this.options.tableName;
+    }
+
     public async set(dbName: string, infrastructure: Infrastructure): Promise<void> {
 
         await this.dynamo.send(new PutCommand({

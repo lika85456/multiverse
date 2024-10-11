@@ -46,6 +46,10 @@ export default class MemoryInfrastructureStorage extends InfrastructureStorage {
         this.storage.clear();
     }
 
+    public getResourceName(): string {
+        return "Memory";
+    }
+
     public async exists() {
         return true;
     }

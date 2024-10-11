@@ -18,6 +18,7 @@ import fs from "fs/promises";
 import type { AwsToken } from "../core/AwsToken";
 import type { WorkerType } from "../Compute/Worker";
 import type { ScalingTargetConfiguration } from "../InfrastructureStorage";
+import BuildBucket from "../BuildBucket/BuildBucket";
 
 const log = logger.getSubLogger({ name: "LambdaOrchestrator" });
 
@@ -126,7 +127,7 @@ export default class LambdaOrchestrator implements Orchestrator {
     /**
      * Builds the orchestrator lambda function and uploads it to s3 source bucket
      */
-    public async build(orchestratorSourceCodeBucket: string) {
+    public async build(buildBucket: BuildBucket) {
         // 1. build the orchestrator (run pnpm build:orchestrator)
         const { exec } = await import("child_process");
 
@@ -180,20 +181,7 @@ export default class LambdaOrchestrator implements Orchestrator {
 
         log.debug("Zip created");
 
-        // return buffer;
-
-        // upload to s3
-        const { S3, PutObjectCommand } = await import("@aws-sdk/client-s3");
-        const s3 = new S3({
-            region: this.options.databaseId.region,
-            credentials: this.options.awsToken
-        });
-
-        await s3.send(new PutObjectCommand({
-            Bucket: orchestratorSourceCodeBucket,
-            Key: "orchestrator.zip",
-            Body: buffer
-        }));
+        await buildBucket.uploadLatestBuild(buffer);
     }
 
     public lambdaName() {
@@ -276,11 +264,12 @@ export default class LambdaOrchestrator implements Orchestrator {
     }
 
     private async deployOrchestratorLambda({
-        changesTable, snapshotBucket, infrastructureTable, databaseConfiguration
+        changesTable, snapshotBucket, infrastructureTable, databaseConfiguration, buildBucket
     }: {
         changesTable: string;
         snapshotBucket: string;
         infrastructureTable: string;
+        buildBucket: string;
         databaseConfiguration: StoredDatabaseConfiguration;
     }) {
         log.debug("Deploying orchestrator lambda function", { configuration: databaseConfiguration });
@@ -296,17 +285,24 @@ export default class LambdaOrchestrator implements Orchestrator {
 
         orchestratorEnvSchema.parse(variables);
 
+        const buildBucketInstance = new BuildBucket(buildBucket, {
+            region: this.options.databaseId.region,
+            awsToken: this.options.awsToken
+        });
+
+        const sourceCode = await buildBucketInstance.getLatestBuildKey();
+
+        if (!sourceCode) {
+            throw new Error("There is no source code for orchestrator lambda available");
+        }
+
         let result;
         let tries = 0;
         while (tries < 3) {
             try {
                 result = await this.lambda.createFunction({
                     // Code: { ZipFile: await this.build(), },
-                    Code: {
-                        // eslint-disable-next-line turbo/no-undeclared-env-vars
-                        S3Bucket: process.env.ORCHESTRATOR_SOURCE_BUCKET,
-                        S3Key: "orchestrator.zip"
-                    },
+                    Code: sourceCode,
                     FunctionName: this.lambdaName(),
                     Role: await this.lambdaRoleARN(),
                     Runtime: Runtime.nodejs18x,
@@ -396,11 +392,12 @@ export default class LambdaOrchestrator implements Orchestrator {
     }
 
     public async deploy({
-        changesTable, snapshotBucket, infrastructureTable, databaseConfiguration, scalingTargetConfiguration
+        changesTable, snapshotBucket, infrastructureTable, databaseConfiguration, scalingTargetConfiguration, buildBucket
     }: {
         changesTable: string;
         snapshotBucket: string;
         infrastructureTable: string;
+        buildBucket: string;
         databaseConfiguration: StoredDatabaseConfiguration;
         scalingTargetConfiguration: ScalingTargetConfiguration;
     }) {
@@ -423,7 +420,8 @@ export default class LambdaOrchestrator implements Orchestrator {
                 changesTable,
                 snapshotBucket,
                 infrastructureTable,
-                databaseConfiguration
+                databaseConfiguration,
+                buildBucket
             }).catch(e => errors.push(e)),
             this.deployPartition({
                 snapshotBucket,
