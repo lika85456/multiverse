@@ -74,11 +74,30 @@ export async function handler(
 
     }
 
-    // @ts-ignore
-    const result = await orchestrator[e.event](...e.payload);
+    try {
+        // @ts-ignore
+        const result = await orchestrator[e.event](...e.payload);
 
-    return {
-        statusCode: 200,
-        body: JSON.stringify(result)
-    };
+        return {
+            statusCode: 200,
+            body: JSON.stringify(result)
+        };
+    } catch (e: unknown) {
+        const errorMessage = e instanceof Error ? `${e.message}\n${e.stack}` : JSON.stringify(e);
+        log.error(errorMessage);
+
+        if (ORCHESTRATOR_ENV.NODE_ENV === "production") {
+
+            return {
+                statusCode: 500,
+                body: "Internal Server Error"
+            };
+        }
+
+        return {
+            statusCode: 500,
+            body: errorMessage
+        };
+    }
+
 }

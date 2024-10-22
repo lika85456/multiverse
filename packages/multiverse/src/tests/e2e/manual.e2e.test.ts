@@ -10,7 +10,8 @@ describe.skip("Multiverse manual", () => {
 
     const multiverse = new Multiverse({
         region,
-        awsToken: undefined as any
+        awsToken: undefined as any,
+        name: "manual"
     });
 
     // afterAll(async() => {
@@ -25,7 +26,7 @@ describe.skip("Multiverse manual", () => {
             secretTokens: [{
                 name: "hovnokleslo",
                 secret: "hovnokleslo",
-                validUntil: Number.MAX_SAFE_INTEGER
+                validUntil: Number.MAX_SAFE_INTEGER/1000
             }],
             space: "l2",
             ...config
@@ -61,7 +62,7 @@ describe.skip("Multiverse manual", () => {
             throw new Error("Database not found");
         }
 
-        await db.add(vectors);
+        await db.addAll(vectors, 5 * 60 * 1000);
     });
 
     it("should respond with amount of stored vectors", async() => {
@@ -71,7 +72,7 @@ describe.skip("Multiverse manual", () => {
             throw new Error("Database not found");
         }
 
-        const count = await db;
+        const count = await db.;
         expect(count).toBe(1000);
     });
 

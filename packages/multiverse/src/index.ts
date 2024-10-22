@@ -22,9 +22,9 @@ export type MultiverseDatabaseConfiguration = StoredDatabaseConfiguration & Data
 export interface IMultiverseDatabase {
     query(query: Query): Promise<QueryResult>;
 
-    add(vector: NewVector[]): Promise<void>;
+    add(vector: NewVector[]): Promise<{unprocessedItems: string[]}>;
 
-    remove(label: string[]): Promise<void>;
+    remove(label: string[]): Promise<{unprocessedItems: string[]}>;
 
     getConfiguration(): Promise<MultiverseDatabaseConfiguration>;
     updateConfiguration(configuration: MultiverseDatabaseConfiguration): Promise<void>;
@@ -70,12 +70,32 @@ export class MultiverseDatabase implements IMultiverseDatabase {
         return this.orchestrator.query(query);
     }
 
-    public async add(vector: NewVector[]) {
-        await this.orchestrator.addVectors(vector);
+    public async add(vector: NewVector[]): Promise<{unprocessedItems: string[]}> {
+        return await this.orchestrator.addVectors(vector);
     }
 
-    public async remove(label: string[]) {
-        await this.orchestrator.removeVectors(label);
+    /**
+     * will add all vectors, but might take some time if database needs to scale up
+     * @param vector
+     */
+    public async addAll(vector: NewVector[], timeLimit: number): Promise<void> {
+        let unprocessedItems = vector;
+        let processedItems: NewVector[] = [];
+        const startTime = Date.now();
+
+        // TODO implement time limit properly
+        while (unprocessedItems.length > 0) {
+            if (Date.now() - startTime > timeLimit) {
+                throw new Error("Time limit exceeded");
+            }
+            const { unprocessedItems: newUnprocessedItems } = await this.add(unprocessedItems);
+            processedItems = processedItems.concat(unprocessedItems);
+            unprocessedItems = newUnprocessedItems.map(item => vector.find(v => v.label === item)).filter(Boolean) as NewVector[];
+        }
+    }
+
+    public async remove(label: string[]): Promise<{unprocessedItems: string[]}> {
+        return await this.orchestrator.removeVectors(label);
     }
 
     public async getConfiguration(): Promise<MultiverseDatabaseConfiguration> {
@@ -145,6 +165,7 @@ export default class Multiverse implements IMultiverse {
         ]);
 
         // TODO build and upload orchestrator source to s3
+        await LambdaOrchestrator.build(this.buildBucket);
     }
 
     public async destroySharedInfrastructure() {

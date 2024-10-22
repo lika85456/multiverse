@@ -217,7 +217,7 @@ export default class LambdaWorker implements Worker {
             Payload: JSON.stringify({ body: JSON.stringify(payloadWithMetadata) })
         });
 
-        const uintPayload = new Uint8Array(result.Payload as ArrayBuffer);
+        const uintPayload = new Uint8Array(result.Payload as unknown as Buffer);
         const payloadString = Buffer.from(uintPayload).toString("utf-8");
         const parsedPayload = JSON.parse(payloadString);
 

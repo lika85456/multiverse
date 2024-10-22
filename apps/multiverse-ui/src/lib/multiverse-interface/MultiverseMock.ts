@@ -134,14 +134,14 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
         }, 0);
     }
 
-    async add(vector: NewVector[]): Promise<void> {
+    async add(vector: NewVector[]): Promise<{unprocessedItems: string[]}> {
         await loadJsonFile();
 
         await sleep(200);
 
         const database = databases.get(this.databaseConfiguration.name);
         if (!database) {
-            return Promise.resolve();
+            return Promise.resolve({ unprocessedItems: [] });
         }
 
         // remove old vectors with the same label to simulate replacement
@@ -172,9 +172,11 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
             queueName: this.databaseConfiguration.statisticsQueueName
         });
         await sqs.push(event);
+
+        return Promise.resolve({ unprocessedItems: [] });
     }
 
-    async remove(label: string[]): Promise<void> {
+    async remove(label: string[]): Promise<{unprocessedItems: string[]}> {
         await sleep(200);
 
         const database = databases.get(this.databaseConfiguration.name);
@@ -206,7 +208,7 @@ class MultiverseDatabaseMock implements IMultiverseDatabase {
         });
         await sqs.push(event);
 
-        return Promise.resolve();
+        return Promise.resolve({ unprocessedItems: [] });
     }
 
     async query(query: Query): Promise<QueryResult> {
@@ -370,7 +372,7 @@ export class MultiverseMock implements IMultiverse {
         return Promise.resolve();
     }
 
-    async removeSharedInfrastructure(): Promise<void> {
+    async destroySharedInfrastructure(): Promise<void> {
         const databases = await this.listDatabases();
         await Promise.all(databases.map(async(database) => {
             await this.removeDatabase((await database.getConfiguration()).name);

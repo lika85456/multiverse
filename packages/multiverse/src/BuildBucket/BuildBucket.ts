@@ -50,7 +50,18 @@ export default class BuildBucket {
     async getLatestBuildKey(): Promise<{
         S3Bucket: string,
         S3Key: string
-    }> {
+    } | null> {
+
+        try {
+            await this.s3.headObject({
+                Bucket: this.name,
+                Key: "latest.zip"
+            });
+
+        } catch (e) {
+            return null;
+        }
+
         return {
             S3Bucket: this.name,
             S3Key: "latest.zip"

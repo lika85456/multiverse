@@ -8,7 +8,7 @@ import DynamoInfrastructureStorage from "../../InfrastructureStorage/DynamoInfra
 import S3SnapshotStorage from "../../SnapshotStorage/S3SnapshotStorage";
 import LambdaOrchestrator from "../LambdaOrchestrator";
 
-describe.only("<LambdaOrchestrator>", () => {
+describe("<LambdaOrchestrator>", () => {
 
     const databaseId: DatabaseID = {
         name: Math.random().toString(36).substring(7),
@@ -16,7 +16,7 @@ describe.only("<LambdaOrchestrator>", () => {
     };
 
     const databaseConfiguration: StoredDatabaseConfiguration = {
-        dimensions: 3,
+        dimensions: 1536,
         space: "l2",
         secretTokens: [{
             name: "hovnokleslo",
@@ -63,7 +63,7 @@ describe.only("<LambdaOrchestrator>", () => {
         ]);
 
         // build orchestrator
-        await orchestrator.build(buildBucket);
+        await LambdaOrchestrator.build(buildBucket);
 
         await orchestrator.deploy({
             changesTable: changesStorage.getResourceName(),

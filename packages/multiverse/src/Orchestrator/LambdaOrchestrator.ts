@@ -60,27 +60,36 @@ export default class LambdaOrchestrator implements Orchestrator {
 
         const uintPayload = new Uint8Array(result.Payload as unknown as ArrayBuffer);
         const payloadString = Buffer.from(uintPayload).toString("utf-8");
-        const parsedPayload = JSON.parse(payloadString);
 
-        log.debug("Orchestrator invoked", {
-            lambdaName: this.lambdaName(),
-            request: eventPayload,
-            response: parsedPayload
-        });
+        try {
+            const parsedPayload = JSON.parse(payloadString);
 
-        if (result.FunctionError) {
-            log.error(JSON.stringify(parsedPayload, null, 4));
-            throw new Error(parsedPayload);
+            log.debug("Orchestrator invoked", {
+                lambdaName: this.lambdaName(),
+                request: eventPayload,
+                response: parsedPayload
+            });
+
+            if (result.FunctionError) {
+                log.error(JSON.stringify(parsedPayload, null, 4));
+                throw new Error(parsedPayload);
+            }
+
+            return parsedPayload.body && JSON.parse(parsedPayload.body);
+        } catch (e) {
+            log.error("Failed to parse response from orchestrator lambda", {
+                response: payloadString,
+                error: e
+            });
+            throw e;
         }
-
-        return parsedPayload.body && JSON.parse(parsedPayload.body);
     }
 
     public async query(query: Query): Promise<QueryResult> {
         return this.request("query", [query]);
     }
 
-    public async addVectors(vectors: NewVector[]): Promise<void> {
+    public async addVectors(vectors: NewVector[]): Promise<{unprocessedItems: string[]}> {
         const payloadByteSize = JSON.stringify(vectors).length;
 
         if (payloadByteSize > this.MAXIMUM_PAYLOAD_SIZE) {
@@ -96,15 +105,15 @@ export default class LambdaOrchestrator implements Orchestrator {
                 promises.push(this.request("addVectors", [vectors.slice(start, end)]));
             }
 
-            await Promise.all(promises);
+            const results = await Promise.all(promises);
 
-            return;
+            return { unprocessedItems: results.flatMap(r => r.unprocessedItems) };
         }
 
         return this.request("addVectors", [vectors]);
     }
 
-    public async removeVectors(labels: string[]): Promise<void> {
+    public async removeVectors(labels: string[]): Promise<{unprocessedItems: string[]}> {
         return this.request("removeVectors", [labels]);
     }
 
@@ -127,7 +136,7 @@ export default class LambdaOrchestrator implements Orchestrator {
     /**
      * Builds the orchestrator lambda function and uploads it to s3 source bucket
      */
-    public async build(buildBucket: BuildBucket) {
+    public static async build(buildBucket: BuildBucket) {
         // 1. build the orchestrator (run pnpm build:orchestrator)
         const { exec } = await import("child_process");
 
@@ -164,7 +173,7 @@ export default class LambdaOrchestrator implements Orchestrator {
         for (const path of buildFolderPaths) {
             try {
                 await fs.access(path);
-                buildFolderPath = path;
+                buildFolderPath = path; // packages/multiverse/src/Orchestrator/dist
                 break;
             } catch (e) {
                 // ignore
@@ -290,10 +299,18 @@ export default class LambdaOrchestrator implements Orchestrator {
             awsToken: this.options.awsToken
         });
 
-        const sourceCode = await buildBucketInstance.getLatestBuildKey();
+        let sourceCode = await buildBucketInstance.getLatestBuildKey();
 
         if (!sourceCode) {
-            throw new Error("There is no source code for orchestrator lambda available");
+            // throw new Error("There is no source code for orchestrator lambda available");
+            log.info("There is no source code for orchestrator lambda available. Trying to build it");
+
+            await LambdaOrchestrator.build(buildBucketInstance);
+            sourceCode = await buildBucketInstance.getLatestBuildKey();
+
+            if (!sourceCode) {
+                throw new Error("There is no source code for orchestrator lambda available even after rebuilding.");
+            }
         }
 
         let result;
@@ -301,14 +318,14 @@ export default class LambdaOrchestrator implements Orchestrator {
         while (tries < 3) {
             try {
                 result = await this.lambda.createFunction({
-                    // Code: { ZipFile: await this.build(), },
                     Code: sourceCode,
                     FunctionName: this.lambdaName(),
                     Role: await this.lambdaRoleARN(),
                     Runtime: Runtime.nodejs18x,
                     Architectures: [Architecture.arm64],
                     Handler: "index.handler",
-                    Timeout: 60,
+                    Timeout: 300,
+                    MemorySize: 512,
                     Environment: {
                         Variables: {
                             NODE_ENV: process.env.NODE_ENV ?? "development",
@@ -319,7 +336,7 @@ export default class LambdaOrchestrator implements Orchestrator {
 
                 break;
             } catch (e: any) {
-                log.error(`Failed to create orchestrator lambda: ${e.message}`);
+                log.error(`Failed to create orchestrator lambda: ${e.message} ${e.stack}`);
                 tries++;
             }
 
@@ -446,7 +463,7 @@ export default class LambdaOrchestrator implements Orchestrator {
                 })()
             ]);
 
-            throw new Error(`Failed to deploy orchestrator: ${errors.map(e => e.message).join(", ")}`);
+            throw new Error(`Failed to deploy orchestrator: ${errors.map(e => `${e.message} ${e.stack}`).join(", ")}`);
         }
 
         await infrastructureStorage.set(this.options.databaseId.name, {
@@ -492,12 +509,13 @@ export default class LambdaOrchestrator implements Orchestrator {
         });
     }
 
-    public async updateCode(orchestratorSourceCodeBucket: string) {
+    public async updateCode(buildBucket: BuildBucket) {
+
+        const sourceCode = await buildBucket.getLatestBuildKey();
+
         const result = await this.lambda.updateFunctionCode({
             FunctionName: this.lambdaName(),
-            // ZipFile: await this.build(),
-            S3Bucket: orchestratorSourceCodeBucket,
-            S3Key: "orchestrator.zip"
+            ...sourceCode
         });
 
         log.debug("Updated lambda function code", { result, });

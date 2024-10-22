@@ -25,6 +25,11 @@ describe("<BuildBucket>", () => {
 
     it("should get the latest build key", async() => {
         const key = await bucket.getLatestBuildKey();
+
+        if (!key) {
+            throw new Error("Key not found");
+        }
+
         expect(key.S3Bucket).toBe(bucketName);
         expect(key.S3Key).toBe("latest.zip");
     });

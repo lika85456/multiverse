@@ -18,6 +18,7 @@
     "start:docs": "cd apps/docs && pnpm start",
     "test:unit": "vitest run unit",
     "test:integration": "vitest run integration",
+    "test": "vitest run",
     "test:watch": "vitest --watch",
     "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit"

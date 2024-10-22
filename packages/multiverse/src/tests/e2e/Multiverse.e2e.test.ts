@@ -10,7 +10,8 @@ describe.each([
 
     const multiverse = new Multiverse({
         region,
-        awsToken: undefined as any
+        awsToken: undefined as any,
+        name: "test"
     });
 
     afterAll(async() => {
@@ -25,7 +26,7 @@ describe.each([
             secretTokens: [{
                 name: "hovnokleslo",
                 secret: "hovnokleslo",
-                validUntil: Number.MAX_SAFE_INTEGER
+                validUntil: Number.MAX_SAFE_INTEGER / 1000
             }],
             space: "l2",
             ...config
@@ -61,7 +62,7 @@ describe.each([
             throw new Error("Database not found");
         }
 
-        await db.add(vectors);
+        await db.addAll(vectors, 5 * 60 * 1000);
     });
 
     it("should query among them correctly", async() => {
@@ -73,7 +74,7 @@ describe.each([
 
         const result = await db.query({
             k: 10,
-            sendVector: true,
+            sendVector: false,
             vector: Vector.random(config.dimensions)
         });
 

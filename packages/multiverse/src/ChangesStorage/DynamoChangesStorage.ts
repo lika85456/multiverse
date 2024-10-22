@@ -158,7 +158,7 @@ export default class DynamoChangesStorage implements ChangesStorage {
         });
     }
 
-    public async add(changes: StoredVectorChange[], batchIndexOffset = 0): Promise<void> {
+    public async add(changes: StoredVectorChange[], batchIndexOffset = 0): Promise<{unprocessedItems: string[]}> {
 
         if (changes.length > 1000) {
             throw new Error("Maximum 1000 changes can be added at once");
@@ -174,12 +174,20 @@ export default class DynamoChangesStorage implements ChangesStorage {
                 batches.push(changes.slice(i, i + MAXIMUM_BATCH_SIZE));
             }
 
-            // for (const batch of batches) {
-            for (let i = 0; i < batches.length; i++) {
-                await this.add(batches[i], i * MAXIMUM_BATCH_SIZE);
+            const unprocessedItems: string[] = [];
+
+            const batchResults = await Promise.allSettled(batches.map(async(batch, i) => {
+                return await this.add(batch, i * MAXIMUM_BATCH_SIZE);
+            }));
+
+            for (let i = 0; i < batchResults.length; i++) {
+                const result = batchResults[i];
+                unprocessedItems.push(...result.status === "fulfilled"
+                    ? result.value.unprocessedItems
+                    : batches[i].map(change => change.action === "add" ? change.vector.label : change.label));
             }
 
-            return;
+            return { unprocessedItems };
         }
 
         const result = await this.dynamo.send(new BatchWriteCommand({
@@ -206,11 +214,17 @@ export default class DynamoChangesStorage implements ChangesStorage {
             ReturnConsumedCapacity: "TOTAL",
         }));
 
-        if (result.UnprocessedItems && result.UnprocessedItems[this.options.tableName]) {
-            throw new Error("Unprocessed items");
-        }
+        // if (result.UnprocessedItems && result.UnprocessedItems[this.options.tableName]) {
+        //     throw new Error("Unprocessed items");
+        // }
 
         logger.debug("Batch write result consumed capacity: " + result.ConsumedCapacity?.map(c => c.CapacityUnits).join(", "));
+
+        return {
+            unprocessedItems: result.UnprocessedItems
+                ? (result.UnprocessedItems[this.options.tableName] ?? [])?.map(item => item.PutRequest?.Item?.label)
+                : []
+        };
     }
 
     public async* changesAfter(timestamp: number): AsyncGenerator<StoredVectorChange, void, unknown> {

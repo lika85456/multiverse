@@ -5,10 +5,10 @@ export default class MemoryChangesStorage implements ChangesStorage {
 
     private changes: StoredVectorChange[] = [];
 
-    add(changes: StoredVectorChange[]): Promise<void> {
+    add(changes: StoredVectorChange[]): Promise<{unprocessedItems: string[]}> {
         this.changes.push(...changes);
 
-        return Promise.resolve();
+        return Promise.resolve({ unprocessedItems: [] });
     }
 
     public async* changesAfter(timestamp: number): AsyncGenerator<StoredVectorChange, void, unknown> {

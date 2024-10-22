@@ -103,9 +103,17 @@ export default class OrchestratorWorker implements Orchestrator {
             parseInt(worker[0])
         );
 
-        const updates = await this.options.changesStorage.getAllChangesAfter(oldestUpdateTimestamp);
+        let updates = await this.options.changesStorage.getAllChangesAfter(oldestUpdateTimestamp);
 
         const latestSnapshot = await this.options.snapshotStorage.latestWithoutDownload();
+
+        const updatesVectorDimensions = updates.length * this.options.databaseConfiguration.dimensions;
+
+        // TODO: this is a last resort, this should not happen
+        if (updatesVectorDimensions > 250_000) {
+            await this.flushChangesStorage();
+            updates = [];
+        }
 
         const result = await worker[1].query({
             query,
@@ -134,10 +142,11 @@ export default class OrchestratorWorker implements Orchestrator {
     }
 
     private async flushChangesStorage() {
+        // THIS SHOULD BE LOCKED and done only once if needed
         log.debug("Flushing changes storage");
 
         const changes = await this.options.changesStorage.getAllChangesAfter(0);
-        await this.options.changesStorage.clearBefore(Number.MAX_SAFE_INTEGER);
+        await this.options.changesStorage.clearBefore(Number.MAX_SAFE_INTEGER / 1000);
 
         const infrastructure = await this.options.infrastructureStorage.get(this.options.databaseId.name);
         if (!infrastructure) {
@@ -159,8 +168,16 @@ export default class OrchestratorWorker implements Orchestrator {
         await worker.requestAll("loadLatestSnapshot", [], "all", infrastructure.scalingTargetConfiguration);
     }
 
-    public async addVectors(vectors: NewVector[]): Promise<void> {
-        await this.options.changesStorage.add(vectors.map(vector => ({
+    private shouldFlush(changesStored: number) {
+        if (changesStored * this.options.databaseConfiguration.dimensions > 100_000) {
+            return true;
+        }
+
+        return false;
+    }
+
+    public async addVectors(vectors: NewVector[]): Promise<{unprocessedItems: string[]}> {
+        const result = await this.options.changesStorage.add(vectors.map(vector => ({
             action: "add",
             timestamp: Date.now(),
             vector
@@ -177,13 +194,15 @@ export default class OrchestratorWorker implements Orchestrator {
             dataSize: -1
         });
 
-        if (count > this.maxChangesCount) {
+        if (this.shouldFlush(count)) {
             await this.flushChangesStorage();
         }
+
+        return result;
     }
 
-    public async removeVectors(labels: string[]): Promise<void> {
-        await this.options.changesStorage.add(labels.map(label => ({
+    public async removeVectors(labels: string[]): Promise<{unprocessedItems: string[]}> {
+        const result = await this.options.changesStorage.add(labels.map(label => ({
             action: "remove",
             timestamp: Date.now(),
             label
@@ -200,9 +219,11 @@ export default class OrchestratorWorker implements Orchestrator {
             dataSize: -1
         });
 
-        if (count > this.maxChangesCount) {
+        if (this.shouldFlush(count)) {
             await this.flushChangesStorage();
         }
+
+        return result;
     }
 
     public async getConfiguration(): Promise<StoredDatabaseConfiguration> {
