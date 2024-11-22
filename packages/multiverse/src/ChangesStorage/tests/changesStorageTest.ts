@@ -30,7 +30,7 @@ export default function changesStorageTest(storage: ChangesStorage) {
         const changes: StoredVectorChange[] = [
             {
                 action: "add",
-                timestamp: Date.now(),
+                timestamp: 0,
                 vector: {
                     label: "test",
                     metadata: {},
@@ -39,7 +39,7 @@ export default function changesStorageTest(storage: ChangesStorage) {
             },
             {
                 action: "add",
-                timestamp: Date.now(),
+                timestamp: 1,
                 vector: {
                     label: "test",
                     metadata: {},
@@ -48,7 +48,7 @@ export default function changesStorageTest(storage: ChangesStorage) {
             },
             {
                 action: "remove",
-                timestamp: Date.now(),
+                timestamp: 2,
                 label: "test"
             }
         ];
@@ -79,6 +79,13 @@ export default function changesStorageTest(storage: ChangesStorage) {
 
         const readChanges = await readWholeIterator(storage.changesAfter(0));
         expect(readChanges).toHaveLength(100);
+
+        // also compare the vectors
+        for (let i = 0; i < 100; i++) {
+            const change = readChanges[i];
+            if (change.action !== "add") throw new Error("Expected add action");
+            expect(change.vector.vector).toEqual([i, i, i]);
+        }
     });
 
     it("should count", async() => {
@@ -125,5 +132,24 @@ export default function changesStorageTest(storage: ChangesStorage) {
 
         // @ts-ignore
         expect(readChanges[0].vector.vector).toEqual(vector.vector.map((v) => expect.closeTo(v)));
+    });
+
+    it("should handle 1000x1536 vectors", async() => {
+        await storage.clearBefore(Date.now() + 10000);
+
+        const vectors = Array.from({ length: 1000 }, (_, i) => ({
+            label: i + "",
+            metadata: {},
+            vector: Array.from({ length: 1536 }, (_, j) => j + i)
+        }));
+
+        await storage.add(vectors.map(vector => ({
+            action: "add",
+            timestamp: Date.now(),
+            vector
+        })));
+
+        const readChanges = await readWholeIterator(storage.changesAfter(0));
+        expect(readChanges).toHaveLength(1000);
     });
 }
