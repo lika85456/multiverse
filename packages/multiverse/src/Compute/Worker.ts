@@ -46,7 +46,7 @@ export interface Worker {
     update(updates: StoredVectorChange[]): Promise<StatefulResponse<void>>;
 
     saveSnapshot(): Promise<StatefulResponse<void>>;
-    saveSnapshotWithUpdates(updates: StoredVectorChange[]): Promise<StatefulResponse<void>>;
+    saveSnapshotWithUpdates(): Promise<StatefulResponse<void>>;
     loadLatestSnapshot(): Promise<StatefulResponse<void>>;
 
     count(): Promise<StatefulResponse<CountResponse>>;

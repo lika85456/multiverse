@@ -214,8 +214,8 @@ export default class PartitionWorker implements Worker {
         return await this.request("saveSnapshot", []);
     }
 
-    public async saveSnapshotWithUpdates(updates: StoredVectorChange[]): Promise<StatefulResponse<void>> {
-        return await this.request("saveSnapshotWithUpdates", [updates]);
+    public async saveSnapshotWithUpdates(): Promise<StatefulResponse<void>> {
+        return await this.request("saveSnapshotWithUpdates", []);
     }
 
     public async loadLatestSnapshot(): Promise<StatefulResponse<void>> {

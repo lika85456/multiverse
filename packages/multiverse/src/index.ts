@@ -8,10 +8,10 @@ import DynamoInfrastructureStorage from "./InfrastructureStorage/DynamoInfrastru
 import type Orchestrator from "./Orchestrator/Orchestrator";
 import LambdaOrchestrator from "./Orchestrator/LambdaOrchestrator";
 import logger from "@multiverse/log";
-import DynamoChangesStorage from "./ChangesStorage/DynamoChangesStorage";
 import S3SnapshotStorage from "./SnapshotStorage/S3SnapshotStorage";
 import type { AwsToken } from "./core/AwsToken";
 import BuildBucket from "./BuildBucket/BuildBucket";
+import BucketChangesStorage from "./ChangesStorage/BucketChangesStorage";
 
 const log = logger.getSubLogger({ name: "Multiverse" });
 
@@ -206,11 +206,11 @@ export default class Multiverse implements IMultiverse {
             region: options.region
         };
 
-        // todo changes storage should be shared
-        const changesStorage = new DynamoChangesStorage({
-            databaseId,
-            tableName: `mv-changes-${options.name}`,
-            awsToken: this.options.awsToken
+        // todo changes storage should be shared ?
+        const changesStorage = new BucketChangesStorage(`mv-changes-${options.name}`, {
+            region: this.options.region,
+            awsToken: this.options.awsToken,
+            maxObjectAge: 1000 * 60 * 60 // 1 hour
         });
 
         const snapshotStorage = new S3SnapshotStorage({
@@ -231,7 +231,7 @@ export default class Multiverse implements IMultiverse {
             changesStorage.deploy(),
             snapshotStorage.deploy(),
             orchestrator.deploy({
-                changesTable: changesStorage.getResourceName(),
+                changesStorage: changesStorage.getResourceName(),
                 snapshotBucket: snapshotStorage.getResourceName(),
                 buildBucket: this.buildBucket.getResourceName(),
                 databaseConfiguration: options,
@@ -273,10 +273,10 @@ export default class Multiverse implements IMultiverse {
             region: this.options.region
         };
 
-        const changesStorage = new DynamoChangesStorage({
-            databaseId,
-            tableName: `mv-changes-${name}`,
-            awsToken: this.options.awsToken
+        const changesStorage = new BucketChangesStorage(`mv-changes-${name}`, {
+            region: this.options.region,
+            awsToken: this.options.awsToken,
+            maxObjectAge: 1000 * 60 * 60 // 1 hour
         });
 
         const snapshotStorage = new S3SnapshotStorage({

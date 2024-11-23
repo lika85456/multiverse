@@ -59,10 +59,10 @@ export default class LambdaWorker implements Worker {
         });
     }
 
-    public async saveSnapshotWithUpdates(updates: StoredVectorChange[]): Promise<StatefulResponse<void>> {
+    public async saveSnapshotWithUpdates(): Promise<StatefulResponse<void>> {
         return await this.invoke({
             event: "saveSnapshotWithUpdates",
-            payload: [updates]
+            payload: []
         });
     }
 
@@ -151,6 +151,7 @@ export default class LambdaWorker implements Worker {
     public async deploy(options: {
         partition: number,
         snapshotBucket: string,
+        changesStorage: string,
         env: "development" | "production",
         configuration: DatabaseConfiguration,
         databaseId: DatabaseID
@@ -162,6 +163,7 @@ export default class LambdaWorker implements Worker {
             PARTITION: options.partition,
             SNAPSHOT_BUCKET: options.snapshotBucket,
             NODE_ENV: options.env,
+            BUCKET_CHANGES_STORAGE: options.changesStorage
         };
 
         databaseEnvSchema.parse(variables);

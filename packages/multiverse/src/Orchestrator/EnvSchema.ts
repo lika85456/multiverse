@@ -3,7 +3,7 @@ import { databaseId, storedDatabaseConfiguration } from "../core/DatabaseConfigu
 
 export const orchestratorEnvSchema = z.object({
     NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
-    CHANGES_TABLE: z.string(),
+    BUCKET_CHANGES_STORAGE: z.string(),
     SNAPSHOT_BUCKET: z.string(),
     DATABASE_IDENTIFIER: databaseId,
     DATABASE_CONFIG: storedDatabaseConfiguration,

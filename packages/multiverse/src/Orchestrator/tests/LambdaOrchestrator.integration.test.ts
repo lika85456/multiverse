@@ -1,5 +1,5 @@
 import BuildBucket from "../../BuildBucket/BuildBucket";
-import DynamoChangesStorage from "../../ChangesStorage/DynamoChangesStorage";
+import BucketChangesStorage from "../../ChangesStorage/BucketChangesStorage";
 import type { DatabaseID, StoredDatabaseConfiguration } from "../../core/DatabaseConfiguration";
 import type { NewVector } from "../../core/Vector";
 import { Vector } from "../../core/Vector";
@@ -25,10 +25,10 @@ describe("<LambdaOrchestrator>", () => {
         }]
     };
 
-    const changesStorage = new DynamoChangesStorage({
-        databaseId,
-        tableName: "multiverse-changes-" + databaseId.name,
-        awsToken: undefined as any
+    const changesStorage = new BucketChangesStorage("multiverse-changes-" + databaseId.name, {
+        region: databaseId.region,
+        awsToken: undefined as any,
+        maxObjectAge: 1000 * 60 * 60 // 1 hour
     });
 
     const infrastructureStorage = new DynamoInfrastructureStorage({
@@ -66,7 +66,7 @@ describe("<LambdaOrchestrator>", () => {
         await LambdaOrchestrator.build(buildBucket);
 
         await orchestrator.deploy({
-            changesTable: changesStorage.getResourceName(),
+            changesStorage: changesStorage.getResourceName(),
             infrastructureTable: infrastructureStorage.getResourceName(),
             snapshotBucket: snapshotStorage.getResourceName(),
             buildBucket: buildBucket.getResourceName(),

@@ -145,25 +145,22 @@ export default class OrchestratorWorker implements Orchestrator {
         // THIS SHOULD BE LOCKED and done only once if needed
         log.debug("Flushing changes storage");
 
-        const changes = await this.options.changesStorage.getAllChangesAfter(0);
-        await this.options.changesStorage.clearBefore(Number.MAX_SAFE_INTEGER / 1000);
-
         const infrastructure = await this.options.infrastructureStorage.get(this.options.databaseId.name);
         if (!infrastructure) {
             throw new Error(`Database ${this.options.databaseId.name} not found`);
         }
-
         const workers = await this.getWorkers(infrastructure);
+        const worker = Object.entries(workers)[0][1];
+
+        await worker.saveSnapshotWithUpdates();
+
+        await this.options.changesStorage.clearBefore(Number.MAX_SAFE_INTEGER / 1000);
 
         // TODO: implement partition
 
         if (Object.entries(workers).length > 1) {
             throw new Error("Only one partition is supported");
         }
-
-        const worker = Object.entries(workers)[0][1];
-
-        await worker.saveSnapshotWithUpdates(changes);
 
         await worker.requestAll("loadLatestSnapshot", [], "all", infrastructure.scalingTargetConfiguration);
     }

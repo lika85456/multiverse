@@ -24,6 +24,16 @@ export default class BuildBucket {
     }
 
     async destroy() {
+        // first clear
+        const objects = await this.s3.listObjectsV2({ Bucket: this.name });
+
+        if (objects.Contents) {
+            await this.s3.deleteObjects({
+                Bucket: this.name,
+                Delete: { Objects: objects.Contents.map(object => ({ Key: object.Key })) }
+            });
+        }
+
         await this.s3.deleteBucket({ Bucket: this.name });
     }
 

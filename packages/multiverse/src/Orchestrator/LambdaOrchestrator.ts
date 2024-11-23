@@ -61,6 +61,10 @@ export default class LambdaOrchestrator implements Orchestrator {
         const uintPayload = new Uint8Array(result.Payload as unknown as ArrayBuffer);
         const payloadString = Buffer.from(uintPayload).toString("utf-8");
 
+        if (payloadString.includes("The specif")) {
+            console.log("KOKOT");
+        }
+
         try {
             const parsedPayload = JSON.parse(payloadString);
 
@@ -273,9 +277,9 @@ export default class LambdaOrchestrator implements Orchestrator {
     }
 
     private async deployOrchestratorLambda({
-        changesTable, snapshotBucket, infrastructureTable, databaseConfiguration, buildBucket
+        changesStorage, snapshotBucket, infrastructureTable, databaseConfiguration, buildBucket
     }: {
-        changesTable: string;
+        changesStorage: string;
         snapshotBucket: string;
         infrastructureTable: string;
         buildBucket: string;
@@ -284,7 +288,7 @@ export default class LambdaOrchestrator implements Orchestrator {
         log.debug("Deploying orchestrator lambda function", { configuration: databaseConfiguration });
 
         const variables: OrchestratorEnvironment = {
-            CHANGES_TABLE: changesTable,
+            BUCKET_CHANGES_STORAGE: changesStorage,
             DATABASE_CONFIG: databaseConfiguration,
             SNAPSHOT_BUCKET: snapshotBucket,
             INFRASTRUCTURE_TABLE: infrastructureTable,
@@ -359,12 +363,13 @@ export default class LambdaOrchestrator implements Orchestrator {
     }
 
     private async deployPartition({
-        snapshotBucket, env, partition, databaseConfiguration
+        snapshotBucket, env, partition, databaseConfiguration, changesStorage
     }: {
         snapshotBucket: string;
         env: "development" | "production";
         partition: number;
         databaseConfiguration: StoredDatabaseConfiguration;
+        changesStorage: string;
     }) {
 
         log.info("Deploying partition", {
@@ -383,7 +388,8 @@ export default class LambdaOrchestrator implements Orchestrator {
             configuration: databaseConfiguration,
             databaseId: this.options.databaseId,
             env,
-            partition
+            partition,
+            changesStorage
         });
 
         log.info("Deployed partition", {
@@ -409,9 +415,9 @@ export default class LambdaOrchestrator implements Orchestrator {
     }
 
     public async deploy({
-        changesTable, snapshotBucket, infrastructureTable, databaseConfiguration, scalingTargetConfiguration, buildBucket
+        changesStorage, snapshotBucket, infrastructureTable, databaseConfiguration, scalingTargetConfiguration, buildBucket
     }: {
-        changesTable: string;
+        changesStorage: string;
         snapshotBucket: string;
         infrastructureTable: string;
         buildBucket: string;
@@ -434,17 +440,19 @@ export default class LambdaOrchestrator implements Orchestrator {
 
         await Promise.all([
             this.deployOrchestratorLambda({
-                changesTable,
+                changesStorage,
                 snapshotBucket,
                 infrastructureTable,
                 databaseConfiguration,
                 buildBucket
             }).catch(e => errors.push(e)),
+
             this.deployPartition({
                 snapshotBucket,
                 env: "production",
                 partition: 0,
-                databaseConfiguration
+                databaseConfiguration,
+                changesStorage
             }).catch(e => errors.push(e)),
         ]);
 

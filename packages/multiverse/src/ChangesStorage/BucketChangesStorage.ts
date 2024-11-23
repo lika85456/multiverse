@@ -61,7 +61,7 @@ export default class BucketChangesStorage implements ChangesStorage {
                 Body: await this.encode(changes),
                 ContentType: "application/json",
                 Metadata: { changes_count: changes.length.toString() + parseInt(latestObjectHead.Metadata.changes_count ?? "0") },
-                // WriteOffsetBytes: latestObjectHead.ContentLength
+                WriteOffsetBytes: latestObjectHead.ContentLength
             });
         }
 
@@ -167,6 +167,7 @@ export default class BucketChangesStorage implements ChangesStorage {
     }
 
     public async destroy(): Promise<void> {
+        await this.clearBefore(Date.now() + 10000000);
         await this.s3.deleteBucket({ Bucket: this.name });
     }
 

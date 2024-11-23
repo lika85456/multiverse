@@ -136,20 +136,33 @@ export default function changesStorageTest(storage: ChangesStorage) {
 
     it("should handle 1000x1536 vectors", async() => {
         await storage.clearBefore(Date.now() + 10000);
+        const length = 1000;
 
-        const vectors = Array.from({ length: 1000 }, (_, i) => ({
+        const vectors = Array.from({ length }, (_, i) => ({
             label: i + "",
             metadata: {},
-            vector: Array.from({ length: 1536 }, (_, j) => j + i)
+            vector: Array.from({ length }, (_, j) => j + i)
         }));
 
-        await storage.add(vectors.map(vector => ({
-            action: "add",
+        const changesToAdd = vectors.map(vector => ({
+            action: "add" as const,
             timestamp: Date.now(),
             vector
-        })));
+        }));
+
+        const half = changesToAdd.slice(0, length / 2);
+        const otherHalf = changesToAdd.slice(length / 2);
+
+        await Promise.all([
+            storage.add(half),
+            storage.add(otherHalf)
+        ]);
 
         const readChanges = await readWholeIterator(storage.changesAfter(0));
-        expect(readChanges).toHaveLength(1000);
+        expect(readChanges).toHaveLength(length);
+
+        // expect there are the same vectors (maybe in different order)
+        const readVectors = readChanges.map(change => change.action === "add" && change.vector.vector);
+        expect(readVectors).toEqual(vectors.map(vector => vector.vector));
     });
 }

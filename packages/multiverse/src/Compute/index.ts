@@ -10,6 +10,7 @@ import S3SnapshotStorage from "../SnapshotStorage/S3SnapshotStorage";
 import type { Worker } from "./Worker";
 import ComputeWorker from "./ComputeWorker";
 import { databaseEnvSchema } from "./EnvSchema";
+import BucketChangesStorage from "../ChangesStorage/BucketChangesStorage";
 
 if (!process.env.VARIABLES) {
     throw new Error("Missing environment variables");
@@ -26,10 +27,17 @@ const snapshotStorage = new S3SnapshotStorage({
     awsToken: undefined as any
 });
 
+const changesStorage = new BucketChangesStorage(env.BUCKET_CHANGES_STORAGE, {
+    region: env.DATABASE_IDENTIFIER.region,
+    awsToken: undefined as any,
+    maxObjectAge: 1000 * 60 * 60 // 1 hour
+});
+
 // TODO!: change size from ENV variables
 const databaseWorker = new ComputeWorker({
     partitionIndex: env.PARTITION,
     ephemeralLimit: 1024,
+    changesStorage,
     index,
     memoryLimit: 512,
     snapshotStorage
@@ -52,21 +60,34 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
     const e = JSON.parse(event.body) as DatabaseEvent;
 
-    // @ts-ignore
-    const result = await databaseWorker[e.event](...e.payload);
+    try {
+        // @ts-ignore
+        const result = await databaseWorker[e.event](...e.payload);
 
-    if (e.waitTime) {
-        await new Promise(resolve => setTimeout(resolve, e.waitTime));
+        if (e.waitTime) {
+            await new Promise(resolve => setTimeout(resolve, e.waitTime));
+        }
+
+        log.debug("Received event", {
+            event,
+            result,
+            waitTime: e.waitTime
+        });
+
+        return {
+            statusCode: 200,
+            body: JSON.stringify(result)
+        };
+    } catch (e) {
+        log.error("Error while processing event", {
+            event,
+            error: e
+        });
+
+        return {
+            statusCode: 500,
+            body: JSON.stringify(e)
+        };
     }
 
-    log.debug("Received event", {
-        event,
-        result,
-        waitTime: e.waitTime
-    });
-
-    return {
-        statusCode: 200,
-        body: JSON.stringify(result)
-    };
 }

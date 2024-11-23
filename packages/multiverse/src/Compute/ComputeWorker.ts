@@ -8,6 +8,7 @@ import type {
     Worker, WorkerQuery, WorkerQueryResult
 } from "./Worker";
 import type { StoredVectorChange } from "../ChangesStorage/StoredVector";
+import type ChangesStorage from "../ChangesStorage";
 
 export default class ComputeWorker implements Worker {
 
@@ -19,6 +20,7 @@ export default class ComputeWorker implements Worker {
     constructor(private options: {
         partitionIndex: number,
         snapshotStorage: SnapshotStorage,
+        changesStorage: ChangesStorage,
         index: Index,
         memoryLimit: number,
         ephemeralLimit: number,
@@ -111,7 +113,8 @@ export default class ComputeWorker implements Worker {
         return await this.state();
     }
 
-    public async saveSnapshotWithUpdates(updates: StoredVectorChange[]): Promise<StatefulResponse<void>> {
+    public async saveSnapshotWithUpdates(): Promise<StatefulResponse<void>> {
+        const updates = await this.options.changesStorage.getAllChangesAfter(this.lastSnapshotUpdate);
         await this.update(updates);
 
         return await this.saveSnapshot();

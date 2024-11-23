@@ -8,18 +8,18 @@ import type {
     APIGatewayProxyEvent, APIGatewayProxyResult, Context
 } from "aws-lambda";
 import { ORCHESTRATOR_ENV } from "./env";
-import DynamoChangesStorage from "../ChangesStorage/DynamoChangesStorage";
 import InfrastructureStorage from "../InfrastructureStorage/DynamoInfrastructureStorage";
 import Orchestrator from "./OrchestratorWorker";
 import type { OrchestratorEvent } from "./Orchestrator";
 import S3SnapshotStorage from "../SnapshotStorage/S3SnapshotStorage";
+import BucketChangesStorage from "../ChangesStorage/BucketChangesStorage";
 
 const databaseConfiguration = ORCHESTRATOR_ENV.DATABASE_CONFIG;
 
-const changesStorage = new DynamoChangesStorage({
-    tableName: ORCHESTRATOR_ENV.CHANGES_TABLE,
-    databaseId: ORCHESTRATOR_ENV.DATABASE_IDENTIFIER,
-    awsToken: undefined as any
+const changesStorage = new BucketChangesStorage(ORCHESTRATOR_ENV.BUCKET_CHANGES_STORAGE, {
+    region: ORCHESTRATOR_ENV.DATABASE_IDENTIFIER.region,
+    awsToken: undefined as any,
+    maxObjectAge: 1000 * 60 * 60 // 1 hour
 });
 
 const infrastructureStorage = new InfrastructureStorage({
