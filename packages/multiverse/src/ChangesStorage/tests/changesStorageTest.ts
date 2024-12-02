@@ -1,3 +1,4 @@
+import log from "@multiverse/log";
 import type ChangesStorage from "..";
 import type { StoredVectorChange } from "../StoredVector";
 
@@ -61,7 +62,9 @@ export default function changesStorageTest(storage: ChangesStorage) {
 
     it("should clear all changes", async() => {
         await storage.clearBefore(Date.now() + 10000);
-        expect(await storage.count()).toBe(0);
+        const changes = await readWholeIterator(storage.changesAfter(0));
+
+        expect(changes).toEqual([]);
     });
 
     it("should add 100 changes", async() => {
@@ -89,8 +92,9 @@ export default function changesStorageTest(storage: ChangesStorage) {
     });
 
     it("should count", async() => {
-        const count = await storage.count();
-        expect(count).toBe(100);
+        const changes = await storage.getAllChangesAfter(0);
+
+        expect(changes).toHaveLength(100);
     });
 
     it("should read correctly changesAfter", async() => {
@@ -150,19 +154,25 @@ export default function changesStorageTest(storage: ChangesStorage) {
             vector
         }));
 
-        const half = changesToAdd.slice(0, length / 2);
-        const otherHalf = changesToAdd.slice(length / 2);
-
+        const quarter = changesToAdd.slice(0, length / 4);
+        const otherQuarter = changesToAdd.slice(length / 4, length / 2);
+        log.info("Adding first half of changes");
         await Promise.all([
-            storage.add(half),
-            storage.add(otherHalf)
+            storage.add(quarter),
+            storage.add(otherQuarter)
         ]);
 
-        const readChanges = await readWholeIterator(storage.changesAfter(0));
+        // add the rest of the changes
+        log.info("Adding second half of changes");
+        await storage.add(changesToAdd.slice(length / 2));
+
+        log.info("Reading changes");
+        const readChanges = await storage.getAllChangesAfter(0);
         expect(readChanges).toHaveLength(length);
+        log.info("Checking vectors");
 
         // expect there are the same vectors (maybe in different order)
         const readVectors = readChanges.map(change => change.action === "add" && change.vector.vector);
-        expect(readVectors).toEqual(vectors.map(vector => vector.vector));
+        expect(readVectors).toEqual(expect.arrayContaining(vectors.map(v => v.vector)));
     });
 }

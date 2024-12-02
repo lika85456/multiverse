@@ -1,9 +1,10 @@
+import log from "@multiverse/log";
 import Multiverse from "../..";
 import type { Region } from "../../core/DatabaseConfiguration";
 import { Vector } from "../../core/Vector";
 
 describe.skip("Multiverse manual", () => {
-    const region = "eu-central-1" as Region;
+    const region = "eu-west-1" as Region;
 
     const name = "manual";
     const config = { dimensions: 1536 };
@@ -26,11 +27,16 @@ describe.skip("Multiverse manual", () => {
             secretTokens: [{
                 name: "hovnokleslo",
                 secret: "hovnokleslo",
-                validUntil: Number.MAX_SAFE_INTEGER/1000
+                validUntil: Number.MAX_SAFE_INTEGER / 1000
             }],
             space: "l2",
             ...config
         });
+    });
+
+    it("should delete a database with its infrastructure too", async() => {
+        await multiverse.removeDatabase(name);
+        await multiverse.destroySharedInfrastructure();
     });
 
     it("should list one database", async() => {
@@ -65,16 +71,16 @@ describe.skip("Multiverse manual", () => {
         await db.addAll(vectors, 5 * 60 * 1000);
     });
 
-    it("should respond with amount of stored vectors", async() => {
-        const db = await multiverse.getDatabase(name);
+    // it("should respond with amount of stored vectors", async() => {
+    //     const db = await multiverse.getDatabase(name);
 
-        if (!db) {
-            throw new Error("Database not found");
-        }
+    //     if (!db) {
+    //         throw new Error("Database not found");
+    //     }
 
-        const count = await db.;
-        expect(count).toBe(1000);
-    });
+    //     const count = await db.getConfiguration();
+    //     log.info(count);
+    // });
 
     it("should query among them correctly", async() => {
         const db = await multiverse.getDatabase(name);
@@ -83,13 +89,16 @@ describe.skip("Multiverse manual", () => {
             throw new Error("Database not found");
         }
 
+        const now = Date.now();
         const result = await db.query({
             k: 10,
             sendVector: true,
             vector: Vector.random(config.dimensions)
         });
+        const elapsed = Date.now() - now;
 
         expect(result.result.length).toBe(10);
+        log.info("Elapsed time", elapsed);
     });
 
     it("should remove the database", async() => {

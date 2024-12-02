@@ -27,6 +27,7 @@ export default defineWorkspace([
       include: ['./**/*.bench.ts'],
       exclude: ['**/node_modules/**', "**/cdk.out/**", "**/dist/**"],
       name: 'Benchmarks',
+      mode: "benchmark",
       environment: 'node',
       globals: true,
       hookTimeout: 60000,

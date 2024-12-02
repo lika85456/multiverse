@@ -46,7 +46,8 @@ describe("<OrchestratorWorker>", () => {
             ephemeralLimit: 10_000,
             index: new LocalIndex(databaseConfiguration),
             memoryLimit: 10_000,
-            snapshotStorage
+            snapshotStorage,
+            changesStorage,
         }));
 
         await infrastructureStorage.set(databaseId.name, {
@@ -68,7 +69,8 @@ describe("<OrchestratorWorker>", () => {
                 warmSecondaryInstances: 0,
                 secondaryFallbacks: 0,
                 outOfRegionFallbacks: 0
-            }
+            },
+            storedChanges: 0,
         });
 
         orchestrator = new OrchestratorWorker({
@@ -160,13 +162,14 @@ describe("<OrchestratorWorker>", () => {
     });
 
     it("should flush after max changes count", async() => {
-        // add 15 vectors and assert that there are 5 vectors in the changes storage and all the workers have loaded their snapshots
+        // add 15 vectors and assert that there are 0                                                                                                                       q vectors in the changes storage and all the workers have loaded their snapshots
         await orchestrator.addVectors(Array.from({ length: 15 }, (_, i) => ({
             label: `test-${i}`,
             vector: [i, i, i],
         })));
 
-        expect(await changesStorage.count()).toBe(0);
+        const changes = await changesStorage.getAllChangesAfter(0);
+        expect(changes.length).toBe(0);
 
         for (let i = 0;i < 10;i++) {
             const result = await orchestrator.query({

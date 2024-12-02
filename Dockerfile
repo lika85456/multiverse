@@ -1,5 +1,5 @@
 # Build Stage
-FROM public.ecr.aws/lambda/nodejs:20 AS build
+FROM public.ecr.aws/lambda/nodejs:18 AS build
 
 # Install build dependencies
 RUN yum install -y python3 make gcc-c++ && \
@@ -23,7 +23,7 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
 RUN pnpm run build:db
 
 # Run Stage
-FROM public.ecr.aws/lambda/nodejs:20 AS run
+FROM public.ecr.aws/lambda/nodejs:18 AS run
 
 # Set working directory
 WORKDIR /var/task
@@ -45,16 +45,7 @@ ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
 
-RUN pnpm install --prod --frozen-lockfile
-
-# Set environment variables
-# ENV NODE_ENV=${NODE_ENV}
-# ENV AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-# ENV AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-# ENV CHANGES_TABLE=${CHANGES_TABLE}
-# ENV SNAPSHOT_BUCKET=${SNAPSHOT_BUCKET}
-# ENV DATABASE_CONFIG=${DATABASE_CONFIG}
-# ENV PARTITION=${PARTITION}
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
 
 # Define the command to run your Lambda function
 CMD ["packages/multiverse/src/Compute/dist/index.handler"]

@@ -1,5 +1,5 @@
 import {
-    DynamoDB, DynamoDBClient, waitUntilTableExists, waitUntilTableNotExists
+    DynamoDB, DynamoDBClient, UpdateItemCommand, waitUntilTableExists, waitUntilTableNotExists
 } from "@aws-sdk/client-dynamodb";
 import {
     DeleteCommand,
@@ -128,6 +128,37 @@ export default class DynamoInfrastructureStorage extends InfrastructureStorage {
 
     public getResourceName(): string {
         return this.options.tableName;
+    }
+
+    public async addStoredChanges(dbName: string, changesCount: number): Promise<void> {
+        await this.dynamo.send(new UpdateItemCommand({
+            TableName: this.options.tableName,
+            Key: { pk: { S: dbName } },
+            UpdateExpression: "SET storedChanges = storedChanges + :changes",
+            ExpressionAttributeValues: { ":changes": { N: changesCount.toString() } }
+        }));
+    }
+
+    public async setStoredChanges(dbName: string, changesCount: number): Promise<void> {
+        await this.dynamo.send(new UpdateItemCommand({
+            TableName: this.options.tableName,
+            Key: { pk: { S: dbName } },
+            UpdateExpression: "SET storedChanges = :changes",
+            ExpressionAttributeValues: { ":changes": { N: changesCount.toString() } }
+        }));
+    }
+
+    public async getStoredChanges(dbName: string): Promise<number> {
+        const res = await this.dynamo.send(new GetCommand({
+            TableName: this.options.tableName,
+            Key: { pk: dbName }
+        }));
+
+        if (res.Item) {
+            return parseInt(res.Item.storedChanges.N ?? "0");
+        }
+
+        return 0;
     }
 
     public async set(dbName: string, infrastructure: Infrastructure): Promise<void> {

@@ -22,6 +22,30 @@ export default class MemoryInfrastructureStorage extends InfrastructureStorage {
         await this.set(dbName, infrastructure);
     }
 
+    public async addStoredChanges(dbName: string, changesCount: number): Promise<void> {
+        if (!this.storage.has(dbName)) {
+            throw new Error(`Database ${dbName} not found`);
+        }
+
+        this.storage.get(dbName)!.storedChanges += changesCount;
+    }
+
+    public async setStoredChanges(dbName: string, changesCount: number): Promise<void> {
+        if (!this.storage.has(dbName)) {
+            throw new Error(`Database ${dbName} not found`);
+        }
+
+        this.storage.get(dbName)!.storedChanges = changesCount;
+    }
+
+    public async getStoredChanges(dbName: string): Promise<number> {
+        if (!this.storage.has(dbName)) {
+            throw new Error(`Database ${dbName} not found`);
+        }
+
+        return this.storage.get(dbName)!.storedChanges;
+    }
+
     public async set(dbName: string, infrastructure: Infrastructure) {
         this.storage.set(dbName, infrastructure);
     }

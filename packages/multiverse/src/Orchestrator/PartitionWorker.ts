@@ -30,8 +30,8 @@ export default class PartitionWorker implements Worker {
     private partition: Promise<PartitionInfrastructureState>;
     private lambdasByPriority: Promise<PartitionLambdaState[]>;
 
-    private REQUEST_TIMEOUT = 2000;
-    private REQUEST_ALL_WAIT_TIME = 2000;
+    private REQUEST_TIMEOUT = 20000;
+    private REQUEST_ALL_WAIT_TIME = 10000;
 
     private lambdaFactory: (name: string, region: Region, waitTime: number) => Worker;
 
@@ -105,7 +105,10 @@ export default class PartitionWorker implements Worker {
     // TODO: this is a naive implementation and could be very much improved
     private async request<TEvent extends keyof Worker>(
         event: TEvent,
-        payload: Parameters<Worker[TEvent]>
+        payload: Parameters<Worker[TEvent]>,
+        options?: {
+            timeout: number;
+        }
     ): Promise<ReturnType<Worker[TEvent]>> {
 
         await this.partition;
@@ -121,7 +124,7 @@ export default class PartitionWorker implements Worker {
                 // @ts-ignore
                 const responsePromise = worker[event](...payload) as Promise<ReturnType<Worker[TEvent]>>;
 
-                const response = await this.throwOnTimeout(responsePromise, this.REQUEST_TIMEOUT);
+                const response = await this.throwOnTimeout(responsePromise, options?.timeout ?? this.REQUEST_TIMEOUT);
 
                 await this.infrastructureStorage.processState(this.databaseName, lambdaState.name, response.state);
 
@@ -199,7 +202,7 @@ export default class PartitionWorker implements Worker {
     }
 
     public async update(updates: StoredVectorChange[]): Promise<StatefulResponse<void>> {
-        return await this.request("update", [updates]);
+        return await this.request("update", [updates], { timeout: 120000 });
     }
 
     public async state(): Promise<StatefulResponse<void>> {
@@ -211,15 +214,15 @@ export default class PartitionWorker implements Worker {
     }
 
     public async saveSnapshot(): Promise<StatefulResponse<void>> {
-        return await this.request("saveSnapshot", []);
+        return await this.request("saveSnapshot", [], { timeout: 120000 });
     }
 
     public async saveSnapshotWithUpdates(): Promise<StatefulResponse<void>> {
-        return await this.request("saveSnapshotWithUpdates", []);
+        return await this.request("saveSnapshotWithUpdates", [], { timeout: 120000 });
     }
 
     public async loadLatestSnapshot(): Promise<StatefulResponse<void>> {
-        return await this.request("loadLatestSnapshot", []);
+        return await this.request("loadLatestSnapshot", [], { timeout: 120000 });
     }
 
     public async count(): Promise<StatefulResponse<CountResponse>> {

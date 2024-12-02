@@ -41,7 +41,7 @@ export default class OrchestratorWorker implements Orchestrator {
             awsToken: this.options.awsToken
         }));
 
-        this.maxChangesCount = this.options.maxChangesCount ?? this.maxChangesCount;
+        this.maxChangesCount = this.options.maxChangesCount ?? this.maxChangesCount ?? 1000;
     }
 
     /**
@@ -166,7 +166,7 @@ export default class OrchestratorWorker implements Orchestrator {
     }
 
     private shouldFlush(changesStored: number) {
-        if (changesStored * this.options.databaseConfiguration.dimensions > 100_000) {
+        if (changesStored * this.options.databaseConfiguration.dimensions > 100_000 || changesStored > this.maxChangesCount) {
             return true;
         }
 
@@ -180,7 +180,9 @@ export default class OrchestratorWorker implements Orchestrator {
             vector
         })));
 
-        const count = await this.options.changesStorage.count();
+        await this.options.infrastructureStorage.addStoredChanges(this.options.databaseId.name, vectors.length);
+        // TODOO optimize this
+        const count = await this.options.infrastructureStorage.getStoredChanges(this.options.databaseId.name);
 
         await this.safelySendStatisticsEvent({
             type: "add",
@@ -205,7 +207,9 @@ export default class OrchestratorWorker implements Orchestrator {
             label
         })));
 
-        const count = await this.options.changesStorage.count();
+        await this.options.infrastructureStorage.addStoredChanges(this.options.databaseId.name, labels.length);
+        // TODOO optimize this
+        const count = await this.options.infrastructureStorage.getStoredChanges(this.options.databaseId.name);
 
         await this.safelySendStatisticsEvent({
             type: "remove",

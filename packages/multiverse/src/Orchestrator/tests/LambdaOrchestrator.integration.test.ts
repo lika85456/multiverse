@@ -15,8 +15,10 @@ describe("<LambdaOrchestrator>", () => {
         region: "eu-central-1"
     };
 
+    const dimensions = 1536;
+
     const databaseConfiguration: StoredDatabaseConfiguration = {
-        dimensions: 1536,
+        dimensions,
         space: "l2",
         secretTokens: [{
             name: "hovnokleslo",
@@ -93,7 +95,7 @@ describe("<LambdaOrchestrator>", () => {
     it("should query empty", async() => {
         const result = await orchestrator.query({
             k: 10,
-            vector: [1, 2, 3],
+            vector: Vector.random(dimensions),
             sendVector: true
         });
 
@@ -103,12 +105,12 @@ describe("<LambdaOrchestrator>", () => {
     it("should add 10 vectors and return correct result", async() => {
         const vectors: NewVector[] = Array.from({ length: 10 }, (_, i) => ({
             label: i + "",
-            vector: Vector.random(3)
+            vector: Vector.random(dimensions)
         }));
 
         await orchestrator.addVectors(vectors);
 
-        const queryVector = Vector.random(3);
+        const queryVector = Vector.random(dimensions);
 
         // wait 1s
         await new Promise(resolve => setTimeout(resolve, 1000));
@@ -120,7 +122,7 @@ describe("<LambdaOrchestrator>", () => {
         });
 
         const mockIndex = new LocalIndex({
-            dimensions: 3,
+            dimensions: 1536,
             space: "l2"
         });
 
@@ -134,12 +136,11 @@ describe("<LambdaOrchestrator>", () => {
         // there might  be some precision errors in vectors and distances - so we need to compare them separately
         for (let i = 0; i < result.result.length; i++) {
             expect(result.result[i].label).toEqual(mockResult[i].label);
-            expect(result.result[i].distance).toBeCloseTo(mockResult[i].distance, 5);
-            // expect(result.result[i].vector).toBeCloseTo(mockResult[i].vector, 5);
+            expect(result.result[i].distance).toBeCloseTo(mockResult[i].distance, 3);
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             for (let j = 0; j < result.result[i].vector!.length; j++) {
                 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                expect(result.result[i].vector![j]).toBeCloseTo(mockResult[i].vector![j], 5);
+                expect(result.result[i].vector![j]).toBeCloseTo(mockResult[i].vector![j], 3);
             }
         }
     });

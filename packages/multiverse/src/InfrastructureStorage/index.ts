@@ -45,6 +45,8 @@ export type Infrastructure = {
      * each partition has multiple compute instances
      */
     partitions: PartitionInfrastructureState[];
+
+    storedChanges: number;
 };
 
 // TODO: RACING CONDITION!!!
@@ -59,6 +61,10 @@ export default abstract class InfrastructureStorage {
     abstract deploy(): Promise<void>;
     abstract destroy(): Promise<void>;
     abstract exists(): Promise<boolean>;
+
+    abstract addStoredChanges(dbName: string, changesCount: number): Promise<void>;
+    abstract setStoredChanges(dbName: string, changesCount: number): Promise<void>;
+    abstract getStoredChanges(dbName: string): Promise<number>;
 
     abstract getResourceName(): string;
 
@@ -88,9 +94,19 @@ export default abstract class InfrastructureStorage {
             throw new Error(`Database ${dbName} not found`);
         }
 
-        const partition = infrastructure.partitions.find(p => p.partitionIndex === state.partitionIndex);
+        // @ts-ignore
+        if (infrastructure.partitions.includes(undefined)) {
+            log.warn("Partitions include undefined", {
+                dbName,
+                lambdaName,
+                state,
+                infrastructure
+            });
+        }
+
+        const partition = infrastructure.partitions.find(p => p?.partitionIndex === state.partitionIndex);
         if (!partition) {
-            throw new Error(`Partition not found for instance ${state.instanceId}`);
+            throw new Error(`Partition ${state.partitionIndex} not found for instance ${state.instanceId} in infrastructure: ${JSON.stringify(infrastructure)}`);
         }
 
         const lambda = partition.lambda.find(l => l.name === lambdaName);

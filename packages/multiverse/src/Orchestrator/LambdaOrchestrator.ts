@@ -61,10 +61,6 @@ export default class LambdaOrchestrator implements Orchestrator {
         const uintPayload = new Uint8Array(result.Payload as unknown as ArrayBuffer);
         const payloadString = Buffer.from(uintPayload).toString("utf-8");
 
-        if (payloadString.includes("The specif")) {
-            console.log("KOKOT");
-        }
-
         try {
             const parsedPayload = JSON.parse(payloadString);
 
@@ -74,9 +70,8 @@ export default class LambdaOrchestrator implements Orchestrator {
                 response: parsedPayload
             });
 
-            if (result.FunctionError) {
-                log.error(JSON.stringify(parsedPayload, null, 4));
-                throw new Error(parsedPayload);
+            if (result.FunctionError || parsedPayload.statusCode !== 200) {
+                throw new Error(parsedPayload.body);
             }
 
             return parsedPayload.body && JSON.parse(parsedPayload.body);
@@ -265,7 +260,26 @@ export default class LambdaOrchestrator implements Orchestrator {
             RoleName: roleName
         }));
 
-        log.debug("Created role", { result, });
+        if (!await iam.getPolicy({ PolicyArn: "arn:aws:iam::aws:policy/multiverse-s3express-policy" }).catch(() => null)) {
+            await iam.createPolicy({
+                PolicyDocument: JSON.stringify({
+                    Version: "2012-10-17",
+                    Statement: [
+                        {
+                            Effect: "Allow",
+                            Action: "s3express:*",
+                            Resource: "*"
+                        }
+                    ]
+                }),
+                PolicyName: "multiverse-s3express-policy"
+            });
+        }
+
+        log.debug(await iam.attachRolePolicy({
+            PolicyArn: "arn:aws:iam::aws:policy/multiverse-s3express-policy",
+            RoleName: roleName
+        }));
 
         const roleARN = result.Role?.Arn;
 
@@ -293,7 +307,7 @@ export default class LambdaOrchestrator implements Orchestrator {
             SNAPSHOT_BUCKET: snapshotBucket,
             INFRASTRUCTURE_TABLE: infrastructureTable,
             DATABASE_IDENTIFIER: this.options.databaseId,
-            NODE_ENV: (process.env.NODE_ENV ?? "development") as any,
+            NODE_ENV: (process.env.NODE_ENV ?? "development") as any
         };
 
         orchestratorEnvSchema.parse(variables);
@@ -334,6 +348,7 @@ export default class LambdaOrchestrator implements Orchestrator {
                         Variables: {
                             NODE_ENV: process.env.NODE_ENV ?? "development",
                             VARIABLES: JSON.stringify(variables),
+                            NODE_OPTIONS: "--enable-source-maps"
                         }
                     }
                 });
@@ -436,7 +451,7 @@ export default class LambdaOrchestrator implements Orchestrator {
             throw new Error("Infrastructure already exists");
         }
 
-        const errors: Error[] = [];
+        let errorDeploying = false;
 
         await Promise.all([
             this.deployOrchestratorLambda({
@@ -445,7 +460,10 @@ export default class LambdaOrchestrator implements Orchestrator {
                 infrastructureTable,
                 databaseConfiguration,
                 buildBucket
-            }).catch(e => errors.push(e)),
+            }).catch(e => {
+                log.error("Failed to deploy orchestrator lambda", { error: e });
+                errorDeploying = true;
+            }),
 
             this.deployPartition({
                 snapshotBucket,
@@ -453,11 +471,14 @@ export default class LambdaOrchestrator implements Orchestrator {
                 partition: 0,
                 databaseConfiguration,
                 changesStorage
-            }).catch(e => errors.push(e)),
+            }).catch(e => {
+                log.error("Failed to deploy primary partition", { error: e });
+                errorDeploying = true;
+            }),
         ]);
 
-        if (errors.length > 0) {
-            log.error("Failed to deploy orchestrator. Destroying created resources", { errors });
+        if (errorDeploying) {
+            log.error("Failed to deploy orchestrator. Destroying created resources");
 
             await Promise.allSettled([
                 this.destroyPartition({ partition: 0 }).catch(e => e),
@@ -471,7 +492,7 @@ export default class LambdaOrchestrator implements Orchestrator {
                 })()
             ]);
 
-            throw new Error(`Failed to deploy orchestrator: ${errors.map(e => `${e.message} ${e.stack}`).join(", ")}`);
+            throw new Error("Failed to deploy orchestrator");
         }
 
         await infrastructureStorage.set(this.options.databaseId.name, {
@@ -513,8 +534,17 @@ export default class LambdaOrchestrator implements Orchestrator {
                 ],
                 partitionIndex: 0
             }],
-            scalingTargetConfiguration
+            scalingTargetConfiguration,
+            storedChanges: 0
         });
+
+        // ping the function to wake them up and also send loadSnapshot to the orchestrator
+        try {
+            await this.request("initialize", [])
+            ;
+        } catch (e) {
+            // ignore
+        }
     }
 
     public async updateCode(buildBucket: BuildBucket) {

@@ -1,3 +1,4 @@
+import log from "@multiverse/log";
 import Multiverse from "../..";
 import type { Region } from "../../core/DatabaseConfiguration";
 import { Vector } from "../../core/Vector";
@@ -6,7 +7,7 @@ describe.each([
     ["low-dimensions", { dimensions: 3 }],
     ["high-dimensions", { dimensions: 1536 }],
 ])("Multiverse E2E %s", (name, config) => {
-    const region = "eu-central-1" as Region;
+    const region = "eu-west-1" as Region;
 
     const multiverse = new Multiverse({
         region,
@@ -15,8 +16,17 @@ describe.each([
     });
 
     afterAll(async() => {
-        await multiverse.removeDatabase(name);
-        await multiverse.destroySharedInfrastructure();
+        try {
+            await multiverse.removeDatabase(name);
+        } catch (e) {
+            log.error(e);
+        }
+
+        try {
+            await multiverse.destroySharedInfrastructure().catch(log.error);
+        } catch (e) {
+            log.error(e);
+        }
     });
 
     it("should create a database with no previous shared infrastructure", async() => {

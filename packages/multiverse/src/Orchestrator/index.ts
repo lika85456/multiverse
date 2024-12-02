@@ -49,6 +49,7 @@ export async function handler(
     event: APIGatewayProxyEvent,
     context: Context,
 ): Promise<APIGatewayProxyResult> {
+
     log.debug("Received event", {
         event,
         context,

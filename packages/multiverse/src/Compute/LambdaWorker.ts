@@ -135,6 +135,28 @@ export default class LambdaWorker implements Worker {
             RoleName: roleName
         }));
 
+        // add s3express:* for s3 express
+        if (!await iam.getPolicy({ PolicyArn: "arn:aws:iam::aws:policy/multiverse-s3express-policy" }).catch(() => null)) {
+            await iam.createPolicy({
+                PolicyDocument: JSON.stringify({
+                    Version: "2012-10-17",
+                    Statement: [
+                        {
+                            Effect: "Allow",
+                            Action: "s3express:*",
+                            Resource: "*"
+                        }
+                    ]
+                }),
+                PolicyName: "multiverse-s3express-policy"
+            });
+        }
+
+        log.debug(await iam.attachRolePolicy({
+            PolicyArn: "arn:aws:iam::aws:policy/multiverse-s3express-policy",
+            RoleName: roleName
+        }));
+
         // ! remove role if changing policies
 
         log.debug("Created role", { result });
@@ -184,6 +206,7 @@ export default class LambdaWorker implements Worker {
                 Variables: {
                     VARIABLES: JSON.stringify(variables),
                     NODE_ENV: options.env,
+                    NODE_OPTIONS: "--enable-source-maps"
                 }
             },
         });
@@ -221,18 +244,23 @@ export default class LambdaWorker implements Worker {
 
         const uintPayload = new Uint8Array(result.Payload as unknown as Buffer);
         const payloadString = Buffer.from(uintPayload).toString("utf-8");
-        const parsedPayload = JSON.parse(payloadString);
 
-        log.debug("Lambda invoked", {
-            lambdaName: this.options.lambdaName,
-            result: parsedPayload
-        });
+        try {
+            const parsedPayload = JSON.parse(payloadString);
 
-        if (result.FunctionError) {
-            log.error(JSON.stringify(parsedPayload, null, 4));
-            throw new Error(parsedPayload);
+            log.debug("Lambda invoked", {
+                lambdaName: this.options.lambdaName,
+                result: parsedPayload
+            });
+
+            if (result.FunctionError || parsedPayload.statusCode !== 200) {
+                throw new Error(parsedPayload.body);
+            }
+
+            return parsedPayload.body && JSON.parse(parsedPayload.body);
+        } catch (e) {
+            throw new Error(payloadString);
         }
 
-        return parsedPayload.body && JSON.parse(parsedPayload.body);
     }
 }
