@@ -18,7 +18,7 @@
     "start:docs": "cd apps/docs && pnpm start",
     "test:unit": "vitest run unit",
     "test:integration": "vitest run integration",
-    "test:bench": "vitest bench",
+    "test:bench": "vitest bench --project Benchmarks --mode benchmark",
     "test": "vitest run --coverage --exclude benchmarks",
     "test:watch": "vitest --watch",
     "test:coverage": "vitest run --coverage",

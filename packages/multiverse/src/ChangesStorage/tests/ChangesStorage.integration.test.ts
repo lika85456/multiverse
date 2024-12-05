@@ -14,7 +14,7 @@ describe.each([
     [
         "<BucketChangesStorage>",
         new BucketChangesStorage("multiverse-test-changes-storage-" + Date.now(), {
-            region: "eu-central-1",
+            region: "eu-west-1",
             awsToken: undefined as any,
             maxObjectAge: 10000
         })

@@ -17,4 +17,5 @@ export default interface Orchestrator {
     addToken(token: Token): Promise<void>;
     removeToken(tokenName: string): Promise<void>;
     auth(secret: string): Promise<boolean>;
+    wakeUpWorkers(): Promise<void>;
 }

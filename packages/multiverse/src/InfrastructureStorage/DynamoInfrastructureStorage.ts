@@ -3,7 +3,8 @@ import {
 } from "@aws-sdk/client-dynamodb";
 import {
     DeleteCommand,
-    DynamoDBDocumentClient, GetCommand, PutCommand, ScanCommand
+    DynamoDBDocumentClient, GetCommand, PutCommand, ScanCommand,
+    UpdateCommand
 } from "@aws-sdk/lib-dynamodb";
 import log from "@multiverse/log";
 import InfrastructureStorage from ".";
@@ -130,13 +131,24 @@ export default class DynamoInfrastructureStorage extends InfrastructureStorage {
         return this.options.tableName;
     }
 
-    public async addStoredChanges(dbName: string, changesCount: number): Promise<void> {
-        await this.dynamo.send(new UpdateItemCommand({
+    public async addStoredChanges(dbName: string, changesCount: number): Promise<number> {
+        const result = await this.dynamo.send(new UpdateItemCommand({
             TableName: this.options.tableName,
             Key: { pk: { S: dbName } },
             UpdateExpression: "SET storedChanges = storedChanges + :changes",
-            ExpressionAttributeValues: { ":changes": { N: changesCount.toString() } }
-        }));
+            ExpressionAttributeValues: { ":changes": { N: changesCount.toString() } as any },
+            ReturnValues: "UPDATED_NEW"
+        })).catch(e => e);
+
+        if (result instanceof Error) {
+            if (result.name === "ConditionalCheckFailedException") {
+                return 0;
+            }
+
+            throw result;
+        }
+
+        return parseInt(result.Attributes?.storedChanges?.N ?? "0");
     }
 
     public async setStoredChanges(dbName: string, changesCount: number): Promise<void> {
@@ -144,18 +156,19 @@ export default class DynamoInfrastructureStorage extends InfrastructureStorage {
             TableName: this.options.tableName,
             Key: { pk: { S: dbName } },
             UpdateExpression: "SET storedChanges = :changes",
-            ExpressionAttributeValues: { ":changes": { N: changesCount.toString() } }
+            ExpressionAttributeValues: { ":changes": { N: changesCount.toString() } as any }
         }));
     }
 
     public async getStoredChanges(dbName: string): Promise<number> {
         const res = await this.dynamo.send(new GetCommand({
             TableName: this.options.tableName,
-            Key: { pk: dbName }
+            Key: { pk: dbName },
+            AttributesToGet: ["storedChanges"]
         }));
 
         if (res.Item) {
-            return parseInt(res.Item.storedChanges.N ?? "0");
+            return parseInt(res.Item?.storedChanges ?? "0");
         }
 
         return 0;
@@ -173,12 +186,14 @@ export default class DynamoInfrastructureStorage extends InfrastructureStorage {
     }
 
     public async setProperty<T extends keyof Infrastructure>(dbName: string, property: T, value: Infrastructure[T]): Promise<void> {
-        await this.dynamo.send(new PutCommand({
+        // update only the property and keep the rest of the already existing object
+        // the property can be number, string or an object
+        await this.dynamo.send(new UpdateCommand({
             TableName: this.options.tableName,
-            Item: {
-                pk: dbName,
-                [property]: value
-            }
+            Key: { pk: dbName },
+            UpdateExpression: `SET #${property} = :value`,
+            ExpressionAttributeNames: { [`#${property}`]: property },
+            ExpressionAttributeValues: { ":value": value }
         }));
     }
 

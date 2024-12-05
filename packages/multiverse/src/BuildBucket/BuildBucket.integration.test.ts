@@ -4,7 +4,7 @@ describe("<BuildBucket>", () => {
     const bucketName = "mv-test-bucket-" + Math.random().toString(36).substring(7);
 
     const bucket = new BuildBucket(bucketName, {
-        region: "eu-central-1",
+        region: "eu-west-1",
         awsToken: undefined as unknown as any
     });
 

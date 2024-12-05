@@ -18,7 +18,7 @@ export default class BucketChangesStorage implements ChangesStorage {
             region: "eu-west-1",
             credentials: this.options.awsToken,
             maxAttempts: 3,
-            logger: log.getSubLogger({ name: "BucketChangesStorage" }),
+            // logger: log.getSubLogger({ name: "BucketChangesStorage" }),
         });
     }
 
@@ -35,7 +35,7 @@ export default class BucketChangesStorage implements ChangesStorage {
     }
 
     public async add(changes: StoredVectorChange[], tries = 0, forceNewObject = false): Promise<{ unprocessedItems: string[]; }> {
-
+        log.info(`Adding ${changes.length} changes to the storage`);
         const objects = await this.s3.listObjectsV2({ Bucket: this.getBucketName() });
         const latestObject = objects.Contents?.sort((a, b) => {
             return parseInt(a.Key?.split(".")[0].slice(0, -4) ?? "0") - parseInt(b.Key?.split(".")[0].slice(0, -4) ?? "0");
@@ -85,6 +85,8 @@ export default class BucketChangesStorage implements ChangesStorage {
             }
 
         }
+
+        log.info("Changes added");
 
         return { unprocessedItems: [] };
     }

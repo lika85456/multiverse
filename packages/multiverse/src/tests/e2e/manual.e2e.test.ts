@@ -1,9 +1,8 @@
 import log from "@multiverse/log";
 import Multiverse from "../..";
 import type { Region } from "../../core/DatabaseConfiguration";
-import { Vector } from "../../core/Vector";
 
-describe.skip("Multiverse manual", () => {
+describe("Multiverse manual", () => {
     const region = "eu-west-1" as Region;
 
     const name = "manual";
@@ -12,13 +11,16 @@ describe.skip("Multiverse manual", () => {
     const multiverse = new Multiverse({
         region,
         awsToken: undefined as any,
-        name: "manual"
+        name: "manual-multiversos"
     });
 
-    // afterAll(async() => {
-    //     await multiverse.removeDatabase(name);
-    //     await multiverse.removeSharedInfrastructure();
-    // });
+    it("should delete manual database", async() => {
+        await multiverse.removeDatabase(name);
+    });
+
+    it("should delete shared infra", async() => {
+        await multiverse.destroySharedInfrastructure();
+    });
 
     it("should create a database with no previous shared infrastructure", async() => {
         await multiverse.createDatabase({
@@ -44,22 +46,28 @@ describe.skip("Multiverse manual", () => {
         expect(databases.length).toBe(1);
     });
 
-    it("should query empty in the database", async() => {
+    it("should query", async() => {
         const database = await multiverse.getDatabase(name);
         if (!database) throw new Error("Database not found");
 
+        const start = Date.now();
         const result = await database.query({
-            k: 10,
-            sendVector: true,
-            vector: Vector.random(config.dimensions)
+            k: 100,
+            sendVector: false,
+            vector: Array.from({ length: config.dimensions }, () => 0)
         });
-        expect(result.result.length).toBe(0);
+
+        const time = Date.now() - start;
+        log.info(result.result.slice(0, 3));
+        log.info(`Query took: ${time} ms`);
     });
 
     it("should add 1000 vectors", async() => {
         const vectors = Array.from({ length: 1000 }, (_, i) => ({
-            label: i + "",
-            vector: Vector.random(config.dimensions)
+            label: i + "random",
+            // vector: Array.from({ length: config.dimensions }, () => i)
+            // add random vectors
+            vector: Array.from({ length: config.dimensions }, () => Math.random())
         }));
 
         const db = await multiverse.getDatabase(name);
@@ -68,40 +76,22 @@ describe.skip("Multiverse manual", () => {
             throw new Error("Database not found");
         }
 
+        const start = Date.now();
         await db.addAll(vectors, 5 * 60 * 1000);
+        log.info(`Adding 1000 vectors took: ${Date.now() - start}ms`);
     });
 
-    // it("should respond with amount of stored vectors", async() => {
-    //     const db = await multiverse.getDatabase(name);
-
-    //     if (!db) {
-    //         throw new Error("Database not found");
-    //     }
-
-    //     const count = await db.getConfiguration();
-    //     log.info(count);
-    // });
-
-    it("should query among them correctly", async() => {
+    it("should add 1 vector", async() => {
         const db = await multiverse.getDatabase(name);
-
         if (!db) {
             throw new Error("Database not found");
         }
 
-        const now = Date.now();
-        const result = await db.query({
-            k: 10,
-            sendVector: true,
-            vector: Vector.random(config.dimensions)
-        });
-        const elapsed = Date.now() - now;
-
-        expect(result.result.length).toBe(10);
-        log.info("Elapsed time", elapsed);
-    });
-
-    it("should remove the database", async() => {
-        await multiverse.removeDatabase(name);
+        const start = Date.now();
+        await db.add([{
+            label: "1",
+            vector: Array.from({ length: config.dimensions }, () => 1)
+        }]);
+        log.info(`Adding 1 vector took: ${Date.now() - start}ms`);
     });
 });

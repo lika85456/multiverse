@@ -9,6 +9,7 @@ import type {
 } from "./Worker";
 import type { StoredVectorChange } from "../ChangesStorage/StoredVector";
 import type ChangesStorage from "../ChangesStorage";
+import log from "@multiverse/log";
 
 export default class ComputeWorker implements Worker {
 
@@ -34,6 +35,7 @@ export default class ComputeWorker implements Worker {
                 instanceId: this.instanceId,
                 partitionIndex: this.options.partitionIndex,
                 lastUpdate: this.lastUpdate,
+                lastSnapshot: this.lastSnapshotUpdate,
                 memoryUsed: (await os.mem.used()).usedMemMb,
                 memoryLimit: this.options.memoryLimit,
                 ephemeralUsed: -1, // TODO implement
@@ -91,6 +93,12 @@ export default class ComputeWorker implements Worker {
 
         const result = await this.options.index.knn(query.query);
 
+        if (!query.query.sendVector) {
+            for (const item of result) {
+                delete item.vector;
+            }
+        }
+
         return {
             ...(await this.state()),
             result: { result }
@@ -108,16 +116,26 @@ export default class ComputeWorker implements Worker {
 
         const snapshot = await this.options.snapshotStorage.create(path, this.lastUpdate);
 
+        this.lastSnapshotUpdate = snapshot.timestamp;
+
         this.log.debug(`Saved snapshot ${snapshot.filePath}`, { snapshot });
 
         return await this.state();
     }
 
-    public async saveSnapshotWithUpdates(): Promise<StatefulResponse<void>> {
+    public async saveSnapshotWithUpdates(): Promise<StatefulResponse<{changesFlushed: number}>> {
+        log.info(`Downloading changes after ${this.lastSnapshotUpdate}`);
         const updates = await this.options.changesStorage.getAllChangesAfter(this.lastSnapshotUpdate);
+        log.info(`Downloaded ${updates.length} changes`);
         await this.update(updates);
+        log.info("Updated with changes");
 
-        return await this.saveSnapshot();
+        await this.saveSnapshot();
+
+        return {
+            ...(await this.state()),
+            result: { changesFlushed: updates.length }
+        };
     }
 
     public async loadLatestSnapshot(): Promise<StatefulResponse<void>> {

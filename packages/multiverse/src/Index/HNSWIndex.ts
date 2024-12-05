@@ -166,7 +166,7 @@ export default class HNSWIndex implements Index {
         zip.addLocalFolder(tmpPath);
         const buffer = zip.toBuffer();
 
-        await writeFile(path, buffer);
+        await writeFile(path, new Uint8Array(buffer));
 
         log.debug("Saved index", {
             path,

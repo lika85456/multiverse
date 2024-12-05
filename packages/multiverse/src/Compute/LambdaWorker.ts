@@ -59,7 +59,7 @@ export default class LambdaWorker implements Worker {
         });
     }
 
-    public async saveSnapshotWithUpdates(): Promise<StatefulResponse<void>> {
+    public async saveSnapshotWithUpdates(): Promise<StatefulResponse<{changesFlushed: number}>> {
         return await this.invoke({
             event: "saveSnapshotWithUpdates",
             payload: []
@@ -200,13 +200,14 @@ export default class LambdaWorker implements Worker {
             Role: await this.lambdaRoleARN(),
             PackageType: "Image",
             Timeout: 900,
-            MemorySize: 512,
+            MemorySize: 2048,
             EphemeralStorage: { Size: 1024 },
             Environment: {
                 Variables: {
                     VARIABLES: JSON.stringify(variables),
                     NODE_ENV: options.env,
-                    NODE_OPTIONS: "--enable-source-maps"
+                    NODE_OPTIONS: "--enable-source-maps",
+                    LOG_LEVEL: "6"
                 }
             },
         });
@@ -232,9 +233,9 @@ export default class LambdaWorker implements Worker {
             waitTime: this.options.waitTime
         };
 
-        log.debug("Invoking lambda", {
+        console.trace("Invoking lambda", {
             lambdaName: this.options.lambdaName,
-            payload: payloadWithMetadata
+            payload
         });
 
         const result = await this.lambda.invoke({
@@ -247,11 +248,6 @@ export default class LambdaWorker implements Worker {
 
         try {
             const parsedPayload = JSON.parse(payloadString);
-
-            log.debug("Lambda invoked", {
-                lambdaName: this.options.lambdaName,
-                result: parsedPayload
-            });
 
             if (result.FunctionError || parsedPayload.statusCode !== 200) {
                 throw new Error(parsedPayload.body);

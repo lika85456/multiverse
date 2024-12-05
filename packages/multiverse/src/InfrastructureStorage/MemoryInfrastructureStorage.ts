@@ -22,12 +22,14 @@ export default class MemoryInfrastructureStorage extends InfrastructureStorage {
         await this.set(dbName, infrastructure);
     }
 
-    public async addStoredChanges(dbName: string, changesCount: number): Promise<void> {
+    public async addStoredChanges(dbName: string, changesCount: number): Promise<number> {
         if (!this.storage.has(dbName)) {
             throw new Error(`Database ${dbName} not found`);
         }
 
         this.storage.get(dbName)!.storedChanges += changesCount;
+
+        return this.storage.get(dbName)!.storedChanges;
     }
 
     public async setStoredChanges(dbName: string, changesCount: number): Promise<void> {

@@ -34,7 +34,7 @@ describe("<OrchestratorWorker>", () => {
 
         databaseId = {
             name: Math.random() + "",
-            region: "eu-central-1"
+            region: "eu-west-1"
         };
 
         changesStorage = new MemoryChangesStorage();
@@ -57,7 +57,7 @@ describe("<OrchestratorWorker>", () => {
                 lambda: [{
                     instances: [],
                     name: "test-worker-0",
-                    region: "eu-central-1",
+                    region: "eu-west-1",
                     type: "primary",
                     wakeUpInstances: 1
                 }],
@@ -71,6 +71,7 @@ describe("<OrchestratorWorker>", () => {
                 outOfRegionFallbacks: 0
             },
             storedChanges: 0,
+            flushing: false
         });
 
         orchestrator = new OrchestratorWorker({

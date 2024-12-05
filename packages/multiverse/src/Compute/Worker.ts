@@ -20,6 +20,7 @@ export type WorkerState = {
     partitionIndex: number;
 
     lastUpdate: number;
+    lastSnapshot: number;
 
     memoryUsed: number;
     memoryLimit: number;
@@ -46,7 +47,7 @@ export interface Worker {
     update(updates: StoredVectorChange[]): Promise<StatefulResponse<void>>;
 
     saveSnapshot(): Promise<StatefulResponse<void>>;
-    saveSnapshotWithUpdates(): Promise<StatefulResponse<void>>;
+    saveSnapshotWithUpdates(): Promise<StatefulResponse<{changesFlushed: number}>>;
     loadLatestSnapshot(): Promise<StatefulResponse<void>>;
 
     count(): Promise<StatefulResponse<CountResponse>>;

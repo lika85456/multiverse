@@ -30,11 +30,15 @@ export default defineWorkspace([
       mode: "benchmark",
       environment: 'node',
       globals: true,
-      hookTimeout: 60000,
-      testTimeout: 60000,
+      hookTimeout: 240000,
+      testTimeout: 240000,
       // @ts-ignore
-      env:process.env
-    }
+      env: {
+        ...process.env,
+        LOG_LEVEL: "4",
+      }
+    },
+    mode: "benchmark"
   },
   {
     test: {

@@ -46,7 +46,10 @@ export default class LambdaOrchestrator implements Orchestrator {
         event: T,
         payload: Parameters<Orchestrator[T]>
     ): Promise<ReturnType<Orchestrator[T]>> {
-
+        // log.info("Requesting orchestrator", {
+        //     event,
+        //     payload
+        // });
         const eventPayload: OrchestratorEvent = {
             event,
             payload,
@@ -63,12 +66,6 @@ export default class LambdaOrchestrator implements Orchestrator {
 
         try {
             const parsedPayload = JSON.parse(payloadString);
-
-            log.debug("Orchestrator invoked", {
-                lambdaName: this.lambdaName(),
-                request: eventPayload,
-                response: parsedPayload
-            });
 
             if (result.FunctionError || parsedPayload.statusCode !== 200) {
                 throw new Error(parsedPayload.body);
@@ -88,23 +85,35 @@ export default class LambdaOrchestrator implements Orchestrator {
         return this.request("query", [query]);
     }
 
+    public async wakeUpWorkers(): Promise<void> {
+        return this.request("wakeUpWorkers", []);
+    }
+
     public async addVectors(vectors: NewVector[]): Promise<{unprocessedItems: string[]}> {
         const payloadByteSize = JSON.stringify(vectors).length;
 
         if (payloadByteSize > this.MAXIMUM_PAYLOAD_SIZE) {
-            // split into multiple addVector calls and return a promise.all
             const callsToMake = Math.ceil(payloadByteSize / this.MAXIMUM_PAYLOAD_SIZE);
             const vectorChunkSize = Math.ceil(vectors.length / callsToMake);
 
             const promises = [];
+            const results = [];
+
             for (let i = 0; i < callsToMake; i++) {
                 const start = i * vectorChunkSize;
                 const end = Math.min((i + 1) * vectorChunkSize, vectors.length);
 
                 promises.push(this.request("addVectors", [vectors.slice(start, end)]));
+
+                if (promises.length === 3) {
+                    results.push(...await Promise.all(promises));
+                    promises.length = 0; // clear the array
+                }
             }
 
-            const results = await Promise.all(promises);
+            if (promises.length > 0) {
+                results.push(...await Promise.all(promises));
+            }
 
             return { unprocessedItems: results.flatMap(r => r.unprocessedItems) };
         }
@@ -343,12 +352,13 @@ export default class LambdaOrchestrator implements Orchestrator {
                     Architectures: [Architecture.arm64],
                     Handler: "index.handler",
                     Timeout: 300,
-                    MemorySize: 512,
+                    MemorySize: 1024,
                     Environment: {
                         Variables: {
                             NODE_ENV: process.env.NODE_ENV ?? "development",
                             VARIABLES: JSON.stringify(variables),
-                            NODE_OPTIONS: "--enable-source-maps"
+                            NODE_OPTIONS: "--enable-source-maps",
+                            // LOG_LEVEL: "6"
                         }
                     }
                 });
@@ -535,15 +545,20 @@ export default class LambdaOrchestrator implements Orchestrator {
                 partitionIndex: 0
             }],
             scalingTargetConfiguration,
-            storedChanges: 0
+            storedChanges: 0,
+            flushing: false
         });
 
-        // ping the function to wake them up and also send loadSnapshot to the orchestrator
         try {
-            await this.request("initialize", [])
-            ;
+            await this.request("initialize", []);
         } catch (e) {
-            // ignore
+            log.error("Failed to initialize orchestrator", { error: e });
+        }
+
+        try {
+            await this.request("wakeUpWorkers", []);
+        } catch (e) {
+            log.error("Failed to wake up workers", { error: e });
         }
     }
 

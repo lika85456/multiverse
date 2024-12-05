@@ -1,5 +1,6 @@
 import { S3 } from "@aws-sdk/client-s3";
 import type { AwsToken } from "..";
+import log from "@multiverse/log";
 
 export default class BuildBucket {
 
@@ -20,10 +21,18 @@ export default class BuildBucket {
     }
 
     async deploy() {
-        await this.s3.createBucket({ Bucket: this.name });
+        log.info(`Creating build bucket ${this.name}`);
+        const result = await this.s3.createBucket({ Bucket: this.name });
+
+        if (!result.Location) {
+            throw new Error("Failed to create bucket");
+        }
+
+        log.info(`Created build bucket ${this.name}`);
     }
 
     async destroy() {
+        log.info(`Destroying build bucket ${this.name}`);
         // first clear
         const objects = await this.s3.listObjectsV2({ Bucket: this.name });
 

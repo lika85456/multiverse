@@ -20,7 +20,9 @@ export class Vector {
         const vector = [];
 
         for (let i = 0; i < size; i++) {
-            vector.push(Math.random());
+            // vector.push(Math.random());
+            // use limited precision, some data get lost so tests are annoying
+            vector.push(Math.floor(Math.random() * 100000) / 100000);
         }
 
         return vector;

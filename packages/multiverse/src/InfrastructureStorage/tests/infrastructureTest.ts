@@ -24,10 +24,11 @@ export default function(storage: InfrastructureStorage) {
 
     it("should set and read infrastructure", async() => {
         const infrastructure: Infrastructure = {
-
+            flushing: false,
+            storedChanges: 0,
             databaseId: {
                 name: "test",
-                region: "eu-central-1"
+                region: "eu-west-1"
             },
 
             configuration: {
@@ -46,7 +47,7 @@ export default function(storage: InfrastructureStorage) {
                 lambda: [{
                     instances: [],
                     name: "test-lambda-0",
-                    region: "eu-central-1",
+                    region: "eu-west-1",
                     type: "primary",
                     wakeUpInstances: 69
                 }],
@@ -71,6 +72,7 @@ export default function(storage: InfrastructureStorage) {
             ephemeralLimit: 1000,
             ephemeralUsed: 0,
             lastUpdate: 10,
+            lastSnapshot: 0,
             memoryLimit: 100,
             memoryUsed: 10,
             partitionIndex: 0
@@ -88,6 +90,7 @@ export default function(storage: InfrastructureStorage) {
             ephemeralLimit: 1000,
             ephemeralUsed: 0,
             lastUpdate: Date.now() - 1000,
+            lastSnapshot: 0,
             memoryLimit: 100,
             memoryUsed: 10,
             partitionIndex: 0
@@ -106,6 +109,7 @@ export default function(storage: InfrastructureStorage) {
             ephemeralLimit: 1000,
             ephemeralUsed: 0,
             lastUpdate: Date.now(),
+            lastSnapshot: 0,
             memoryLimit: 100,
             memoryUsed: 10,
             partitionIndex: 0
@@ -141,6 +145,34 @@ export default function(storage: InfrastructureStorage) {
         // assert token was added
         const updatedInfrastructure = await storage.get("test");
         expect(updatedInfrastructure?.configuration.secretTokens.length).toBe(1);
+
+        expect({
+            ...updatedInfrastructure,
+            configuration: undefined
+        }).toEqual({
+            ...infrastructure,
+            configuration: undefined
+        });
+    });
+
+    it("initial changes count should be 0", async() => {
+        const count = await storage.getStoredChanges("test");
+
+        expect(count).toBe(0);
+    });
+
+    it("should add changes", async() => {
+        await Promise.allSettled([
+            storage.addStoredChanges("test", 10),
+            storage.addStoredChanges("test", 10),
+            storage.addStoredChanges("test", 10)
+        ]);
+    });
+
+    it("should get stored changes", async() => {
+        const count = await storage.getStoredChanges("test");
+
+        expect(count).toBe(30);
     });
 
     it("should remove infrastructure", async() => {
@@ -152,4 +184,5 @@ export default function(storage: InfrastructureStorage) {
     it.skip("should not overwrite the rest of the data when updating state of an instance", async() => {
 
     });
+
 }

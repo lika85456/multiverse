@@ -8,6 +8,7 @@ import type {
 import type { StatisticsEvent } from "../core/Events";
 import type { Query, QueryResult } from "../core/Query";
 import type { NewVector } from "../core/Vector";
+import LocalIndex from "../Index/LocalIndex";
 import type InfrastructureStorage from "../InfrastructureStorage";
 import type { Infrastructure } from "../InfrastructureStorage";
 import type SnapshotStorage from "../SnapshotStorage";
@@ -38,29 +39,75 @@ export default class OrchestratorWorker implements Orchestrator {
         this.lambdaFactory = this.options.lambdaFactory ?? ((name, region) => new LambdaWorker({
             lambdaName: name,
             region,
-            awsToken: this.options.awsToken
+            awsToken: this.options.awsToken,
         }));
 
         this.maxChangesCount = this.options.maxChangesCount ?? this.maxChangesCount ?? 1000;
     }
 
     /**
-     * Initialize should be called if new instance is created (once per orchestrator lifecycle)
+     * Initialization is called on every orchestrator instance (to handle cache etc.)
+     * Dont wake up workers here for the first time, they will get woken up by the deployer
      */
     public async initialize() {
         // check if infrastructure meets scaling quotas, if not, scale up
+        // log.info("Initializing orchestrator worker");
+        // const infrastructure = await this.options.infrastructureStorage.get(this.options.databaseId.name);
+
+        // if (!infrastructure) {
+        //     throw new Error(`Database ${this.options.databaseId.name} not found`);
+        // }
+
+        // // check if infrastructure contains at least 10 minute old instances
+        // const workersInstantiated = infrastructure
+        //     .partitions.some(partition => partition
+        //         .lambda.some(lambda => lambda
+        //             .instances.some(instance => instance.lastUpdated < Date.now() - 1000 * 60 * 10)));
+
+        // // todo implement partitions
+        // if (!workersInstantiated) {
+        //     const workers = await this.getWorkers(infrastructure);
+
+        //     // wake up workers
+        //     for (let i = 0;i < 3;i++) {
+        //         try {
+        //             await Promise.all(Object.values(workers).map(worker => worker.requestAll("loadLatestSnapshot", [], "all", infrastructure.scalingTargetConfiguration)));
+        //         } catch (e) {
+        //             log.error("Error while waking up workers. But continuing", { error: e });
+        //         }
+        //     }
+        // }
+
+        // log.info("Orchestrator worker (and compute workers) initialized");
+    }
+
+    public async wakeUpWorkers(tries = 0): Promise<void> {
+        log.info("Waking up workers");
+
         const infrastructure = await this.options.infrastructureStorage.get(this.options.databaseId.name);
 
         if (!infrastructure) {
             throw new Error(`Database ${this.options.databaseId.name} not found`);
         }
 
-        // todo implement partitions
         const workers = await this.getWorkers(infrastructure);
 
-        for (const worker of Object.values(workers)) {
-            await worker.requestAll("loadLatestSnapshot", [], "all", infrastructure.scalingTargetConfiguration);
+        try {
+            await Promise.all(Object.values(workers).map(worker => worker.requestAll("loadLatestSnapshot", [], "all", infrastructure.scalingTargetConfiguration)));
+        } catch (e) {
+            log.error("Error while waking up workers.", { error: e });
+
+            if (tries > 3) {
+                throw e;
+            }
+
+            log.info(`Retrying waking up workers. Try ${tries + 1}`);
+            await new Promise(resolve => setTimeout(resolve, 5000));
+
+            return this.wakeUpWorkers(tries + 1);
         }
+
+        log.info("Workers woken up");
     }
 
     private async getWorkers(infrastructure: Infrastructure): Promise<{[partitionIndex: number]: PartitionWorker}> {
@@ -81,12 +128,14 @@ export default class OrchestratorWorker implements Orchestrator {
     }
 
     public async query(query: Query): Promise<QueryResult> {
+        log.info("Starting query");
         const startTimestamp = Date.now();
 
         const infrastructure = await this.options.infrastructureStorage.get(this.options.databaseId.name);
         if (!infrastructure) {
             throw new Error(`Database ${this.options.databaseId.name} not found`);
         }
+        log.info(`Getting infrastructure took ${Date.now() - startTimestamp} ms`);
 
         const workers = await this.getWorkers(infrastructure);
 
@@ -98,36 +147,65 @@ export default class OrchestratorWorker implements Orchestrator {
 
         const worker = Object.entries(workers)[0];
 
-        const oldestUpdateTimestamp = await this.options.infrastructureStorage.getOldestUpdateTimestamp(
-            infrastructure,
-            parseInt(worker[0])
-        );
+        const [
+            oldestUpdateTimestamp,
+            latestSnapshot
+        ] = await Promise.all([
+            this.options.infrastructureStorage.getOldestUpdateTimestamp(infrastructure, parseInt(worker[0])),
+            this.options.snapshotStorage.latestWithoutDownload()
+        ]);
 
-        let updates = await this.options.changesStorage.getAllChangesAfter(oldestUpdateTimestamp);
-
-        const latestSnapshot = await this.options.snapshotStorage.latestWithoutDownload();
-
-        const updatesVectorDimensions = updates.length * this.options.databaseConfiguration.dimensions;
-
-        // TODO: this is a last resort, this should not happen
-        if (updatesVectorDimensions > 250_000) {
-            await this.flushChangesStorage();
-            updates = [];
-        }
-
-        const result = await worker[1].query({
+        const resultWorkerQueryResult = worker[1].query({
             query,
-            updates,
             updateSnapshotIfOlderThan: latestSnapshot?.timestamp ?? 0
         });
-        // TODO! merge result with updates!!!!!!§
 
-        log.debug("Querying", {
-            infrastructure,
-            oldestUpdateTimestamp,
-            updates,
-            result
+        log.info("Starting to query a worker and load updates after oldest timestamp");
+        const workerQueryStart = Date.now();
+        const [
+            result,
+            updates
+        ] = await Promise.all([
+            resultWorkerQueryResult.then(res => {
+                log.info(`Querying worker took ${Date.now() - workerQueryStart} ms`);
+
+                return res;
+            }),
+            this.options.changesStorage.getAllChangesAfter(oldestUpdateTimestamp).then(changes => {
+                log.info(`Getting updates took ${Date.now() - workerQueryStart} ms`);
+
+                return changes;
+            })
+        ]);
+
+        log.info(`Got ${updates.length} updates. Merging now`);
+        // todo merge result + updates
+        const resultLatestSnapshotTimestamp = result.state.lastUpdate;
+        const updatesThatResultNeeds = updates.filter(update => update.timestamp >= resultLatestSnapshotTimestamp);
+
+        const index = new LocalIndex({
+            dimensions: this.options.databaseConfiguration.dimensions,
+            space: this.options.databaseConfiguration.space,
         });
+
+        // add updates
+        for (const update of updatesThatResultNeeds) {
+            if (update.action === "add") {
+                await index.add([update.vector]);
+            } else if (update.action === "remove") {
+                await index.remove([update.label]);
+            }
+        }
+
+        const localQueryResult = await index.knn(query);
+
+        const mergedResult = [...result.result.result, ...localQueryResult];
+
+        const finalResult = {
+            result: mergedResult
+                .sort((a, b) => a.distance - b.distance)
+                .slice(0, query.k)
+        };
 
         const endTimestamp = Date.now();
 
@@ -138,31 +216,62 @@ export default class OrchestratorWorker implements Orchestrator {
             timestamp: startTimestamp
         });
 
-        return result.result;
+        log.info(`Query took ${endTimestamp - startTimestamp} ms`);
+
+        return finalResult;
     }
 
     private async flushChangesStorage() {
         // THIS SHOULD BE LOCKED and done only once if needed
-        log.debug("Flushing changes storage");
+        log.info("Flushing changes storage");
 
         const infrastructure = await this.options.infrastructureStorage.get(this.options.databaseId.name);
         if (!infrastructure) {
             throw new Error(`Database ${this.options.databaseId.name} not found`);
         }
-        const workers = await this.getWorkers(infrastructure);
-        const worker = Object.entries(workers)[0][1];
+        log.info("Got infrastructure");
 
-        await worker.saveSnapshotWithUpdates();
+        if (infrastructure.flushing) {
+            log.info("Already flushing");
 
-        await this.options.changesStorage.clearBefore(Number.MAX_SAFE_INTEGER / 1000);
-
-        // TODO: implement partition
-
-        if (Object.entries(workers).length > 1) {
-            throw new Error("Only one partition is supported");
+            return;
         }
 
-        await worker.requestAll("loadLatestSnapshot", [], "all", infrastructure.scalingTargetConfiguration);
+        await this.options.infrastructureStorage.setProperty(this.options.databaseId.name, "flushing", true);
+
+        let error;
+        try {
+            const workers = await this.getWorkers(infrastructure);
+            const worker = Object.entries(workers)[0][1];
+
+            const savingTime = Date.now();
+            log.info("Saving snapshot with updates");
+            const { result: { changesFlushed } } = await worker.saveSnapshotWithUpdates();
+
+            // todo racing conditions... lock this somehow
+            await Promise.allSettled([
+                worker.requestAll("loadLatestSnapshot", [], "all", infrastructure.scalingTargetConfiguration),
+                this.options.infrastructureStorage.addStoredChanges(this.options.databaseId.name, -changesFlushed),
+                this.options.changesStorage.clearBefore(savingTime),
+            ]);
+
+            // TODO: implement partition
+
+            if (Object.entries(workers).length > 1) {
+                throw new Error("Only one partition is supported");
+            }
+
+            log.info("Flushed changes storage");
+        } catch (e) {
+            log.error("Error while flushing changes storage", { error: e });
+            error = e;
+        } finally {
+            await this.options.infrastructureStorage.setProperty(this.options.databaseId.name, "flushing", false);
+        }
+
+        if (error) {
+            throw error;
+        }
     }
 
     private shouldFlush(changesStored: number) {
@@ -174,15 +283,47 @@ export default class OrchestratorWorker implements Orchestrator {
     }
 
     public async addVectors(vectors: NewVector[]): Promise<{unprocessedItems: string[]}> {
-        const result = await this.options.changesStorage.add(vectors.map(vector => ({
-            action: "add",
-            timestamp: Date.now(),
-            vector
-        })));
+        let count = 0;
+        let result: any;
 
-        await this.options.infrastructureStorage.addStoredChanges(this.options.databaseId.name, vectors.length);
-        // TODOO optimize this
-        const count = await this.options.infrastructureStorage.getStoredChanges(this.options.databaseId.name);
+        try {
+            log.info("Adding vectors to changes storage", { vectors: vectors.length });
+            result = await this.options.changesStorage.add(vectors.map(vector => ({
+                action: "add",
+                timestamp: Date.now(),
+                vector
+            })));
+            log.info("Added vectors", { vectors: vectors.length });
+
+            log.info("Updating infrastructure storage");
+            count = await this.options.infrastructureStorage.addStoredChanges(this.options.databaseId.name, vectors.length);
+            log.info("Updated infrastructure storage");
+
+            log.info(`Flush count: ${count} -> condition: ${this.shouldFlush(count)}`);
+            if (this.shouldFlush(count)) {
+                await this.flushChangesStorage();
+            }
+
+        } catch (e) {
+            // revert changes
+            log.error("Error while adding vectors", { error: e });
+
+            if (!result) {
+                throw e;
+            }
+
+            // TODO: revert changes
+
+            await this.options.changesStorage.add(vectors.map(vector => ({
+                action: "remove",
+                timestamp: Date.now(),
+                label: vector.label
+            })));
+
+            if (count !== 0 && vectors.length > 0) {
+                await this.options.infrastructureStorage.addStoredChanges(this.options.databaseId.name, -vectors.length);
+            }
+        }
 
         await this.safelySendStatisticsEvent({
             type: "add",
@@ -193,23 +334,39 @@ export default class OrchestratorWorker implements Orchestrator {
             dataSize: -1
         });
 
-        if (this.shouldFlush(count)) {
-            await this.flushChangesStorage();
-        }
-
         return result;
     }
 
     public async removeVectors(labels: string[]): Promise<{unprocessedItems: string[]}> {
-        const result = await this.options.changesStorage.add(labels.map(label => ({
-            action: "remove",
-            timestamp: Date.now(),
-            label
-        })));
+        let count = 0;
+        let result: any;
 
-        await this.options.infrastructureStorage.addStoredChanges(this.options.databaseId.name, labels.length);
-        // TODOO optimize this
-        const count = await this.options.infrastructureStorage.getStoredChanges(this.options.databaseId.name);
+        try {
+            log.info("Removing vectors from changes storage", { vectors: labels.length });
+            result = await this.options.changesStorage.add(labels.map(label => ({
+                action: "remove",
+                timestamp: Date.now(),
+                label
+            })));
+            log.info("Removed vectors", { vectors: labels.length });
+
+            log.info("Updating infrastructure storage");
+            count = await this.options.infrastructureStorage.addStoredChanges(this.options.databaseId.name, labels.length);
+            log.info("Updated infrastructure storage");
+
+            log.info(`Flush count: ${count} -> condition: ${this.shouldFlush(count)}`);
+            if (this.shouldFlush(count)) {
+                await this.flushChangesStorage();
+            }
+
+        } catch (e) {
+            // revert changes
+            log.error("Error while removing vectors", { error: e });
+
+            throw e;
+
+            // TODO: revert changes
+        }
 
         await this.safelySendStatisticsEvent({
             type: "remove",
@@ -219,10 +376,6 @@ export default class OrchestratorWorker implements Orchestrator {
             vectorsAfter: count,
             dataSize: -1
         });
-
-        if (this.shouldFlush(count)) {
-            await this.flushChangesStorage();
-        }
 
         return result;
     }

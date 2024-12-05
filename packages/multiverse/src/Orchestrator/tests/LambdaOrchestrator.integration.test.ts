@@ -12,7 +12,7 @@ describe("<LambdaOrchestrator>", () => {
 
     const databaseId: DatabaseID = {
         name: Math.random().toString(36).substring(7),
-        region: "eu-central-1"
+        region: "eu-west-1"
     };
 
     const dimensions = 1536;
@@ -52,7 +52,7 @@ describe("<LambdaOrchestrator>", () => {
     });
 
     const buildBucket = new BuildBucket("multiverse-build-" + databaseId.name, {
-        region: "eu-central-1",
+        region: "eu-west-1",
         awsToken: undefined as any
     });
 

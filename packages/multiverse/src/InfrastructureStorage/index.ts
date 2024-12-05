@@ -17,7 +17,6 @@ export type PartitionLambdaState = {
         id: string;
         lastUpdated: number; // 0 means its not updated
     }[]
-
 };
 
 export type PartitionInfrastructureState = {
@@ -47,6 +46,7 @@ export type Infrastructure = {
     partitions: PartitionInfrastructureState[];
 
     storedChanges: number;
+    flushing: boolean;
 };
 
 // TODO: RACING CONDITION!!!
@@ -62,7 +62,7 @@ export default abstract class InfrastructureStorage {
     abstract destroy(): Promise<void>;
     abstract exists(): Promise<boolean>;
 
-    abstract addStoredChanges(dbName: string, changesCount: number): Promise<void>;
+    abstract addStoredChanges(dbName: string, changesCount: number): Promise<number>;
     abstract setStoredChanges(dbName: string, changesCount: number): Promise<void>;
     abstract getStoredChanges(dbName: string): Promise<number>;
 

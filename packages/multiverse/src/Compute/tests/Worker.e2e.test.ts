@@ -1,3 +1,4 @@
+import BucketChangesStorage from "../../ChangesStorage/BucketChangesStorage";
 import type { DatabaseID, DatabaseConfiguration } from "../../core/DatabaseConfiguration";
 import S3SnapshotStorage from "../../SnapshotStorage/S3SnapshotStorage";
 import LambdaWorker from "../LambdaWorker";
@@ -14,7 +15,7 @@ function initializeLambdaWorker({
 
     const worker = new LambdaWorker({
         lambdaName: "multiverse-lambda-worker-test-" + Math.random().toString(36).substring(7),
-        region: "eu-central-1",
+        region: "eu-west-1",
         awsToken: undefined as any
     });
 
@@ -22,6 +23,12 @@ function initializeLambdaWorker({
         bucketName: snapshotBucketName,
         databaseId,
         awsToken: undefined as any
+    });
+
+    const changesStorage = new BucketChangesStorage("multiverse-changes-" + databaseId.name, {
+        region: databaseId.region,
+        awsToken: undefined as any,
+        maxObjectAge: 1000 * 60 * 60 // 1 hour
     });
 
     const deploy = async() => {
@@ -32,7 +39,8 @@ function initializeLambdaWorker({
             partition: 0,
             snapshotBucket: snapshotBucketName,
             configuration: config,
-            databaseId
+            databaseId,
+            changesStorage: changesStorage.getResourceName()
         });
     };
 

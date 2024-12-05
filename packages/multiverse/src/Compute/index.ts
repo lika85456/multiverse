@@ -69,8 +69,7 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
         }
 
         log.debug("Received event", {
-            event,
-            result,
+            action: e.event,
             waitTime: e.waitTime
         });
 
