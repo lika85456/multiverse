@@ -233,7 +233,7 @@ export default class LambdaWorker implements Worker {
             waitTime: this.options.waitTime
         };
 
-        console.trace("Invoking lambda", {
+        log.debug("Invoking lambda", {
             lambdaName: this.options.lambdaName,
             payload
         });

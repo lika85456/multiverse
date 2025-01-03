@@ -353,12 +353,13 @@ export default class LambdaOrchestrator implements Orchestrator {
                     Handler: "index.handler",
                     Timeout: 300,
                     MemorySize: 1024,
+                    // Tags: { "multiverse:database": this.options.databaseId.name },
                     Environment: {
                         Variables: {
                             NODE_ENV: process.env.NODE_ENV ?? "development",
                             VARIABLES: JSON.stringify(variables),
                             NODE_OPTIONS: "--enable-source-maps",
-                            // LOG_LEVEL: "6"
+                            LOG_LEVEL: "5"
                         }
                     }
                 });
