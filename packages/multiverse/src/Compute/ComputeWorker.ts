@@ -31,6 +31,7 @@ export default class ComputeWorker implements Worker {
     public async state(): Promise<StatefulResponse<void>> {
         return {
             result: undefined,
+            computeTime: 0,
             state: {
                 instanceId: this.instanceId,
                 partitionIndex: this.options.partitionIndex,
@@ -45,6 +46,8 @@ export default class ComputeWorker implements Worker {
     }
 
     public async update(updates: StoredVectorChange[]): Promise<StatefulResponse<void>> {
+        const startTime = Date.now();
+
         for (const update of updates) {
             // some of the updates might have been proccessed already (if lastUpdate===update.timestamp),
             // but if in the right order, it should lead to the same results
@@ -64,14 +67,20 @@ export default class ComputeWorker implements Worker {
         // find the latest timestamp
         this.lastUpdate = updates.reduce((max, update) => Math.max(max, update.timestamp), this.lastUpdate);
 
-        return await this.state();
+        return {
+            ...(await this.state()),
+            computeTime: Date.now() - startTime
+        };
     }
 
     public async query(query: WorkerQuery): Promise<StatefulResponse<WorkerQueryResult>> {
+        const startTime = Date.now();
+
         if (query.query.k === 0) {
             return {
                 ...(await this.state()),
-                result: { result: [] }
+                result: { result: [] },
+                computeTime: Date.now() - startTime
             };
         }
 
@@ -101,7 +110,8 @@ export default class ComputeWorker implements Worker {
 
         return {
             ...(await this.state()),
-            result: { result }
+            result: { result },
+            computeTime: Date.now() - startTime
         };
     }
 
@@ -110,6 +120,8 @@ export default class ComputeWorker implements Worker {
     }
 
     public async saveSnapshot(): Promise<StatefulResponse<void>> {
+        const startTime = Date.now();
+
         const randomId = Math.random().toString(36).slice(2);
         const path = `/tmp/${randomId}`;
         await this.options.index.save(path);
@@ -120,10 +132,15 @@ export default class ComputeWorker implements Worker {
 
         this.log.debug(`Saved snapshot ${snapshot.filePath}`, { snapshot });
 
-        return await this.state();
+        return {
+            ...(await this.state()),
+            computeTime: Date.now() - startTime
+        };
     }
 
     public async saveSnapshotWithUpdates(): Promise<StatefulResponse<{changesFlushed: number}>> {
+        const startTime = Date.now();
+
         log.info(`Downloading changes after ${this.lastSnapshotUpdate}`);
         const updates = await this.options.changesStorage.getAllChangesAfter(this.lastSnapshotUpdate);
         log.info(`Downloaded ${updates.length} changes`);
@@ -134,17 +151,23 @@ export default class ComputeWorker implements Worker {
 
         return {
             ...(await this.state()),
-            result: { changesFlushed: updates.length }
+            result: { changesFlushed: updates.length },
+            computeTime: Date.now() - startTime
         };
     }
 
     public async loadLatestSnapshot(): Promise<StatefulResponse<void>> {
+        const startTime = Date.now();
+
         const snapshot = await this.options.snapshotStorage.loadLatest();
 
         if (!snapshot) {
             this.log.debug("No snapshot to load");
 
-            return await this.state();
+            return {
+                ...(await this.state()),
+                computeTime: Date.now() - startTime
+            };
         }
 
         await this.options.index.load(snapshot.filePath);
@@ -157,19 +180,28 @@ export default class ComputeWorker implements Worker {
             totalVectorsLoaded: await this.options.index.count()
         });
 
-        return await this.state();
+        return {
+            ...(await this.state()),
+            computeTime: Date.now() - startTime
+        };
     }
 
     public async count(): Promise<StatefulResponse<{
         vectors: number,
         vectorDimensions: number
     }>> {
-        return { // TODO: implement properly
+        const startTime = Date.now();
+        const result = { // TODO: implement properly
             ...(await this.state()),
             result: {
                 vectors: await this.options.index.count(),
                 vectorDimensions: await this.options.index.dimensions(),
             }
+        };
+
+        return {
+            ...result,
+            computeTime: Date.now() - startTime
         };
     }
 

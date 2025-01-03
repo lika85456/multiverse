@@ -6,7 +6,7 @@ import LocalIndex from "../../Index/LocalIndex";
 import HNSWIndex from "../../Index/HNSWIndex";
 
 describe.each([
-    ["low-dimensions", { dimensions: 3 }],
+    ["low-dimensions", { dimensions: 100 }],
     ["high-dimensions", { dimensions: 1536 }],
 ])("Multiverse E2E %s", (name, config) => {
     const region = "eu-west-1" as Region;

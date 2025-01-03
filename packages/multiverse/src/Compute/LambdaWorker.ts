@@ -177,6 +177,9 @@ export default class LambdaWorker implements Worker {
         env: "development" | "production",
         configuration: DatabaseConfiguration,
         databaseId: DatabaseID
+        memorySize?: number;
+        ephemeralStorage?: number;
+        enableLogs?: boolean;
     }) {
 
         const variables: DatabaseEnvironment = {
@@ -200,14 +203,14 @@ export default class LambdaWorker implements Worker {
             Role: await this.lambdaRoleARN(),
             PackageType: "Image",
             Timeout: 900,
-            MemorySize: 2048,
-            EphemeralStorage: { Size: 1024 },
+            MemorySize: options.memorySize ?? 2048,
+            EphemeralStorage: { Size: options.ephemeralStorage ?? 1024 },
             Environment: {
                 Variables: {
                     VARIABLES: JSON.stringify(variables),
                     NODE_ENV: options.env,
                     NODE_OPTIONS: "--enable-source-maps",
-                    LOG_LEVEL: "6"
+                    LOG_LEVEL: options.enableLogs ? "0" : "6"
                 }
             },
         });

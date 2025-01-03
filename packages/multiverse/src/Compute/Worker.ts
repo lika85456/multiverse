@@ -32,6 +32,7 @@ export type WorkerState = {
 export type StatefulResponse<T> = {
     result: T;
     state: WorkerState;
+    computeTime: number;
 };
 
 export type CountResponse = {
