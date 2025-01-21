@@ -106,12 +106,14 @@ export default function calculate({
         price: knnQueries * DYNAMODB.read * 2 // transactional for flushing
     });
 
-    costs.push({
-        operation: "knn",
-        service: "S3",
-        description: "Read changes",
-        price: knnQueries * S3.directory.getSelect * 2 // 2 objects per query?
-    });
+    if (changeQueries > 0) {
+        costs.push({
+            operation: "knn",
+            service: "S3",
+            description: "Read changes",
+            price: knnQueries * S3.directory.getSelect * 2 // 2 objects per query?
+        });
+    }
 
     costs.push({
         operation: "knn",
@@ -206,12 +208,14 @@ export default function calculate({
     const warmsPerMonth = 30 * 24 * 6;
 
     // warming
-    costs.push({
-        operation: "warming",
-        service: "Lambda",
-        description: "Orchestrator",
-        price: warmsPerMonth * (LAMBDA.requests + LAMBDA.compute * 0.1 * 0.256)
-    });
+    if (warmInstances > 0) {
+        costs.push({
+            operation: "warming",
+            service: "Lambda",
+            description: "Orchestrator",
+            price: warmsPerMonth * (LAMBDA.requests + LAMBDA.compute * 0.1 * 0.256)
+        });
+    }
 
     // 5 seconds stall time
     costs.push({
@@ -265,9 +269,9 @@ export default function calculate({
 
 calculate({
     changeQueries: 0,
-    dimensions: 1536,
-    knnQueries: 900,
-    replicas: 2,
-    vectorsStored: 1000,
-    warmInstances: 3
+    dimensions: 384,
+    knnQueries: 10000,
+    replicas: 1,
+    vectorsStored: 100_000_000,
+    warmInstances: 0
 });
