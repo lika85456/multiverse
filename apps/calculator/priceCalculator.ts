@@ -69,6 +69,15 @@ const DYNAMODB = {
     write: 0.705 / 1000000,
 };
 
+type CalculatorInput = {
+    vectorsStored: number,
+    dimensions: number,
+    knnQueries: number,
+    changeQueries: number,
+    replicas: number,
+    warmInstances: number
+};
+
 export default function calculate({
     vectorsStored,
     dimensions,
@@ -77,14 +86,7 @@ export default function calculate({
     replicas,
     // warm instances per replica
     warmInstances
-}: {
-    vectorsStored: number,
-    dimensions: number,
-    knnQueries: number,
-    changeQueries: number,
-    replicas: number,
-    warmInstances: number
-}) {
+}: CalculatorInput) {
     const costs: PriceDescription[] = [];
 
     // storage
@@ -267,11 +269,144 @@ export default function calculate({
     return costs;
 }
 
-calculate({
+/*
+Pinecone pricing:
+
+Storage (/GB/Month)	Read Units ($/1M RU)	Write Units ($/1M WU)
+$0.33	$18	$4.50
+
+The number of RUs used by a query is proportional to the following factors:
+
+    Record count: The number of vectors contained in the target index. Only vectors stored in the relevant namespace are used.
+    Record size: Higher dimensionality or larger metadata increases the size of each scanned vector.
+
+Because serverless indexes organize vectors in similarity-based clusters, only a fraction of each index will be read for each query. The number of RUs a query uses therefore increases much more slowly than the index size.
+
+The following table contains the RU cost of a query at different namespace sizes and record dimensionality, assuming an average metadata size around 500 bytes:
+Records per namespace	Dimension=384	Dimension=768	Dimension=1536
+100,000	5 RUs	5 RUs	6 RUs
+1,000,000	6 RUs	10 RUs	18 RUs
+10,000,000	18 RUs	32 RUs	59 RUs
+
+TopK value	Additional RUs used
+TopK=5	1
+TopK=10	1
+TopK=50	5
+
+Scanning a namespace has a minimal cost of 5 RUs.
+
+The number of WUs used by an upsert request is proportional to the total size of records it writes and/or modifies, with a minimum of 1 WU.
+
+The following table contains the WU cost of an upsert request at different batch sizes and record dimensionality, assuming an average metadata size around 500 bytes:
+Records per batch	Dimension=384	Dimension=768	Dimension=1536
+1	3 WUs	4 WUs	7 WUs
+10	30 WUs	40 WUs	70 WUs
+100	300 WUs	400 WUs	700 WUs
+
+*/
+
+function calculatePinecone({
+    vectorsStored,
+    dimensions,
+    knnQueries,
+    changeQueries,
+    replicas,
+    warmInstances,
+}: CalculatorInput): PriceDescription[] {
+    const costs: PriceDescription[] = [];
+
+    // Calculate storage costs
+    const vectorSize = dimensions * 4 + 500; // 4 bytes per float and 500 bytes for metadata
+    const storedSizeGB = (vectorsStored * vectorSize) / (1024 ** 3); // Convert bytes to GB
+    const storageCost = storedSizeGB * 0.33;
+
+    costs.push({
+        operation: "storage",
+        service: "Pinecone",
+        description: "Storage",
+        price: storageCost,
+    });
+
+    // Determine RU cost per knn query based on vectorsStored and dimensions
+    let ruPerKnnQuery = 5; // Default minimal cost
+    if (vectorsStored >= 10_000_000) {
+        if (dimensions === 384) ruPerKnnQuery = 18;
+        else if (dimensions === 768) ruPerKnnQuery = 32;
+        else if (dimensions === 1536) ruPerKnnQuery = 59;
+    } else if (vectorsStored >= 1_000_000) {
+        if (dimensions === 384) ruPerKnnQuery = 6;
+        else if (dimensions === 768) ruPerKnnQuery = 10;
+        else if (dimensions === 1536) ruPerKnnQuery = 18;
+    }
+
+    const knnReadUnits = ruPerKnnQuery * knnQueries;
+    const knnReadCost = (knnReadUnits / 1_000_000) * 18; // $18 per 1M RUs
+
+    costs.push({
+        operation: "knn_queries",
+        service: "Pinecone",
+        description: "k-NN Queries",
+        price: knnReadCost,
+    });
+
+    // Calculate change query costs (write units)
+    let wuPerChangeQuery = 1; // Default minimal cost
+    if (changeQueries > 0) {
+        if (dimensions === 384) wuPerChangeQuery = 3;
+        else if (dimensions === 768) wuPerChangeQuery = 4;
+        else if (dimensions === 1536) wuPerChangeQuery = 7;
+    }
+
+    const changeWriteUnits = wuPerChangeQuery * changeQueries;
+    const changeWriteCost = (changeWriteUnits / 1_000_000) * 4.5; // $4.50 per 1M WUs
+
+    costs.push({
+        operation: "change_queries",
+        service: "Pinecone",
+        description: "Change Queries",
+        price: changeWriteCost,
+    });
+
+    // Add replica and instance costs (not detailed in pricing, placeholder for future use)
+    const replicaCost = replicas * warmInstances * 0; // Placeholder as no specific cost is given
+
+    costs.push({
+        operation: "replicas",
+        service: "Pinecone",
+        description: "Replica and Warm Instances",
+        price: replicaCost,
+    });
+
+    return costs;
+}
+
+// const input = {
+//     changeQueries: 0,
+//     dimensions: 1536,
+//     knnQueries: 900,
+//     replicas: 2,
+//     vectorsStored: 1000,
+//     warmInstances: 3
+// };
+
+// const input = {
+//     changeQueries: 10_000,
+//     dimensions: 1536,
+//     knnQueries: 200_000,
+//     replicas: 3,
+//     vectorsStored: 300_000,
+//     warmInstances: 8
+// };
+
+const input = {
     changeQueries: 0,
     dimensions: 384,
     knnQueries: 10000,
     replicas: 1,
     vectorsStored: 100_000_000,
     warmInstances: 0
-});
+};
+
+calculate(input);
+
+console.log(`Pinecone total price: $${calculatePinecone(input).reduce((acc, cost) => acc + cost.price, 0)}`);
