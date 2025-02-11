@@ -2,7 +2,7 @@ import log from "@multiverse/log";
 import Multiverse from "../..";
 import type { Region } from "../../core/DatabaseConfiguration";
 
-describe("Multiverse manual", () => {
+describe.skip("Multiverse manual", () => {
     const region = "eu-west-1" as Region;
 
     const name = "manual";

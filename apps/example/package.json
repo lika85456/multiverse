@@ -1,0 +1,16 @@
+{
+  "name": "example",
+  "version": "1.0.0",
+  "description": "Example code for the Multiverse library",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Vojtěch Jedlička",
+  "license": "ISC",
+  "dependencies": {
+    "@multiverse/env": "workspace:^",
+    "@multiverse/log": "workspace:^",
+    "@multiverse/multiverse": "workspace:^"
+  }
+}

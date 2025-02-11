@@ -30,7 +30,15 @@ AWS account and costs are billed directly to the user's AWS account. Expected co
 
 # Multiverse Library
 
-Will be provided by Vojtěch Jedlička.
+## Prerequisities
+
+To use the Multiverse library you need to fill the `.env` file with your configuration. Use the same structure as in `.env.example`. The AWS ECR (address) must be in the same region as the database (preferably `eu-west-1` as other regions might not support S3 directory buckets). Filling `ORCHESTRATOR_SOURCE_BUCKET` is no longer needed for the library, but the Web UI still uses it.
+
+Dependencies must be installed using `pnpm install`.
+
+## Running the example
+
+In `apps/example` you can find an example repository using the Multiverse library. You can run it using `bun apps/example/index.ts` or any other Typescript runner.
 
 # Multiverse UI
 
