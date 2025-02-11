@@ -32,6 +32,8 @@ export interface IMultiverseDatabase {
     addToken(token: Token): Promise<void>;
 
     removeToken(tokenName: string): Promise<void>;
+
+    ping(wait?: number): Promise<string>;
 }
 
 export interface IMultiverse {
@@ -64,6 +66,10 @@ export class MultiverseDatabase implements IMultiverseDatabase {
             secretToken: options.secretToken,
             awsToken: this.options.awsToken
         });
+    }
+
+    public async ping(wait?: number): Promise<string> {
+        return this.orchestrator.ping(wait);
     }
 
     public async query(query: Query): Promise<QueryResult> {

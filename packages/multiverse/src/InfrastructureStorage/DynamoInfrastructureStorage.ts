@@ -10,6 +10,7 @@ import log from "@multiverse/log";
 import InfrastructureStorage from ".";
 import type { Infrastructure } from ".";
 import type { AwsToken } from "../core/AwsToken";
+import keepAliveAgent from "../keepAliveAgent";
 
 const logger = log.getSubLogger({ name: "DynamoChangesStorageDeployer" });
 
@@ -116,7 +117,8 @@ export default class DynamoInfrastructureStorage extends InfrastructureStorage {
         super();
         const db = new DynamoDBClient({
             region: options.region,
-            credentials: options.awsToken
+            credentials: options.awsToken,
+            requestHandler: keepAliveAgent
         });
         this.dynamo = DynamoDBDocumentClient.from(db);
 
@@ -175,7 +177,6 @@ export default class DynamoInfrastructureStorage extends InfrastructureStorage {
     }
 
     public async set(dbName: string, infrastructure: Infrastructure): Promise<void> {
-
         await this.dynamo.send(new PutCommand({
             TableName: this.options.tableName,
             Item: {

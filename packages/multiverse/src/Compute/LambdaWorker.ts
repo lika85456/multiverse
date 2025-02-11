@@ -12,6 +12,7 @@ import type { StoredVectorChange } from "../ChangesStorage/StoredVector";
 import type { DatabaseEnvironment } from "./EnvSchema";
 import { databaseEnvSchema } from "./EnvSchema";
 import type { AwsToken } from "../core/AwsToken";
+import keepAliveAgent from "../keepAliveAgent";
 
 const logger = log.getSubLogger({ name: "LambdaWorker" });
 
@@ -25,9 +26,11 @@ export default class LambdaWorker implements Worker {
         waitTime?: number;
         awsToken: AwsToken
     }) {
+        // TODO! maybe refresh agent on EMFILE errors?
         this.lambda = new Lambda({
             region: options.region,
-            credentials: options.awsToken
+            credentials: options.awsToken,
+            requestHandler: keepAliveAgent
         });
     }
 

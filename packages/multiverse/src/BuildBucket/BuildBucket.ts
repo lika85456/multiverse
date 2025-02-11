@@ -1,6 +1,7 @@
 import { S3 } from "@aws-sdk/client-s3";
 import type { AwsToken } from "..";
 import log from "@multiverse/log";
+import keepAliveAgent from "../keepAliveAgent";
 
 export default class BuildBucket {
 
@@ -12,7 +13,8 @@ export default class BuildBucket {
     }) {
         this.s3 = new S3({
             region: this.options.region,
-            credentials: this.options.awsToken
+            credentials: this.options.awsToken,
+            requestHandler: keepAliveAgent
         });
     }
 

@@ -7,6 +7,7 @@ import type { Readable } from "stream";
 import log from "@multiverse/log";
 import type { DatabaseID } from "../core/DatabaseConfiguration";
 import type { AwsToken } from "../core/AwsToken";
+import keepAliveAgent from "../keepAliveAgent";
 
 const logger = log.getSubLogger({ name: "S3SnapshotStorage" });
 
@@ -96,7 +97,8 @@ export default class S3SnapshotStorage implements SnapshotStorage {
     }) {
         this.s3 = new S3({
             region: options.databaseId.region,
-            credentials: options.awsToken
+            credentials: options.awsToken,
+            requestHandler: keepAliveAgent
         });
         this.options.downloadPath = this.options.downloadPath || "/tmp/s3-snapshots";
         this.deployer = new S3SnapshotStorageDeployer({

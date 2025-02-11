@@ -45,6 +45,14 @@ export default class OrchestratorWorker implements Orchestrator {
         this.maxChangesCount = this.options.maxChangesCount ?? this.maxChangesCount ?? 1000;
     }
 
+    public async ping(wait?: number) {
+        if (wait) {
+            await new Promise(resolve => setTimeout(resolve, wait));
+        }
+
+        return "pong";
+    }
+
     /**
      * Initialization is called on every orchestrator instance (to handle cache etc.)
      * Dont wake up workers here for the first time, they will get woken up by the deployer

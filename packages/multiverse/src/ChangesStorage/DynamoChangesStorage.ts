@@ -9,6 +9,7 @@ import {
 import type { StoredVectorChange } from "./StoredVector";
 import type { DatabaseID } from "../core/DatabaseConfiguration";
 import type { AwsToken } from "../core/AwsToken";
+import keepAliveAgent from "../keepAliveAgent";
 
 const logger = log.getSubLogger({ name: "DynamoChangesStorageDeployer" });
 
@@ -38,7 +39,8 @@ export class DynamoChangesStorageDeployer {
     }) {
         this.dynamo = new DynamoDB({
             region: options.region,
-            credentials: options.awsToken
+            credentials: options.awsToken,
+            requestHandler: keepAliveAgent
         });
     }
 

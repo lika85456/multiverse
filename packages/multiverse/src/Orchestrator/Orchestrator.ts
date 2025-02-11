@@ -18,4 +18,5 @@ export default interface Orchestrator {
     removeToken(tokenName: string): Promise<void>;
     auth(secret: string): Promise<boolean>;
     wakeUpWorkers(): Promise<void>;
+    ping(wait?: number): Promise<string>;
 }

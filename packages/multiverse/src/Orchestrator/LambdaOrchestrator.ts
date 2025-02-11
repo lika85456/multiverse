@@ -19,6 +19,7 @@ import type { AwsToken } from "../core/AwsToken";
 import type { WorkerType } from "../Compute/Worker";
 import type { ScalingTargetConfiguration } from "../InfrastructureStorage";
 import BuildBucket from "../BuildBucket/BuildBucket";
+import keepAliveAgent from "../keepAliveAgent";
 
 const log = logger.getSubLogger({ name: "LambdaOrchestrator" });
 
@@ -34,7 +35,8 @@ export default class LambdaOrchestrator implements Orchestrator {
     }) {
         this.lambda = new Lambda({
             region: options.databaseId.region,
-            credentials: options.awsToken
+            credentials: options.awsToken,
+            requestHandler: keepAliveAgent
         });
     }
 
@@ -79,6 +81,10 @@ export default class LambdaOrchestrator implements Orchestrator {
             });
             throw e;
         }
+    }
+
+    public async ping(wait?: number) {
+        return this.request("ping", [wait]);
     }
 
     public async query(query: Query): Promise<QueryResult> {
