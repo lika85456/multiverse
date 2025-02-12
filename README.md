@@ -32,14 +32,10 @@ AWS account and costs are billed directly to the user's AWS account. Expected co
 
 ## Prerequisities
 
-### Filling .env
-To use the Multiverse library you need to fill the `.env` file with your configuration. Use the same structure as in `.env.example`. The AWS ECR must be in the same region as the database (preferably `eu-west-1` as other regions might not support S3 directory buckets). Filling `ORCHESTRATOR_SOURCE_BUCKET` is no longer needed for the library, but the Web UI still uses it.
-
-### Installing dependencies
-Dependencies must be installed using `pnpm install` from the root of the project.
-
-### Deploying Compute worker image to AWS ECR
-Deploy the database worker image using `pnpm run deploy:db`. If you are using Docker Desktop, the configuration might be wrong and errors might occur. In that case look at https://stackoverflow.com/questions/76109195/how-to-fix-docker-login-error-error-saving-credentials.
+1. Create an AWS account and gather your credentials.
+2. Create an AWS ECR repository `multiverse-compute` for the compute worker image. Copy the repository URI and delete the postfix `/multiverse-compute` into the `.env` file. Create the repository in the same region as the database (preferably `eu-west-1`, or in regions where directory buckets are allowed).
+3. Filling `ORCHESTRATOR_SOURCE_BUCKET` is not neccessary for the library, but it is required for the UI.
+4. Install dependencies using `pnpm install`.
 
 ## Running the example
 
