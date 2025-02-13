@@ -7,7 +7,7 @@ import Multiverse from "@multiverse/multiverse";
 import log from "@multiverse/log";
 
 const multiverse = new Multiverse({
-    awsToken: undefined as unknown as AwsToken, // define in .env
+    awsToken: undefined as unknown as AwsToken, // provide token in .env file
     name: "example-multiverse",
     region: "eu-west-1"
 });

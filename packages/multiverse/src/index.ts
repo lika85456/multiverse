@@ -212,6 +212,10 @@ export default class Multiverse implements IMultiverse {
             region: options.region
         };
 
+        if (await this.infrastructureStorage.get(options.name)) {
+            throw new Error(`Database ${options.name} already exists`);
+        }
+
         // todo changes storage should be shared ?
         const changesStorage = new BucketChangesStorage(`mv-changes-${options.name}`, {
             region: this.options.region,
