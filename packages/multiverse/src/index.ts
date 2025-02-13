@@ -8,9 +8,10 @@ import DynamoInfrastructureStorage from "./InfrastructureStorage/DynamoInfrastru
 import type Orchestrator from "./Orchestrator/Orchestrator";
 import LambdaOrchestrator from "./Orchestrator/LambdaOrchestrator";
 import logger from "@multiverse/log";
-import DynamoChangesStorage from "./ChangesStorage/DynamoChangesStorage";
 import S3SnapshotStorage from "./SnapshotStorage/S3SnapshotStorage";
 import type { AwsToken } from "./core/AwsToken";
+import BuildBucket from "./BuildBucket/BuildBucket";
+import BucketChangesStorage from "./ChangesStorage/BucketChangesStorage";
 
 const log = logger.getSubLogger({ name: "Multiverse" });
 
@@ -21,9 +22,9 @@ export type MultiverseDatabaseConfiguration = StoredDatabaseConfiguration & Data
 export interface IMultiverseDatabase {
     query(query: Query): Promise<QueryResult>;
 
-    add(vector: NewVector[]): Promise<void>;
+    add(vector: NewVector[]): Promise<{unprocessedItems: string[]}>;
 
-    remove(label: string[]): Promise<void>;
+    remove(label: string[]): Promise<{unprocessedItems: string[]}>;
 
     getConfiguration(): Promise<MultiverseDatabaseConfiguration>;
     updateConfiguration(configuration: MultiverseDatabaseConfiguration): Promise<void>;
@@ -31,6 +32,8 @@ export interface IMultiverseDatabase {
     addToken(token: Token): Promise<void>;
 
     removeToken(tokenName: string): Promise<void>;
+
+    ping(wait?: number): Promise<string>;
 }
 
 export interface IMultiverse {
@@ -42,7 +45,7 @@ export interface IMultiverse {
 
     listDatabases(): Promise<IMultiverseDatabase[]>;
 
-    removeSharedInfrastructure(): Promise<void>;
+    destroySharedInfrastructure(): Promise<void>;
 }
 
 export class MultiverseDatabase implements IMultiverseDatabase {
@@ -65,16 +68,40 @@ export class MultiverseDatabase implements IMultiverseDatabase {
         });
     }
 
+    public async ping(wait?: number): Promise<string> {
+        return this.orchestrator.ping(wait);
+    }
+
     public async query(query: Query): Promise<QueryResult> {
         return this.orchestrator.query(query);
     }
 
-    public async add(vector: NewVector[]) {
-        await this.orchestrator.addVectors(vector);
+    public async add(vector: NewVector[]): Promise<{unprocessedItems: string[]}> {
+        return await this.orchestrator.addVectors(vector);
     }
 
-    public async remove(label: string[]) {
-        await this.orchestrator.removeVectors(label);
+    /**
+     * will add all vectors, but might take some time if database needs to scale up
+     * @param vector
+     */
+    public async addAll(vector: NewVector[], timeLimit: number): Promise<void> {
+        let unprocessedItems = vector;
+        let processedItems: NewVector[] = [];
+        const startTime = Date.now();
+
+        // TODO implement time limit properly
+        while (unprocessedItems.length > 0) {
+            if (Date.now() - startTime > timeLimit) {
+                throw new Error("Time limit exceeded");
+            }
+            const { unprocessedItems: newUnprocessedItems } = await this.add(unprocessedItems);
+            processedItems = processedItems.concat(unprocessedItems);
+            unprocessedItems = newUnprocessedItems.map(item => vector.find(v => v.label === item)).filter(Boolean) as NewVector[];
+        }
+    }
+
+    public async remove(label: string[]): Promise<{unprocessedItems: string[]}> {
+        return await this.orchestrator.removeVectors(label);
     }
 
     public async getConfiguration(): Promise<MultiverseDatabaseConfiguration> {
@@ -104,22 +131,29 @@ export class MultiverseDatabase implements IMultiverseDatabase {
  */
 export default class Multiverse implements IMultiverse {
 
-    private INFRASTRUCTURE_TABLE_NAME = "multiverse-infrastructure-storage";
-
     private infrastructureStorage: InfrastructureStorage;
+    private buildBucket: BuildBucket;
 
     /**
      * Either set the AWS credentials in the environment or provide them here.
      * @param options
+     * @param options.region AWS region for primary database
+     * @param options.awsToken AWS credentials
+     * @param options.name Name of the Multiverse. It will be used as a prefix for all the resources. Useful for staging
      */
     constructor(private options: {
         region: Region,
         awsToken: AwsToken,
+        name: string
     }) {
-
         this.infrastructureStorage = new DynamoInfrastructureStorage({
             region: options.region,
-            tableName: this.INFRASTRUCTURE_TABLE_NAME,
+            tableName: `mv-infra-${options.name}`,
+            awsToken: this.options.awsToken
+        });
+
+        this.buildBucket = new BuildBucket(`mv-build-${this.options.name}`, {
+            region: this.options.region,
             awsToken: this.options.awsToken
         });
     }
@@ -131,17 +165,26 @@ export default class Multiverse implements IMultiverse {
 
         log.info("Deploying shared infrastructure");
 
-        await this.infrastructureStorage.deploy();
+        await Promise.allSettled([
+            this.infrastructureStorage.deploy(),
+            this.buildBucket.deploy()
+        ]);
+
+        // TODO build and upload orchestrator source to s3
+        await LambdaOrchestrator.build(this.buildBucket);
     }
 
-    public async removeSharedInfrastructure() {
+    public async destroySharedInfrastructure() {
         if (!(await this.infrastructureStorage.exists())) {
             return;
         }
 
         log.info("Removing shared infrastructure");
 
-        await this.infrastructureStorage.destroy();
+        await Promise.allSettled([
+            this.infrastructureStorage.destroy(),
+            this.buildBucket.destroy()
+        ]);
     }
 
     /**
@@ -169,15 +212,15 @@ export default class Multiverse implements IMultiverse {
             region: options.region
         };
 
-        // todo changes storage should be shared
-        const changesStorage = new DynamoChangesStorage({
-            databaseId,
-            tableName: `multiverse-changes-${options.name}`,
-            awsToken: this.options.awsToken
+        // todo changes storage should be shared ?
+        const changesStorage = new BucketChangesStorage(`mv-changes-${options.name}`, {
+            region: this.options.region,
+            awsToken: this.options.awsToken,
+            maxObjectAge: 1000 * 60 * 60 // 1 hour
         });
 
         const snapshotStorage = new S3SnapshotStorage({
-            bucketName: `multiverse-snapshot-${options.name}`,
+            bucketName: `mv-snapshot-${options.name}`,
             databaseId,
             awsToken: this.options.awsToken
         });
@@ -194,10 +237,11 @@ export default class Multiverse implements IMultiverse {
             changesStorage.deploy(),
             snapshotStorage.deploy(),
             orchestrator.deploy({
-                changesTable: `multiverse-changes-${options.name}`,
-                snapshotBucket: `multiverse-snapshot-${options.name}`,
+                changesStorage: changesStorage.getResourceName(),
+                snapshotBucket: snapshotStorage.getResourceName(),
+                buildBucket: this.buildBucket.getResourceName(),
                 databaseConfiguration: options,
-                infrastructureTable: this.INFRASTRUCTURE_TABLE_NAME,
+                infrastructureTable: this.infrastructureStorage.getResourceName(),
                 scalingTargetConfiguration: {
                     warmPrimaryInstances: 10,
                     warmRegionalInstances: 0,
@@ -212,12 +256,12 @@ export default class Multiverse implements IMultiverse {
             await Promise.all(promises);
         } catch (e) {
             // wait untill all finished but catch
-            await Promise.all(promises.map(p => p.catch(() => null)));
+            await Promise.all(promises.map(p => p.catch((e) => log.error(e))));
 
             await Promise.all([
-                changesStorage.destroy().catch(() => null),
-                snapshotStorage.destroy().catch(() => null),
-                orchestrator.destroy().catch(() => null)
+                changesStorage.destroy().catch((e) => log.error(e)),
+                snapshotStorage.destroy().catch((e) => log.error(e)),
+                orchestrator.destroy().catch((e) => log.error(e))
             ]);
 
             throw e;
@@ -235,14 +279,14 @@ export default class Multiverse implements IMultiverse {
             region: this.options.region
         };
 
-        const changesStorage = new DynamoChangesStorage({
-            databaseId,
-            tableName: `multiverse-changes-${name}`,
-            awsToken: this.options.awsToken
+        const changesStorage = new BucketChangesStorage(`mv-changes-${name}`, {
+            region: this.options.region,
+            awsToken: this.options.awsToken,
+            maxObjectAge: 1000 * 60 * 60 // 1 hour
         });
 
         const snapshotStorage = new S3SnapshotStorage({
-            bucketName: `multiverse-snapshot-${name}`,
+            bucketName: `mv-snapshot-${name}`,
             databaseId,
             awsToken: this.options.awsToken
         });

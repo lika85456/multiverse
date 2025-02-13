@@ -5,10 +5,10 @@ export default class MemoryChangesStorage implements ChangesStorage {
 
     private changes: StoredVectorChange[] = [];
 
-    add(changes: StoredVectorChange[]): Promise<void> {
+    add(changes: StoredVectorChange[]): Promise<{unprocessedItems: string[]}> {
         this.changes.push(...changes);
 
-        return Promise.resolve();
+        return Promise.resolve({ unprocessedItems: [] });
     }
 
     public async* changesAfter(timestamp: number): AsyncGenerator<StoredVectorChange, void, unknown> {
@@ -19,10 +19,6 @@ export default class MemoryChangesStorage implements ChangesStorage {
         }
 
         return;
-    }
-
-    public async count(): Promise<number> {
-        return this.changes.length;
     }
 
     public async clearBefore(timestamp: number): Promise<void> {
@@ -39,5 +35,9 @@ export default class MemoryChangesStorage implements ChangesStorage {
 
     destroy(): Promise<void> {
         return Promise.resolve();
+    }
+
+    public getResourceName(): string {
+        return "Memory";
     }
 }

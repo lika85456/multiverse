@@ -105,7 +105,7 @@ export default function mockWorkerFactory(lambdaFactory: WorkerFactory): WorkerF
 
                 return result;
             },
-            saveSnapshotWithUpdates: async(updates) => {
+            saveSnapshotWithUpdates: async() => {
                 const instance = getFreeInstance();
 
                 instance.busy = true;
@@ -114,7 +114,7 @@ export default function mockWorkerFactory(lambdaFactory: WorkerFactory): WorkerF
                     await new Promise(resolve => setTimeout(resolve, waitTime));
                 }
 
-                const result = await instance.worker.saveSnapshotWithUpdates(updates);
+                const result = await instance.worker.saveSnapshotWithUpdates();
                 instance.busy = false;
 
                 return result;

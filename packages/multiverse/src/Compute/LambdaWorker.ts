@@ -12,6 +12,7 @@ import type { StoredVectorChange } from "../ChangesStorage/StoredVector";
 import type { DatabaseEnvironment } from "./EnvSchema";
 import { databaseEnvSchema } from "./EnvSchema";
 import type { AwsToken } from "../core/AwsToken";
+import keepAliveAgent from "../keepAliveAgent";
 
 const logger = log.getSubLogger({ name: "LambdaWorker" });
 
@@ -25,9 +26,11 @@ export default class LambdaWorker implements Worker {
         waitTime?: number;
         awsToken: AwsToken
     }) {
+        // TODO! maybe refresh agent on EMFILE errors?
         this.lambda = new Lambda({
             region: options.region,
-            credentials: options.awsToken
+            credentials: options.awsToken,
+            requestHandler: keepAliveAgent
         });
     }
 
@@ -59,10 +62,10 @@ export default class LambdaWorker implements Worker {
         });
     }
 
-    public async saveSnapshotWithUpdates(updates: StoredVectorChange[]): Promise<StatefulResponse<void>> {
+    public async saveSnapshotWithUpdates(): Promise<StatefulResponse<{changesFlushed: number}>> {
         return await this.invoke({
             event: "saveSnapshotWithUpdates",
-            payload: [updates]
+            payload: []
         });
     }
 
@@ -135,6 +138,28 @@ export default class LambdaWorker implements Worker {
             RoleName: roleName
         }));
 
+        // add s3express:* for s3 express
+        if (!await iam.getPolicy({ PolicyArn: "arn:aws:iam::aws:policy/multiverse-s3express-policy" }).catch(() => null)) {
+            await iam.createPolicy({
+                PolicyDocument: JSON.stringify({
+                    Version: "2012-10-17",
+                    Statement: [
+                        {
+                            Effect: "Allow",
+                            Action: "s3express:*",
+                            Resource: "*"
+                        }
+                    ]
+                }),
+                PolicyName: "multiverse-s3express-policy"
+            });
+        }
+
+        log.debug(await iam.attachRolePolicy({
+            PolicyArn: "arn:aws:iam::aws:policy/multiverse-s3express-policy",
+            RoleName: roleName
+        }));
+
         // ! remove role if changing policies
 
         log.debug("Created role", { result });
@@ -151,9 +176,13 @@ export default class LambdaWorker implements Worker {
     public async deploy(options: {
         partition: number,
         snapshotBucket: string,
+        changesStorage: string,
         env: "development" | "production",
         configuration: DatabaseConfiguration,
         databaseId: DatabaseID
+        memorySize?: number;
+        ephemeralStorage?: number;
+        enableLogs?: boolean;
     }) {
 
         const variables: DatabaseEnvironment = {
@@ -162,6 +191,7 @@ export default class LambdaWorker implements Worker {
             PARTITION: options.partition,
             SNAPSHOT_BUCKET: options.snapshotBucket,
             NODE_ENV: options.env,
+            BUCKET_CHANGES_STORAGE: options.changesStorage
         };
 
         databaseEnvSchema.parse(variables);
@@ -176,12 +206,14 @@ export default class LambdaWorker implements Worker {
             Role: await this.lambdaRoleARN(),
             PackageType: "Image",
             Timeout: 900,
-            MemorySize: 512,
-            EphemeralStorage: { Size: 1024 },
+            MemorySize: options.memorySize ?? 2048,
+            EphemeralStorage: { Size: options.ephemeralStorage ?? 1024 },
             Environment: {
                 Variables: {
                     VARIABLES: JSON.stringify(variables),
                     NODE_ENV: options.env,
+                    NODE_OPTIONS: "--enable-source-maps",
+                    LOG_LEVEL: options.enableLogs ? "0" : "6"
                 }
             },
         });
@@ -209,7 +241,7 @@ export default class LambdaWorker implements Worker {
 
         log.debug("Invoking lambda", {
             lambdaName: this.options.lambdaName,
-            payload: payloadWithMetadata
+            payload
         });
 
         const result = await this.lambda.invoke({
@@ -217,20 +249,20 @@ export default class LambdaWorker implements Worker {
             Payload: JSON.stringify({ body: JSON.stringify(payloadWithMetadata) })
         });
 
-        const uintPayload = new Uint8Array(result.Payload as ArrayBuffer);
+        const uintPayload = new Uint8Array(result.Payload as unknown as Buffer);
         const payloadString = Buffer.from(uintPayload).toString("utf-8");
-        const parsedPayload = JSON.parse(payloadString);
 
-        log.debug("Lambda invoked", {
-            lambdaName: this.options.lambdaName,
-            result: parsedPayload
-        });
+        try {
+            const parsedPayload = JSON.parse(payloadString);
 
-        if (result.FunctionError) {
-            log.error(JSON.stringify(parsedPayload, null, 4));
-            throw new Error(parsedPayload);
+            if (result.FunctionError || parsedPayload.statusCode !== 200) {
+                throw new Error(parsedPayload.body);
+            }
+
+            return parsedPayload.body && JSON.parse(parsedPayload.body);
+        } catch (e) {
+            throw new Error(payloadString);
         }
 
-        return parsedPayload.body && JSON.parse(parsedPayload.body);
     }
 }

@@ -1,16 +1,16 @@
-import MemoryChangesStorage from "../ChangesStorage/MemoryChangesStorage";
-import ComputeWorker from "../Compute/ComputeWorker";
-import type { Worker } from "../Compute/Worker";
+import MemoryChangesStorage from "../../ChangesStorage/MemoryChangesStorage";
+import ComputeWorker from "../../Compute/ComputeWorker";
+import type { Worker } from "../../Compute/Worker";
 import type {
-    DatabaseID, Region,
-    StoredDatabaseConfiguration
-} from "../core/DatabaseConfiguration";
-import type { Query } from "../core/Query";
-import LocalIndex from "../Index/LocalIndex";
-import MemoryInfrastructureStorage from "../InfrastructureStorage/MemoryInfrastructureStorage";
-import LocalSnapshotStorage from "../SnapshotStorage/LocalSnapshotStorage";
-import mockWorkerFactory from "./MockWorkerFactory";
-import Orchestrator from "./OrchestratorWorker";
+    DatabaseID, StoredDatabaseConfiguration, Region
+} from "../../core/DatabaseConfiguration";
+import type { Query } from "../../core/Query";
+import LocalIndex from "../../Index/LocalIndex";
+import MemoryInfrastructureStorage from "../../InfrastructureStorage/MemoryInfrastructureStorage";
+import LocalSnapshotStorage from "../../SnapshotStorage/LocalSnapshotStorage";
+import mockWorkerFactory from "../MockWorkerFactory";
+import type Orchestrator from "../Orchestrator";
+import OrchestratorWorker from "../OrchestratorWorker";
 
 describe("<OrchestratorWorker>", () => {
 
@@ -34,7 +34,7 @@ describe("<OrchestratorWorker>", () => {
 
         databaseId = {
             name: Math.random() + "",
-            region: "eu-central-1"
+            region: "eu-west-1"
         };
 
         changesStorage = new MemoryChangesStorage();
@@ -46,7 +46,8 @@ describe("<OrchestratorWorker>", () => {
             ephemeralLimit: 10_000,
             index: new LocalIndex(databaseConfiguration),
             memoryLimit: 10_000,
-            snapshotStorage
+            snapshotStorage,
+            changesStorage,
         }));
 
         await infrastructureStorage.set(databaseId.name, {
@@ -56,7 +57,7 @@ describe("<OrchestratorWorker>", () => {
                 lambda: [{
                     instances: [],
                     name: "test-worker-0",
-                    region: "eu-central-1",
+                    region: "eu-west-1",
                     type: "primary",
                     wakeUpInstances: 1
                 }],
@@ -68,10 +69,12 @@ describe("<OrchestratorWorker>", () => {
                 warmSecondaryInstances: 0,
                 secondaryFallbacks: 0,
                 outOfRegionFallbacks: 0
-            }
+            },
+            storedChanges: 0,
+            flushing: false
         });
 
-        orchestrator = new Orchestrator({
+        orchestrator = new OrchestratorWorker({
             changesStorage,
             databaseConfiguration,
             databaseId,
@@ -160,13 +163,14 @@ describe("<OrchestratorWorker>", () => {
     });
 
     it("should flush after max changes count", async() => {
-        // add 15 vectors and assert that there are 5 vectors in the changes storage and all the workers have loaded their snapshots
+        // add 15 vectors and assert that there are 0                                                                                                                       q vectors in the changes storage and all the workers have loaded their snapshots
         await orchestrator.addVectors(Array.from({ length: 15 }, (_, i) => ({
             label: `test-${i}`,
             vector: [i, i, i],
         })));
 
-        expect(await changesStorage.count()).toBe(0);
+        const changes = await changesStorage.getAllChangesAfter(0);
+        expect(changes.length).toBe(0);
 
         for (let i = 0;i < 10;i++) {
             const result = await orchestrator.query({

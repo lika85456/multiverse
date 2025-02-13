@@ -11,10 +11,12 @@ export type OrchestratorEvent = {
 export default interface Orchestrator {
     initialize(): Promise<void>;
     query(query: Query): Promise<QueryResult>;
-    addVectors(vectors: NewVector[]): Promise<void>;
-    removeVectors(labels: string[]): Promise<void>;
+    addVectors(vectors: NewVector[]): Promise<{unprocessedItems: string[]}>;
+    removeVectors(labels: string[]): Promise<{unprocessedItems: string[]}>;
     getConfiguration(): Promise<StoredDatabaseConfiguration>;
     addToken(token: Token): Promise<void>;
     removeToken(tokenName: string): Promise<void>;
     auth(secret: string): Promise<boolean>;
+    wakeUpWorkers(): Promise<void>;
+    ping(wait?: number): Promise<string>;
 }

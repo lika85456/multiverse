@@ -77,4 +77,8 @@ export default class LocalSnapshotStorage implements SnapshotStorage {
         // delete the folder
         await rm(this.path, { recursive: true });
     }
+
+    public getResourceName(): string {
+        return this.path.replace(/\//g, "_");
+    }
 }

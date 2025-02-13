@@ -19,8 +19,6 @@ export default $config({
             }
         });
 
-        const orchestratorSourceBucket = new sst.aws.Bucket("OrchestratorSourceBucket");
-
         const app = new sst.aws.Nextjs("AppFrontend", {
             path: "./apps/multiverse-ui",
             environment: sstENV,
@@ -46,8 +44,7 @@ export default $config({
 
         return {
             appUrl: app.url,
-            docsUrl: docs.url,
-            orchestratorSourceBucket: orchestratorSourceBucket.name,
+            docsUrl: docs.url
         };
     },
 });

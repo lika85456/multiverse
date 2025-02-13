@@ -197,7 +197,7 @@ export const awsToken = router({
 
             // delete all databases in the multiverse
             const multiverse = await (new MultiverseFactory()).getMultiverse();
-            await multiverse.removeSharedInfrastructure();
+            await multiverse.destroySharedInfrastructure();
 
             // delete aws token from mongodb
             await removeAwsToken(sessionUser._id);

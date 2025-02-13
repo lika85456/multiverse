@@ -18,8 +18,10 @@ export default class HNSWIndex implements Index {
     private idMap: {[id: number]: string} = {};
     private metadata: {[id: number]: Record<string, string>} = {};
 
-    constructor(private config: DatabaseConfiguration) {
-        this.index = this.initializeIndex();
+    constructor(private config: DatabaseConfiguration, options?: {
+        initialSize?: number
+    }) {
+        this.index = this.initializeIndex(options?.initialSize);
     }
 
     private initializeIndex(size = 1000) {
@@ -68,10 +70,10 @@ export default class HNSWIndex implements Index {
             });
         }
 
-        log.debug("Querying", {
-            query,
-            results
-        });
+        // log.debug("Querying", {
+        //     query,
+        //     results
+        // });
 
         return results;
     }
@@ -166,7 +168,7 @@ export default class HNSWIndex implements Index {
         zip.addLocalFolder(tmpPath);
         const buffer = zip.toBuffer();
 
-        await writeFile(path, buffer);
+        await writeFile(path, new Uint8Array(buffer));
 
         log.debug("Saved index", {
             path,

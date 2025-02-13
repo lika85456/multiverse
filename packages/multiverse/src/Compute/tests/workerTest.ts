@@ -1,11 +1,7 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
-import type { DatabaseID, DatabaseConfiguration } from "../core/DatabaseConfiguration";
-import { Vector } from "../core/Vector";
-import S3SnapshotStorage from "../SnapshotStorage/S3SnapshotStorage";
-import ComputeWorker from "./ComputeWorker";
-import LambdaWorker from "./LambdaWorker";
-import LocalIndex from "../Index/LocalIndex";
-import LocalSnapshotStorage from "../SnapshotStorage/LocalSnapshotStorage";
+import type { DatabaseID, DatabaseConfiguration } from "../../core/DatabaseConfiguration";
+import { Vector } from "../../core/Vector";
+import type SnapshotStorage from "../../SnapshotStorage";
+import type { Worker } from "../Worker";
 
 function vectorIsClose(vector1: number[], vector2: number[]): boolean {
     const MAX_DIFF = 0.0001;
@@ -13,126 +9,18 @@ function vectorIsClose(vector1: number[], vector2: number[]): boolean {
     return vector1.every((v1, i) => Math.abs(v1 - vector2[i]) < MAX_DIFF);
 }
 
-function initializeLambdaWorker({
-    databaseId,
-    config
-}: {
+type InitializeWorkerFunction = (params: {
     databaseId: DatabaseID;
     config: DatabaseConfiguration;
-}) {
-    const snapshotBucketName = "multiverse-snapshot-bucket-" + Math.random().toString(36).substring(7);
-
-    const worker = new LambdaWorker({
-        lambdaName: "multiverse-lambda-worker-test-" + Math.random().toString(36).substring(7),
-        region: "eu-central-1",
-        awsToken: undefined as any
-    });
-
-    const snapshotStorage = new S3SnapshotStorage({
-        bucketName: snapshotBucketName,
-        databaseId,
-        awsToken: undefined as any
-    });
-
-    const deploy = async() => {
-        await snapshotStorage.deploy();
-
-        await worker.deploy({
-            env: "development",
-            partition: 0,
-            snapshotBucket: snapshotBucketName,
-            configuration: config,
-            databaseId
-        });
-    };
-
-    const destroy = async() => {
-        await Promise.all([
-            worker.destroy(),
-            snapshotStorage.destroy()
-        ]);
-    };
-
-    return {
-        worker,
-        snapshotStorage,
-        config,
-        deploy,
-        destroy
-    };
-}
-
-function initializeLocalWorker({
-    databaseId,
-    config
-}: {
-    databaseId: DatabaseID;
+}) => {
+    worker: Worker;
+    snapshotStorage: SnapshotStorage;
     config: DatabaseConfiguration;
-}) {
-    const snapshotStorage = new LocalSnapshotStorage(databaseId.name);
+    deploy: () => Promise<void>;
+    destroy: () => Promise<void>;
+};
 
-    const worker = new ComputeWorker({
-        partitionIndex: 0,
-        snapshotStorage,
-        index: new LocalIndex(config),
-        memoryLimit: 1000,
-        ephemeralLimit: 1000
-    });
-
-    return {
-        worker,
-        snapshotStorage,
-        config,
-        deploy: async() => {},
-        destroy: async() => {}
-    };
-}
-
-function initializeLocalWorkerWithAWSStorages({
-    databaseId,
-    config
-}: {
-    databaseId: DatabaseID;
-    config: DatabaseConfiguration;
-}) {
-    const snapshotBucketName = "multiverse-snapshot-bucket-" + Math.random().toString(36).substring(7);
-
-    const snapshotStorage = new S3SnapshotStorage({
-        bucketName: snapshotBucketName,
-        databaseId,
-        awsToken: undefined as any
-    });
-
-    const worker = new ComputeWorker({
-        partitionIndex: 0,
-        snapshotStorage,
-        index: new LocalIndex(config),
-        memoryLimit: 1000,
-        ephemeralLimit: 1000
-    });
-
-    const deploy = async() => {
-        await snapshotStorage.deploy();
-    };
-
-    const destroy = async() => {
-        await snapshotStorage.destroy();
-    };
-
-    return {
-        worker,
-        snapshotStorage,
-        config,
-        deploy,
-        destroy
-    };
-}
-
-describe.each([
-    ["<ComputeWorker>", initializeLocalWorker],
-    ["<ComputeWorker with AWS storages>", initializeLocalWorkerWithAWSStorages],
-    ["<LambdaWorker>", initializeLambdaWorker],
-])("%s", (name, initializeWorker) => {
+export default function workerTest(initializeWorker: InitializeWorkerFunction) {
 
     describe("Empty snapshot storage", () => {
 
@@ -490,5 +378,4 @@ describe.each([
             });
         });
     });
-
-});
+};

@@ -30,8 +30,8 @@ export default class PartitionWorker implements Worker {
     private partition: Promise<PartitionInfrastructureState>;
     private lambdasByPriority: Promise<PartitionLambdaState[]>;
 
-    private REQUEST_TIMEOUT = 2000;
-    private REQUEST_ALL_WAIT_TIME = 2000;
+    private REQUEST_TIMEOUT = 10000;
+    private REQUEST_ALL_WAIT_TIME = 10000;
 
     private lambdaFactory: (name: string, region: Region, waitTime: number) => Worker;
 
@@ -105,7 +105,11 @@ export default class PartitionWorker implements Worker {
     // TODO: this is a naive implementation and could be very much improved
     private async request<TEvent extends keyof Worker>(
         event: TEvent,
-        payload: Parameters<Worker[TEvent]>
+        payload: Parameters<Worker[TEvent]>,
+        options?: {
+            timeout: number;
+        },
+        tries = 0
     ): Promise<ReturnType<Worker[TEvent]>> {
 
         await this.partition;
@@ -121,7 +125,7 @@ export default class PartitionWorker implements Worker {
                 // @ts-ignore
                 const responsePromise = worker[event](...payload) as Promise<ReturnType<Worker[TEvent]>>;
 
-                const response = await this.throwOnTimeout(responsePromise, this.REQUEST_TIMEOUT);
+                const response = await this.throwOnTimeout(responsePromise, options?.timeout ?? this.REQUEST_TIMEOUT);
 
                 await this.infrastructureStorage.processState(this.databaseName, lambdaState.name, response.state);
 
@@ -133,6 +137,13 @@ export default class PartitionWorker implements Worker {
                     error: e
                 });
             }
+        }
+
+        if (tries < 3) {
+            log.debug("Retrying");
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            return this.request(event, payload, options, tries + 1);
         }
 
         throw new Error(`All lambdas failed: ${JSON.stringify(errors)}`);
@@ -187,8 +198,11 @@ export default class PartitionWorker implements Worker {
             }));
 
         // promise all but throw on timeout
-        await this.throwOnTimeout(Promise.allSettled(responsePromises), this.REQUEST_ALL_WAIT_TIME * 5).catch();
-
+        try {
+            await this.throwOnTimeout(Promise.allSettled(responsePromises), this.REQUEST_ALL_WAIT_TIME + this.REQUEST_TIMEOUT);
+        } catch (e) {
+            log.error(`Some PartitionWorker requests failed?: ${e}`);
+        }
         // parse states
         // TODO: parse states asynchronously
         await Promise.all(results.map(async result => {
@@ -199,7 +213,7 @@ export default class PartitionWorker implements Worker {
     }
 
     public async update(updates: StoredVectorChange[]): Promise<StatefulResponse<void>> {
-        return await this.request("update", [updates]);
+        return await this.request("update", [updates], { timeout: 120000 });
     }
 
     public async state(): Promise<StatefulResponse<void>> {
@@ -211,15 +225,15 @@ export default class PartitionWorker implements Worker {
     }
 
     public async saveSnapshot(): Promise<StatefulResponse<void>> {
-        return await this.request("saveSnapshot", []);
+        return await this.request("saveSnapshot", [], { timeout: 120000 });
     }
 
-    public async saveSnapshotWithUpdates(updates: StoredVectorChange[]): Promise<StatefulResponse<void>> {
-        return await this.request("saveSnapshotWithUpdates", [updates]);
+    public async saveSnapshotWithUpdates(): Promise<StatefulResponse<{changesFlushed: number}>> {
+        return await this.request("saveSnapshotWithUpdates", [], { timeout: 120000 });
     }
 
     public async loadLatestSnapshot(): Promise<StatefulResponse<void>> {
-        return await this.request("loadLatestSnapshot", []);
+        return await this.request("loadLatestSnapshot", [], { timeout: 120000 });
     }
 
     public async count(): Promise<StatefulResponse<CountResponse>> {

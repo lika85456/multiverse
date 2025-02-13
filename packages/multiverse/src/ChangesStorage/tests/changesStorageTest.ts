@@ -1,6 +1,6 @@
-import DynamoChangesStorage from "./DynamoChangesStorage";
-import MemoryChangesStorage from "./MemoryChangesStorage";
-import type { StoredVectorChange } from "./StoredVector";
+import log from "@multiverse/log";
+import type ChangesStorage from "..";
+import type { StoredVectorChange } from "../StoredVector";
 
 async function readWholeIterator<T>(iterator: AsyncGenerator<T, void, unknown>): Promise<T[]> {
     const result = [];
@@ -12,17 +12,7 @@ async function readWholeIterator<T>(iterator: AsyncGenerator<T, void, unknown>):
     return result;
 }
 
-describe.each([
-    ["<MemoryChangesStorage>", new MemoryChangesStorage()],
-    ["<DynamoChangesStorage>", new DynamoChangesStorage({
-        tableName: "multiverse-test-changes-storage-" + Date.now(),
-        databaseId: {
-            name: "test",
-            region: "eu-central-1"
-        },
-        awsToken: undefined as any
-    })]
-])("%s", (name, storage) => {
+export default function changesStorageTest(storage: ChangesStorage) {
 
     beforeAll(async() => {
         await storage.deploy();
@@ -41,7 +31,7 @@ describe.each([
         const changes: StoredVectorChange[] = [
             {
                 action: "add",
-                timestamp: Date.now(),
+                timestamp: 0,
                 vector: {
                     label: "test",
                     metadata: {},
@@ -50,7 +40,7 @@ describe.each([
             },
             {
                 action: "add",
-                timestamp: Date.now(),
+                timestamp: 1,
                 vector: {
                     label: "test",
                     metadata: {},
@@ -59,7 +49,7 @@ describe.each([
             },
             {
                 action: "remove",
-                timestamp: Date.now(),
+                timestamp: 2,
                 label: "test"
             }
         ];
@@ -72,7 +62,9 @@ describe.each([
 
     it("should clear all changes", async() => {
         await storage.clearBefore(Date.now() + 10000);
-        expect(await storage.count()).toBe(0);
+        const changes = await readWholeIterator(storage.changesAfter(0));
+
+        expect(changes).toEqual([]);
     });
 
     it("should add 100 changes", async() => {
@@ -90,11 +82,19 @@ describe.each([
 
         const readChanges = await readWholeIterator(storage.changesAfter(0));
         expect(readChanges).toHaveLength(100);
+
+        // also compare the vectors
+        for (let i = 0; i < 100; i++) {
+            const change = readChanges[i];
+            if (change.action !== "add") throw new Error("Expected add action");
+            expect(change.vector.vector).toEqual([i, i, i]);
+        }
     });
 
     it("should count", async() => {
-        const count = await storage.count();
-        expect(count).toBe(100);
+        const changes = await storage.getAllChangesAfter(0);
+
+        expect(changes).toHaveLength(100);
     });
 
     it("should read correctly changesAfter", async() => {
@@ -137,4 +137,42 @@ describe.each([
         // @ts-ignore
         expect(readChanges[0].vector.vector).toEqual(vector.vector.map((v) => expect.closeTo(v)));
     });
-});
+
+    it("should handle 1000x1536 vectors", async() => {
+        await storage.clearBefore(Date.now() + 10000);
+        const length = 1000;
+
+        const vectors = Array.from({ length }, (_, i) => ({
+            label: i + "",
+            metadata: {},
+            vector: Array.from({ length }, (_, j) => j + i)
+        }));
+
+        const changesToAdd = vectors.map(vector => ({
+            action: "add" as const,
+            timestamp: Date.now(),
+            vector
+        }));
+
+        const quarter = changesToAdd.slice(0, length / 4);
+        const otherQuarter = changesToAdd.slice(length / 4, length / 2);
+        log.info("Adding first half of changes");
+        await Promise.all([
+            storage.add(quarter),
+            storage.add(otherQuarter)
+        ]);
+
+        // add the rest of the changes
+        log.info("Adding second half of changes");
+        await storage.add(changesToAdd.slice(length / 2));
+
+        log.info("Reading changes");
+        const readChanges = await storage.getAllChangesAfter(0);
+        expect(readChanges).toHaveLength(length);
+        log.info("Checking vectors");
+
+        // expect there are the same vectors (maybe in different order)
+        const readVectors = readChanges.map(change => change.action === "add" && change.vector.vector);
+        expect(readVectors).toEqual(expect.arrayContaining(vectors.map(v => v.vector)));
+    });
+}

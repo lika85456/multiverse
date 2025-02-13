@@ -30,7 +30,18 @@ AWS account and costs are billed directly to the user's AWS account. Expected co
 
 # Multiverse Library
 
-Will be provided by Vojtěch Jedlička.
+## Prerequisities
+
+1. Create an AWS account and gather your credentials.
+2. Create an AWS ECR repository `multiverse-compute` for the compute worker image. Copy the repository URI and delete the postfix `/multiverse-compute` into the `.env` file. Create the repository in the same region as the database (preferably `eu-west-1`, or in regions where directory buckets are allowed).
+3. Filling `ORCHESTRATOR_SOURCE_BUCKET` is not neccessary for the library, but it is required for the UI.
+4. Install dependencies using `pnpm install`.
+
+## Running the example
+
+In `apps/example` you can find an example repository using the Multiverse library. You can run it using `bun apps/example/index.ts` or any other Typescript runner.
+
+Alternatively you can try the manual test in `packages/multiverse/src/test/manual.test.ts` to interactively run the cases, provided you have Vitest extension installed (VSCode recommended).
 
 # Multiverse UI
 

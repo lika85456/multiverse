@@ -4,15 +4,15 @@ import HNSWIndex from "./HNSWIndex";
 import { execSync } from "child_process";
 import LocalIndex from "./LocalIndex";
 
+const config: DatabaseConfiguration = {
+    dimensions: 3,
+    space: "l2",
+};
+
 describe.each([
     ["HNSWIndex", (config: DatabaseConfiguration) => new HNSWIndex(config)],
     ["LocalIndex", (config: DatabaseConfiguration) => new LocalIndex(config)]
 ])("%s", (name, indexFactory) => {
-
-    const config: DatabaseConfiguration = {
-        dimensions: 3,
-        space: "l2",
-    };
 
     describe("Basic functions", () => {
         const index = indexFactory(config);
@@ -58,7 +58,7 @@ describe.each([
     });
 
     describe("Query with thousand vectors", () => {
-        const index = new HNSWIndex(config);
+        const index = indexFactory(config);
 
         beforeAll(async() => {
             const vectors = Array.from({ length: 1000 }, (_, i) => ({
@@ -73,7 +73,8 @@ describe.each([
             const query = [3, 3, 3];
             const result = await index.knn({
                 k: 10,
-                vector: query
+                vector: query,
+                sendVector: false
             });
 
             expect(result.length).toBe(10);
@@ -82,163 +83,201 @@ describe.each([
         });
 
     });
+});
 
-    describe("Edge cases", () => {
+describe("Edge cases", () => {
 
-        const index = new HNSWIndex(config);
+    const index = new HNSWIndex(config);
 
-        it("should fail on wrong query", async() => {
-            // wrong amount of dimensions
-            const query = [3, 3, 3, 3];
-            await expect(index.knn({
-                k: 10,
-                vector: query
-            })).rejects.toThrow();
+    it("should fail on wrong query", async() => {
+        // wrong amount of dimensions
+        const query = [3, 3, 3, 3];
+        await expect(index.knn({
+            k: 10,
+            vector: query
+        })).rejects.toThrow();
 
-            await expect(index.knn({
-                k: -1,
-                vector: [3, 3, 3]
-            })).rejects.toThrow();
-        });
+        await expect(index.knn({
+            k: -1,
+            vector: [3, 3, 3]
+        })).rejects.toThrow();
+    });
 
-        it("should resize automatically", async() => {
-            for (let i = 0; i < 200; i++) {
-                await index.add([
+    it("should resize automatically", async() => {
+        for (let i = 0; i < 200; i++) {
+            await index.add([
+                {
+                    label: "test label " + i,
+                    vector: [i, i, i]
+                }
+            ]);
+        }
+    });
+
+    it("should work with multiple index instances", async() => {
+        const instances = [
+            new HNSWIndex(config),
+            new HNSWIndex(config),
+            new HNSWIndex(config),
+        ];
+
+        for (let i = 0; i < 200; i++) {
+            for (const instance of instances) {
+                await instance.add([
                     {
                         label: "test label " + i,
                         vector: [i, i, i]
                     }
                 ]);
             }
+        }
+
+        for (const instance of instances) {
+            expect(await instance.count()).toBe(200);
+        }
+    });
+});
+
+describe("Saving & Loading", () => {
+    describe("Small amount of vectors", () => {
+        const index = new HNSWIndex({
+            dimensions: 1536,
+            space: "l2",
         });
 
-        it("should work with multiple index instances", async() => {
-            const instances = [
-                new HNSWIndex(config),
-                new HNSWIndex(config),
-                new HNSWIndex(config),
-            ];
+        const path = "/tmp/multiverse-test-index";
 
-            for (let i = 0; i < 200; i++) {
-                for (const instance of instances) {
-                    await instance.add([
-                        {
-                            label: "test label " + i,
-                            vector: [i, i, i]
-                        }
-                    ]);
+        const firstVector = Vector.random(1536);
+        const secondVector = Vector.random(1536);
+
+        beforeAll(async() => {
+            await index.add([
+                {
+                    label: "test label 1",
+                    vector: firstVector,
+                    metadata: { somsing: "smoozie" }
+                },
+                {
+                    label: "test label 2",
+                    vector: secondVector,
                 }
-            }
+            ]);
+        });
 
-            for (const instance of instances) {
-                expect(await instance.count()).toBe(200);
-            }
+        afterAll(async() => {
+            execSync(`rm -rf ${path}`);
+        });
+
+        it("should save", async() => {
+            await index.save(path);
+        });
+
+        it("should load", async() => {
+            const newIndex = new HNSWIndex({
+                dimensions: 1536,
+                space: "l2",
+            });
+
+            await newIndex.load(path);
+
+            expect(await newIndex.count()).toBe(2);
+            expect(await newIndex.dimensions()).toBe(1536);
+
+            const query = {
+                k: 10,
+                vector: firstVector,
+            };
+
+            const newQueryResult = await newIndex.knn(query);
+            const oldQueryResult = await index.knn(query);
+
+            expect(newQueryResult).toEqual(oldQueryResult);
         });
     });
 
-    describe("Saving & Loading", () => {
-        describe("Small amount of vectors", () => {
-            const index = new HNSWIndex({
+    describe("Large amount of vectors", () => {
+        const index = new HNSWIndex({
+            dimensions: 1536,
+            space: "l2",
+        });
+
+        const path = "/tmp/multiverse-test-index";
+
+        const vectors = Array.from({ length: 2000 }, (_, i) => ({
+            label: "test label " + i,
+            vector: Vector.random(1536)
+        }));
+
+        beforeAll(async() => {
+            await index.add(vectors);
+        });
+
+        afterAll(async() => {
+            execSync(`rm -rf ${path}`);
+        });
+
+        it("should save", async() => {
+            await index.save(path);
+        });
+
+        it("should load", async() => {
+            const newIndex = new HNSWIndex({
                 dimensions: 1536,
                 space: "l2",
             });
 
-            const path = "/tmp/multiverse-test-index";
+            await newIndex.load(path);
 
-            const firstVector = Vector.random(1536);
-            const secondVector = Vector.random(1536);
+            expect(await newIndex.count()).toBe(2000);
+            expect(await newIndex.dimensions()).toBe(1536);
 
-            beforeAll(async() => {
-                await index.add([
-                    {
-                        label: "test label 1",
-                        vector: firstVector,
-                        metadata: { somsing: "smoozie" }
-                    },
-                    {
-                        label: "test label 2",
-                        vector: secondVector,
-                    }
-                ]);
-            });
+            const query = {
+                k: 10,
+                vector: vectors[0].vector,
+            };
 
-            afterAll(async() => {
-                execSync(`rm -rf ${path}`);
-            });
+            const newQueryResult = await newIndex.knn(query);
+            const oldQueryResult = await index.knn(query);
 
-            it("should save", async() => {
-                await index.save(path);
-            });
-
-            it("should load", async() => {
-                const newIndex = new HNSWIndex({
-                    dimensions: 1536,
-                    space: "l2",
-                });
-
-                await newIndex.load(path);
-
-                expect(await newIndex.count()).toBe(2);
-                expect(await newIndex.dimensions()).toBe(1536);
-
-                const query = {
-                    k: 10,
-                    vector: firstVector,
-                };
-
-                const newQueryResult = await newIndex.knn(query);
-                const oldQueryResult = await index.knn(query);
-
-                expect(newQueryResult).toEqual(oldQueryResult);
-            });
+            expect(newQueryResult).toEqual(oldQueryResult);
         });
+    });
+});
 
-        describe("Large amount of vectors", () => {
-            const index = new HNSWIndex({
-                dimensions: 1536,
-                space: "l2",
-            });
+describe("All indexes should give the same results", () => {
+    const indexFactories = [
+        (config: DatabaseConfiguration) => new HNSWIndex(config),
+        (config: DatabaseConfiguration) => new LocalIndex(config)
+    ];
 
-            const path = "/tmp/multiverse-test-index";
+    const vectors = Array.from({ length: 1000 }, (_, i) => ({
+        label: "test label " + i,
+        vector: Vector.random(config.dimensions)
+    }));
 
-            const vectors = Array.from({ length: 2000 }, (_, i) => ({
-                label: "test label " + i,
-                vector: Vector.random(1536)
-            }));
+    it("indexes should give the same results", async() => {
+        const indexes = indexFactories.map(factory => factory(config));
 
-            beforeAll(async() => {
-                await index.add(vectors);
-            });
+        for (const index of indexes) {
+            await index.add(vectors);
+        }
 
-            afterAll(async() => {
-                execSync(`rm -rf ${path}`);
-            });
+        const queryVector = Vector.random(config.dimensions);
 
-            it("should save", async() => {
-                await index.save(path);
-            });
+        const results = await Promise.all(indexes.map(index => index.knn({
+            k: 10,
+            vector: queryVector,
+            sendVector: false
+        })));
 
-            it("should load", async() => {
-                const newIndex = new HNSWIndex({
-                    dimensions: 1536,
-                    space: "l2",
-                });
+        for (let i = 1; i < results.length; i++) {
+            for (let j = 0; j < results[i].length; j++) {
+                // expect the label to be the exact same
+                expect(results[i][j].label).toBe(results[0][j].label);
 
-                await newIndex.load(path);
-
-                expect(await newIndex.count()).toBe(2000);
-                expect(await newIndex.dimensions()).toBe(1536);
-
-                const query = {
-                    k: 10,
-                    vector: vectors[0].vector,
-                };
-
-                const newQueryResult = await newIndex.knn(query);
-                const oldQueryResult = await index.knn(query);
-
-                expect(newQueryResult).toEqual(oldQueryResult);
-            });
-        });
+                // expect the distance to be close
+                expect(results[i][j].distance).toBeCloseTo(results[0][j].distance, 3);
+            }
+        }
     });
 });

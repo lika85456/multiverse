@@ -1,11 +1,12 @@
-import ComputeWorker from "../Compute/ComputeWorker";
-import type { Region, StoredDatabaseConfiguration } from "../core/DatabaseConfiguration";
-import { Vector } from "../core/Vector";
-import LocalIndex from "../Index/LocalIndex";
-import MemoryInfrastructureStorage from "../InfrastructureStorage/MemoryInfrastructureStorage";
-import LocalSnapshotStorage from "../SnapshotStorage/LocalSnapshotStorage";
-import mockWorkerFactory from "./MockWorkerFactory";
-import PartitionWorker from "./PartitionWorker";
+import MemoryChangesStorage from "../../ChangesStorage/MemoryChangesStorage";
+import ComputeWorker from "../../Compute/ComputeWorker";
+import type { StoredDatabaseConfiguration, Region } from "../../core/DatabaseConfiguration";
+import { Vector } from "../../core/Vector";
+import LocalIndex from "../../Index/LocalIndex";
+import MemoryInfrastructureStorage from "../../InfrastructureStorage/MemoryInfrastructureStorage";
+import LocalSnapshotStorage from "../../SnapshotStorage/LocalSnapshotStorage";
+import mockWorkerFactory from "../MockWorkerFactory";
+import PartitionWorker from "../PartitionWorker";
 
 describe("<PartitionWorker>", () => {
 
@@ -13,13 +14,15 @@ describe("<PartitionWorker>", () => {
     let config: StoredDatabaseConfiguration;
 
     let infrastructureStorage: MemoryInfrastructureStorage;
+    let changesStorage: MemoryChangesStorage;
 
     const realLambdaFactory = (_name: string, _region: Region) => new ComputeWorker({
         partitionIndex: 0,
         ephemeralLimit: 10_000,
         index: new LocalIndex(config),
         memoryLimit: 10_000,
-        snapshotStorage
+        snapshotStorage,
+        changesStorage
     });
 
     const busyLambdaFactory: any = (_name: string, _region: Region) => jest.fn(async() => {
@@ -67,11 +70,15 @@ describe("<PartitionWorker>", () => {
 
         infrastructureStorage = new MemoryInfrastructureStorage();
 
+        changesStorage = new MemoryChangesStorage();
+
         infrastructureStorage.set("test", {
+            storedChanges: 0,
+            flushing: false,
             configuration: config,
             databaseId: {
                 name: "test",
-                region: "eu-central-1"
+                region: "eu-west-1"
             },
             scalingTargetConfiguration,
             partitions: [{
@@ -80,14 +87,14 @@ describe("<PartitionWorker>", () => {
                     {
                         instances: [],
                         name: "test-worker-0",
-                        region: "eu-central-1",
+                        region: "eu-west-1",
                         type: "primary",
                         wakeUpInstances: 1
                     },
                     {
                         instances: [],
                         name: "test-worker-fallback",
-                        region: "eu-central-1",
+                        region: "eu-west-1",
                         type: "fallback",
                         wakeUpInstances: 1
                     }
@@ -169,7 +176,8 @@ describe("<PartitionWorker>", () => {
                 ephemeralLimit: 10_000,
                 index: new LocalIndex(config),
                 memoryLimit: 10_000,
-                snapshotStorage
+                snapshotStorage,
+                changesStorage
             });
         });
 

@@ -1,14 +1,16 @@
 import {
-    DynamoDB, DynamoDBClient, waitUntilTableExists, waitUntilTableNotExists
+    DynamoDB, DynamoDBClient, UpdateItemCommand, waitUntilTableExists, waitUntilTableNotExists
 } from "@aws-sdk/client-dynamodb";
 import {
     DeleteCommand,
-    DynamoDBDocumentClient, GetCommand, PutCommand, ScanCommand
+    DynamoDBDocumentClient, GetCommand, PutCommand, ScanCommand,
+    UpdateCommand
 } from "@aws-sdk/lib-dynamodb";
 import log from "@multiverse/log";
 import InfrastructureStorage from ".";
 import type { Infrastructure } from ".";
 import type { AwsToken } from "../core/AwsToken";
+import keepAliveAgent from "../keepAliveAgent";
 
 const logger = log.getSubLogger({ name: "DynamoChangesStorageDeployer" });
 
@@ -115,7 +117,8 @@ export default class DynamoInfrastructureStorage extends InfrastructureStorage {
         super();
         const db = new DynamoDBClient({
             region: options.region,
-            credentials: options.awsToken
+            credentials: options.awsToken,
+            requestHandler: keepAliveAgent
         });
         this.dynamo = DynamoDBDocumentClient.from(db);
 
@@ -126,8 +129,54 @@ export default class DynamoInfrastructureStorage extends InfrastructureStorage {
         });
     }
 
-    public async set(dbName: string, infrastructure: Infrastructure): Promise<void> {
+    public getResourceName(): string {
+        return this.options.tableName;
+    }
 
+    public async addStoredChanges(dbName: string, changesCount: number): Promise<number> {
+        const result = await this.dynamo.send(new UpdateItemCommand({
+            TableName: this.options.tableName,
+            Key: { pk: { S: dbName } },
+            UpdateExpression: "SET storedChanges = storedChanges + :changes",
+            ExpressionAttributeValues: { ":changes": { N: changesCount.toString() } as any },
+            ReturnValues: "UPDATED_NEW"
+        })).catch(e => e);
+
+        if (result instanceof Error) {
+            if (result.name === "ConditionalCheckFailedException") {
+                return 0;
+            }
+
+            throw result;
+        }
+
+        return parseInt(result.Attributes?.storedChanges?.N ?? "0");
+    }
+
+    public async setStoredChanges(dbName: string, changesCount: number): Promise<void> {
+        await this.dynamo.send(new UpdateItemCommand({
+            TableName: this.options.tableName,
+            Key: { pk: { S: dbName } },
+            UpdateExpression: "SET storedChanges = :changes",
+            ExpressionAttributeValues: { ":changes": { N: changesCount.toString() } as any }
+        }));
+    }
+
+    public async getStoredChanges(dbName: string): Promise<number> {
+        const res = await this.dynamo.send(new GetCommand({
+            TableName: this.options.tableName,
+            Key: { pk: dbName },
+            AttributesToGet: ["storedChanges"]
+        }));
+
+        if (res.Item) {
+            return parseInt(res.Item?.storedChanges ?? "0");
+        }
+
+        return 0;
+    }
+
+    public async set(dbName: string, infrastructure: Infrastructure): Promise<void> {
         await this.dynamo.send(new PutCommand({
             TableName: this.options.tableName,
             Item: {
@@ -138,12 +187,14 @@ export default class DynamoInfrastructureStorage extends InfrastructureStorage {
     }
 
     public async setProperty<T extends keyof Infrastructure>(dbName: string, property: T, value: Infrastructure[T]): Promise<void> {
-        await this.dynamo.send(new PutCommand({
+        // update only the property and keep the rest of the already existing object
+        // the property can be number, string or an object
+        await this.dynamo.send(new UpdateCommand({
             TableName: this.options.tableName,
-            Item: {
-                pk: dbName,
-                [property]: value
-            }
+            Key: { pk: dbName },
+            UpdateExpression: `SET #${property} = :value`,
+            ExpressionAttributeNames: { [`#${property}`]: property },
+            ExpressionAttributeValues: { ":value": value }
         }));
     }
 

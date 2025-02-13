@@ -18,6 +18,8 @@ import fs from "fs/promises";
 import type { AwsToken } from "../core/AwsToken";
 import type { WorkerType } from "../Compute/Worker";
 import type { ScalingTargetConfiguration } from "../InfrastructureStorage";
+import BuildBucket from "../BuildBucket/BuildBucket";
+import keepAliveAgent from "../keepAliveAgent";
 
 const log = logger.getSubLogger({ name: "LambdaOrchestrator" });
 
@@ -33,7 +35,8 @@ export default class LambdaOrchestrator implements Orchestrator {
     }) {
         this.lambda = new Lambda({
             region: options.databaseId.region,
-            credentials: options.awsToken
+            credentials: options.awsToken,
+            requestHandler: keepAliveAgent
         });
     }
 
@@ -45,7 +48,10 @@ export default class LambdaOrchestrator implements Orchestrator {
         event: T,
         payload: Parameters<Orchestrator[T]>
     ): Promise<ReturnType<Orchestrator[T]>> {
-
+        // log.info("Requesting orchestrator", {
+        //     event,
+        //     payload
+        // });
         const eventPayload: OrchestratorEvent = {
             event,
             payload,
@@ -57,53 +63,71 @@ export default class LambdaOrchestrator implements Orchestrator {
             Payload: JSON.stringify({ body: JSON.stringify(eventPayload) })
         });
 
-        const uintPayload = new Uint8Array(result.Payload as ArrayBuffer);
+        const uintPayload = new Uint8Array(result.Payload as unknown as ArrayBuffer);
         const payloadString = Buffer.from(uintPayload).toString("utf-8");
-        const parsedPayload = JSON.parse(payloadString);
 
-        log.debug("Orchestrator invoked", {
-            lambdaName: this.lambdaName(),
-            request: eventPayload,
-            response: parsedPayload
-        });
+        try {
+            const parsedPayload = JSON.parse(payloadString);
 
-        if (result.FunctionError) {
-            log.error(JSON.stringify(parsedPayload, null, 4));
-            throw new Error(parsedPayload);
+            if (result.FunctionError || parsedPayload.statusCode !== 200) {
+                throw new Error(parsedPayload.body);
+            }
+
+            return parsedPayload.body && JSON.parse(parsedPayload.body);
+        } catch (e) {
+            log.error("Failed to parse response from orchestrator lambda", {
+                response: payloadString,
+                error: e
+            });
+            throw e;
         }
+    }
 
-        return parsedPayload.body && JSON.parse(parsedPayload.body);
+    public async ping(wait?: number) {
+        return this.request("ping", [wait]);
     }
 
     public async query(query: Query): Promise<QueryResult> {
         return this.request("query", [query]);
     }
 
-    public async addVectors(vectors: NewVector[]): Promise<void> {
+    public async wakeUpWorkers(): Promise<void> {
+        return this.request("wakeUpWorkers", []);
+    }
+
+    public async addVectors(vectors: NewVector[]): Promise<{unprocessedItems: string[]}> {
         const payloadByteSize = JSON.stringify(vectors).length;
 
         if (payloadByteSize > this.MAXIMUM_PAYLOAD_SIZE) {
-            // split into multiple addVector calls and return a promise.all
             const callsToMake = Math.ceil(payloadByteSize / this.MAXIMUM_PAYLOAD_SIZE);
             const vectorChunkSize = Math.ceil(vectors.length / callsToMake);
 
             const promises = [];
+            const results = [];
+
             for (let i = 0; i < callsToMake; i++) {
                 const start = i * vectorChunkSize;
                 const end = Math.min((i + 1) * vectorChunkSize, vectors.length);
 
                 promises.push(this.request("addVectors", [vectors.slice(start, end)]));
+
+                if (promises.length === 3) {
+                    results.push(...await Promise.all(promises));
+                    promises.length = 0; // clear the array
+                }
             }
 
-            await Promise.all(promises);
+            if (promises.length > 0) {
+                results.push(...await Promise.all(promises));
+            }
 
-            return;
+            return { unprocessedItems: results.flatMap(r => r.unprocessedItems) };
         }
 
         return this.request("addVectors", [vectors]);
     }
 
-    public async removeVectors(labels: string[]): Promise<void> {
+    public async removeVectors(labels: string[]): Promise<{unprocessedItems: string[]}> {
         return this.request("removeVectors", [labels]);
     }
 
@@ -124,10 +148,27 @@ export default class LambdaOrchestrator implements Orchestrator {
     }
 
     /**
-     * TODO! run build only on test environment.
-     * Builds the orchestrator lambda function and zips it.
+     * Builds the orchestrator lambda function and uploads it to s3 source bucket
      */
-    public async build(): Promise<Uint8Array> {
+    public static async build(buildBucket: BuildBucket) {
+        // 1. build the orchestrator (run pnpm build:orchestrator)
+        const { exec } = await import("child_process");
+
+        await new Promise((resolve, reject) => {
+            exec("pnpm build:orchestrator", (error, stdout, stderr) => {
+                if (error) {
+                    reject(error);
+
+                    return;
+                }
+
+                log.debug(stdout);
+                log.debug(stderr);
+
+                resolve(undefined);
+            });
+        });
+
         // 2. zip the build folder using adm
         const { default: AdmZip } = await import("adm-zip");
         const zip = new AdmZip();
@@ -146,7 +187,7 @@ export default class LambdaOrchestrator implements Orchestrator {
         for (const path of buildFolderPaths) {
             try {
                 await fs.access(path);
-                buildFolderPath = path;
+                buildFolderPath = path; // packages/multiverse/src/Orchestrator/dist
                 break;
             } catch (e) {
                 // ignore
@@ -163,7 +204,7 @@ export default class LambdaOrchestrator implements Orchestrator {
 
         log.debug("Zip created");
 
-        return buffer;
+        await buildBucket.uploadLatestBuild(buffer);
     }
 
     public lambdaName() {
@@ -234,7 +275,26 @@ export default class LambdaOrchestrator implements Orchestrator {
             RoleName: roleName
         }));
 
-        log.debug("Created role", { result, });
+        if (!await iam.getPolicy({ PolicyArn: "arn:aws:iam::aws:policy/multiverse-s3express-policy" }).catch(() => null)) {
+            await iam.createPolicy({
+                PolicyDocument: JSON.stringify({
+                    Version: "2012-10-17",
+                    Statement: [
+                        {
+                            Effect: "Allow",
+                            Action: "s3express:*",
+                            Resource: "*"
+                        }
+                    ]
+                }),
+                PolicyName: "multiverse-s3express-policy"
+            });
+        }
+
+        log.debug(await iam.attachRolePolicy({
+            PolicyArn: "arn:aws:iam::aws:policy/multiverse-s3express-policy",
+            RoleName: roleName
+        }));
 
         const roleARN = result.Role?.Arn;
 
@@ -246,54 +306,73 @@ export default class LambdaOrchestrator implements Orchestrator {
     }
 
     private async deployOrchestratorLambda({
-        changesTable, snapshotBucket, infrastructureTable, databaseConfiguration
+        changesStorage, snapshotBucket, infrastructureTable, databaseConfiguration, buildBucket
     }: {
-        changesTable: string;
+        changesStorage: string;
         snapshotBucket: string;
         infrastructureTable: string;
+        buildBucket: string;
         databaseConfiguration: StoredDatabaseConfiguration;
     }) {
         log.debug("Deploying orchestrator lambda function", { configuration: databaseConfiguration });
 
         const variables: OrchestratorEnvironment = {
-            CHANGES_TABLE: changesTable,
+            BUCKET_CHANGES_STORAGE: changesStorage,
             DATABASE_CONFIG: databaseConfiguration,
             SNAPSHOT_BUCKET: snapshotBucket,
             INFRASTRUCTURE_TABLE: infrastructureTable,
             DATABASE_IDENTIFIER: this.options.databaseId,
-            NODE_ENV: (process.env.NODE_ENV ?? "development") as any,
+            NODE_ENV: (process.env.NODE_ENV ?? "development") as any
         };
 
         orchestratorEnvSchema.parse(variables);
+
+        const buildBucketInstance = new BuildBucket(buildBucket, {
+            region: this.options.databaseId.region,
+            awsToken: this.options.awsToken
+        });
+
+        let sourceCode = await buildBucketInstance.getLatestBuildKey();
+
+        if (!sourceCode) {
+            // throw new Error("There is no source code for orchestrator lambda available");
+            log.info("There is no source code for orchestrator lambda available. Trying to build it");
+
+            await LambdaOrchestrator.build(buildBucketInstance);
+            sourceCode = await buildBucketInstance.getLatestBuildKey();
+
+            if (!sourceCode) {
+                throw new Error("There is no source code for orchestrator lambda available even after rebuilding.");
+            }
+        }
 
         let result;
         let tries = 0;
         while (tries < 3) {
             try {
                 result = await this.lambda.createFunction({
-                    // Code: { ZipFile: await this.build(), },
-                    Code: {
-                        // eslint-disable-next-line turbo/no-undeclared-env-vars
-                        S3Bucket: process.env.ORCHESTRATOR_SOURCE_BUCKET,
-                        S3Key: "orchestrator.zip"
-                    },
+                    Code: sourceCode,
                     FunctionName: this.lambdaName(),
                     Role: await this.lambdaRoleARN(),
                     Runtime: Runtime.nodejs18x,
                     Architectures: [Architecture.arm64],
                     Handler: "index.handler",
-                    Timeout: 60,
+                    Timeout: 300,
+                    MemorySize: 1024,
+                    // Tags: { "multiverse:database": this.options.databaseId.name },
                     Environment: {
                         Variables: {
                             NODE_ENV: process.env.NODE_ENV ?? "development",
                             VARIABLES: JSON.stringify(variables),
+                            NODE_OPTIONS: "--enable-source-maps",
+                            LOG_LEVEL: "5"
                         }
                     }
                 });
 
                 break;
-            } catch (e) {
-                log.error("Failed to create orchestrator lambda", { error: e });
+            } catch (e: any) {
+                log.error(`Failed to create orchestrator lambda: ${e.message} ${e.stack}`);
                 tries++;
             }
 
@@ -316,12 +395,13 @@ export default class LambdaOrchestrator implements Orchestrator {
     }
 
     private async deployPartition({
-        snapshotBucket, env, partition, databaseConfiguration
+        snapshotBucket, env, partition, databaseConfiguration, changesStorage
     }: {
         snapshotBucket: string;
         env: "development" | "production";
         partition: number;
         databaseConfiguration: StoredDatabaseConfiguration;
+        changesStorage: string;
     }) {
 
         log.info("Deploying partition", {
@@ -340,7 +420,8 @@ export default class LambdaOrchestrator implements Orchestrator {
             configuration: databaseConfiguration,
             databaseId: this.options.databaseId,
             env,
-            partition
+            partition,
+            changesStorage
         });
 
         log.info("Deployed partition", {
@@ -366,11 +447,12 @@ export default class LambdaOrchestrator implements Orchestrator {
     }
 
     public async deploy({
-        changesTable, snapshotBucket, infrastructureTable, databaseConfiguration, scalingTargetConfiguration
+        changesStorage, snapshotBucket, infrastructureTable, databaseConfiguration, scalingTargetConfiguration, buildBucket
     }: {
-        changesTable: string;
+        changesStorage: string;
         snapshotBucket: string;
         infrastructureTable: string;
+        buildBucket: string;
         databaseConfiguration: StoredDatabaseConfiguration;
         scalingTargetConfiguration: ScalingTargetConfiguration;
     }) {
@@ -386,25 +468,34 @@ export default class LambdaOrchestrator implements Orchestrator {
             throw new Error("Infrastructure already exists");
         }
 
-        const errors: Error[] = [];
+        let errorDeploying = false;
 
         await Promise.all([
             this.deployOrchestratorLambda({
-                changesTable,
+                changesStorage,
                 snapshotBucket,
                 infrastructureTable,
-                databaseConfiguration
-            }).catch(e => errors.push(e)),
+                databaseConfiguration,
+                buildBucket
+            }).catch(e => {
+                log.error("Failed to deploy orchestrator lambda", { error: e });
+                errorDeploying = true;
+            }),
+
             this.deployPartition({
                 snapshotBucket,
                 env: "production",
                 partition: 0,
-                databaseConfiguration
-            }).catch(e => errors.push(e)),
+                databaseConfiguration,
+                changesStorage
+            }).catch(e => {
+                log.error("Failed to deploy primary partition", { error: e });
+                errorDeploying = true;
+            }),
         ]);
 
-        if (errors.length > 0) {
-            log.error("Failed to deploy orchestrator. Destroying created resources", { errors });
+        if (errorDeploying) {
+            log.error("Failed to deploy orchestrator. Destroying created resources");
 
             await Promise.allSettled([
                 this.destroyPartition({ partition: 0 }).catch(e => e),
@@ -418,7 +509,7 @@ export default class LambdaOrchestrator implements Orchestrator {
                 })()
             ]);
 
-            throw new Error(`Failed to deploy orchestrator: ${errors.map(e => e.message).join(", ")}`);
+            throw new Error("Failed to deploy orchestrator");
         }
 
         await infrastructureStorage.set(this.options.databaseId.name, {
@@ -460,14 +551,31 @@ export default class LambdaOrchestrator implements Orchestrator {
                 ],
                 partitionIndex: 0
             }],
-            scalingTargetConfiguration
+            scalingTargetConfiguration,
+            storedChanges: 0,
+            flushing: false
         });
+
+        try {
+            await this.request("initialize", []);
+        } catch (e) {
+            log.error("Failed to initialize orchestrator", { error: e });
+        }
+
+        try {
+            await this.request("wakeUpWorkers", []);
+        } catch (e) {
+            log.error("Failed to wake up workers", { error: e });
+        }
     }
 
-    public async updateCode() {
+    public async updateCode(buildBucket: BuildBucket) {
+
+        const sourceCode = await buildBucket.getLatestBuildKey();
+
         const result = await this.lambda.updateFunctionCode({
             FunctionName: this.lambdaName(),
-            ZipFile: await this.build(),
+            ...sourceCode
         });
 
         log.debug("Updated lambda function code", { result, });
