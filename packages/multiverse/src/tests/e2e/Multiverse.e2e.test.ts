@@ -62,8 +62,6 @@ describe.each([
         expect(result.result.length).toBe(0);
     });
 
-    // tab:pinecone-serverless-resource-usage
-
     it("should add 10 vectors and query amongst them correctly", async() => {
         const vectors = Array.from({ length: 10 }, (_, i) => ({
             label: i + "",

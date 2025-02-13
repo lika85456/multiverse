@@ -36,6 +36,7 @@ AWS account and costs are billed directly to the user's AWS account. Expected co
 2. Create an AWS ECR repository `multiverse-compute` for the compute worker image. Copy the repository URI and delete the postfix `/multiverse-compute` into the `.env` file. Create the repository in the same region as the database (preferably `eu-west-1`, or in regions where directory buckets are allowed).
 3. Filling `ORCHESTRATOR_SOURCE_BUCKET` is not neccessary for the library, but it is required for the UI.
 4. Install dependencies using `pnpm install`.
+5. Upload the compute worker image using `pnpm deploy:db`
 
 ## Running the example
 
