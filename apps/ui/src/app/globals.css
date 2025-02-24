@@ -1,0 +1,195 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    :root {
+        --background: 0 0% 100%;
+        --foreground: 222.2 84% 4.9%;
+
+        --card: 0 0% 100%;
+        --card-foreground: 222.2 84% 4.9%;
+
+        --popover: 0 0% 100%;
+        --popover-foreground: 222.2 84% 4.9%;
+
+        --primary: 222.2 47.4% 11.2%;
+        --primary-foreground: 210 40% 98%;
+
+        --secondary: 210 40% 96.1%;
+        --secondary-foreground: 222.2 47.4% 11.2%;
+
+        --tertiary: 0 0% 40%;
+        --tertiary-foreground: 0 0% 90%;
+
+        --muted: 210 40% 96.1%;
+        --muted-foreground: 215.4 16.3% 46.9%;
+
+        --middle: 0 0% 50%;
+        --middle-foreground: 0 0% 100%;
+
+        --accent: 210 40% 96.1%;
+        --accent-foreground: 222.2 47.4% 11.2%;
+
+        --accent-light: 263 100% 71%;
+        --accent-light-foreground: 0 0% 100%;
+
+        --contrast-primary: 39 100% 89%;
+        --contrast-primary-foreground: 0 0% 100%;
+
+        --destructive: 0 84.2% 60.2%;
+        --destructive-foreground: 210 40% 98%;
+
+        --destructive-light: 7 93% 74%;;
+        --destructive-light-foreground: 0 0% 100%;
+
+        --error: 0 84.2% 60.2%;
+        --error-foreground: 210 40% 98%;
+
+        --warning: 43 70% 59%;
+        --warning-foreground: 0 0% 100%;
+
+        --success: 104 40% 61%;
+        --success-foreground: 0 0% 100%;
+
+        --grey30: 0 0% 30%;
+        --grey30-foreground: 0 0% 70%;
+
+        --grey40: 0 0% 40%;
+        --grey40-foreground: 0 0% 60%;
+
+        --border: 214.3 31.8% 91.4%;
+        --input: 214.3 31.8% 91.4%;
+        --ring: 222.2 84% 4.9%;
+
+        --radius: 0.5rem;
+    }
+
+    .dark {
+        --background: 0 0% 10%;
+        --foreground: 0 0% 100%;
+
+        --card: 0 0% 20%;
+        --card-foreground: 0 0% 90%;
+
+        --popover: 0 0% 10%;
+        --popover-foreground: 0 0% 90%;
+
+        --primary: 0 0% 10%;
+        --primary-foreground: 0 0% 100%;
+
+        --secondary: 0 0% 20%;
+        --secondary-foreground: 0 0% 80%;
+
+        --tertiary: 0 0% 60%;
+        --tertiary-foreground: 0 0% 90%;
+
+        --muted: 0 0% 20%;
+        --muted-foreground: 0 0% 60%;
+
+        --accent: 263 100% 52%;
+        --accent-foreground: 0 0% 100%;
+
+        --accent-light: 263 100% 71%;
+        --accent-light-foreground: 0 0% 100%;
+
+        --contrast-primary: 39 100% 89%;
+        --contrast-primary-foreground: 0 0% 10%;
+
+        --destructive: 7 71% 58%;
+        --destructive-foreground: 0 0% 100%;
+
+        --destructive-light: 7 93% 74%;;
+        --destructive-light-foreground: 0 0% 100%;
+
+        --error: 0 84.2% 60.2%;
+        --error-foreground: 0 0% 10%;
+
+        --warning: 43 70% 59%;
+        --warning-foreground: 0 0% 10%;
+
+        --success: 104 40% 61%;
+        --success-foreground: 0 0% 10%;
+
+        --grey30: 0 0% 30%;
+        --grey30-foreground: 0 0% 70%;
+
+        --grey40: 0 0% 40%;
+        --grey40-foreground: 0 0% 60%;
+
+        --border: 0 0% 50%;
+        --input: 0 0% 50%;
+        --ring: 0 0% 50%;
+
+    }
+
+    .light {
+        --background: 0 0% 100%;
+        --foreground: 0 0% 10%;
+
+        --card: 0 0% 90%;
+        --card-foreground: 0 0% 10%;
+
+        --popover: 0 0% 90%;
+        --popover-foreground: 0 0% 10%;
+
+        --primary: 0 0% 100%;
+        --primary-foreground: 0 0% 10%;
+
+        --secondary: 0 0% 80%;
+        --secondary-foreground: 0 0% 20%;
+
+        --tertiary: 0 0% 40%;
+        --tertiary-foreground: 0 0% 10%;
+
+        --muted: 0 0% 80%;
+        --muted-foreground: 0 0% 40%;
+
+        --middle: 0 0% 50%;
+        --middle-foreground: 0 0% 0%;
+
+        --accent: 263 100% 52%;
+        --accent-foreground: 0 0% 100%;
+
+        --accent-light: 263 100% 71%;
+        --accent-light-foreground: 0 0% 100%;
+
+        --contrast-primary: 40 46% 57%;
+        --contrast-primary-foreground: 0 0% 10%;
+
+        --destructive: 7 71% 58%;
+        --destructive-foreground: 0 0% 100%;
+
+        --destructive-light: 7 93% 74%;;
+        --destructive-light-foreground: 0 0% 100%;
+
+        --error: 0 84.2% 60.2%;
+        --error-foreground: 0 0% 10%;
+
+        --warning: 43 70% 59%;
+        --warning-foreground: 0 0% 10%;
+
+        --success: 104 40% 61%;
+        --success-foreground: 0 0% 10%;
+
+        --grey30: 0 0% 70%;
+        --grey30-foreground: 0 0% 30%;
+
+        --grey40: 0 0% 60%;
+        --grey40-foreground: 0 0% 40%;
+
+        --border: 0 0% 50%;
+        --input: 0 0% 60%;
+        --ring: 0 0% 70%;
+    }
+}
+
+@layer base {
+    * {
+        @apply border-border;
+    }
+
+    body {
+        @apply bg-background text-foreground;
+    }
+}

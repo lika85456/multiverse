@@ -76,9 +76,6 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ vars.AWS_REGION }}
 
-      - name: Install SST
-        run: curl -fsSL https://ion.sst.dev/install | bash
-
       - name: Deploy DB
         run: bun run deploy:db
 

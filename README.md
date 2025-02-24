@@ -56,17 +56,17 @@ To run Multiverse UI, you need to have installed `Node.js (v20)` and `pnpm`. You
 First, you need to install all dependencies. Fill in the `.env` file with your configuration. Then you can run the 
 application. 
 
-NOTE: Root `.env` file is used for the deployment of the application. The `apps/multiverse-ui/.env` file is used for running the application locally.
+NOTE: Root `.env` file is used for the deployment of the application. The `apps/ui/.env` file is used for running the application locally.
 
 ### Local environment
 
-To run the application locally, you will need to fill in the `apps/multiverse-ui/.env` file with your configuration.
-All keys provided in the `apps/multiverse-ui/.env.example` need to be filled. This environment configuration is used for
+To run the application locally, you will need to fill in the `apps/ui/.env` file with your configuration.
+All keys provided in the `apps/ui/.env.example` need to be filled. This environment configuration is used for
 running the application locally.
 
 ### Deployment environment
 
-During deployment the `apps/multiverse-ui/.env` file will be used. If you don't have global AWS credentials environment
+During deployment the `apps/ui/.env` file will be used. If you don't have global AWS credentials environment
 variable set up, you will also need to provide the `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` in the root `.env` file.
 
 ### Environment configuration
@@ -136,7 +136,7 @@ Fill in the `SMTP_USER` and `SMTP_PASSWORD` keys in the related `.env` file with
 You will need to have a running MongoDB instance. In production, you will have to create your own MongoDB database in 
 [Mongo Atlas](https://cloud.mongodb.com/). More about using MongoDB Atlas can be found in the [MongoDB Atlas documentation](https://www.mongodb.com/docs/atlas/). In development, 
 create mongodb in Docker or use the cloud MongoDB database in Mongo Atlas. Copy the connection string (with credentials 
-if needed) and fill in the `MONGODB_URI` variable in the `apps/multiverse-ui/.env` file.
+if needed) and fill in the `MONGODB_URI` variable in the `apps/ui/.env` file.
 
 #### NextAuth secret key
 
@@ -163,7 +163,7 @@ string to running development database instance. Set other keys as well.
 NOTE: costs calculation in development mode is disabled to prevent unnecessary costs, since Cost Explorer API is expensive (0.01$ per request).
 
 ```bash
-cd apps/multiverse-ui #if not already in the directory
+cd apps/ui #if not already in the directory
 pnpm i
 pnpm dev
 ```
@@ -178,7 +178,7 @@ pnpm i # in the root of the project
 pnpm build:orchestrator
 pnpm deploy:orchestrator
 pnpm deploy:db
-cd apps/multiverse-ui
+cd apps/ui
 pnpm i
 pnpm build
 pnpm start
@@ -265,7 +265,7 @@ pnpm sst deploy # (--stage prod) if you are deploying to the prod stage
 - if the problem persists, also remove package-lock.yaml and reinstall the packages with `pnpm i` 
 (source: [`Stack overflow: EndpointFunctions[fn] is not a function #5435`](https://github.com/aws/aws-sdk-js-v3/issues/5435))
 - make sure to build the orchestrator
-- make sure to fix any issues in the code which might break the build of the multiverse-ui
+- make sure to fix any issues in the code which might break the build of the ui
 
 #### Multiverse functionality (creating database, adding vector, querying, etc.) fails
 - make sure to have the orchestrator built:

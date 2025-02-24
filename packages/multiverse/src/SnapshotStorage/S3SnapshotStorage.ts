@@ -222,7 +222,7 @@ export default class S3SnapshotStorage implements SnapshotStorage {
         await mkdir(`${this.options.downloadPath}/${this.options.databaseId.name}`, { recursive: true });
 
         // pipe body to filePath
-        await new Promise((resolve, reject) => {
+        await new Promise<void>((resolve, reject) => {
             (s3Object.Body as Readable).pipe(createWriteStream(`${this.options.downloadPath}/${latest.filePath}`))
                 .on("finish", resolve)
                 .on("error", reject);

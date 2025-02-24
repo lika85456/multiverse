@@ -1,7 +1,6 @@
 /** @type {import("eslint").Linter.Config} */
 const config = {
   extends: [
-    "turbo",
     "eslint:recommended",
     "plugin:@typescript-eslint/recommended",
     "prettier",

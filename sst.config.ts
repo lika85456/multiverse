@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/triple-slash-reference */
 /// <reference path="./.sst/platform/config.d.ts" />
 
-import { sstENV } from "./apps/multiverse-ui/src/lib/sstEnv";
+import { sstENV } from "./apps/ui/src/lib/sstEnv";
 
 export default $config({
     app(input) {
@@ -11,18 +12,17 @@ export default $config({
         };
     },
     async run() {
-        const docs = new sst.aws.StaticSite("Docs", {
-            path: "./apps/docs",
-            build: {
-                output: "build",
-                command: "pnpm run build",
-            }
-        });
+        // const docs = new sst.aws.StaticSite("Docs", {
+        //     path: "./apps/docs",
+        //     build: {
+        //         output: "build",
+        //         command: "pnpm run build",
+        //     }
+        // });
 
         const app = new sst.aws.Nextjs("AppFrontend", {
-            path: "./apps/multiverse-ui",
+            path: "./apps/ui",
             environment: sstENV,
-            link: [orchestratorSourceBucket],
             transform: {
                 server: {
                     memory: "256 MB",
@@ -32,19 +32,19 @@ export default $config({
             }
         });
 
-        new sst.aws.Cron("Cron", {
-            schedule: "rate(1 hour)",
-            job: {
-                handler: "apps/multiverse-ui/src/lib/statistics-processor/index.start",
-                timeout: "60 seconds",
-                memory: "256 MB",
-                environment: sstENV,
-            },
-        });
+        // new sst.aws.Cron("Cron", {
+        //     schedule: "rate(1 hour)",
+        //     job: {
+        //         handler: "apps/ui/src/lib/statistics-processor/index.start",
+        //         timeout: "60 seconds",
+        //         memory: "256 MB",
+        //         environment: sstENV,
+        //     },
+        // });
 
         return {
             appUrl: app.url,
-            docsUrl: docs.url
+            // docsUrl: docs.url
         };
     },
 });
