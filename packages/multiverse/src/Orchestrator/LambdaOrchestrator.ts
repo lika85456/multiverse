@@ -155,7 +155,7 @@ export default class LambdaOrchestrator implements Orchestrator {
         const { exec } = await import("child_process");
 
         await new Promise((resolve, reject) => {
-            exec("pnpm build:orchestrator", (error, stdout, stderr) => {
+            exec("bun build:orchestrator", (error, stdout, stderr) => {
                 if (error) {
                     reject(error);
 

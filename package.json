@@ -15,7 +15,7 @@
     "dev": "turbo dev",
     "lint": "turbo lint",
     "run:db": "DOCKER_BUILDKIT=1 docker build -t multiverse . && docker run -p 9000:8080 multiverse",
-    "start:docs": "cd apps/docs && pnpm start",
+    "start:docs": "cd apps/docs && bun start",
     "test": "vitest run ./packages/multiverse --coverage --exclude \"**/tests/benchmarks/**\" --coverage.exclude=\"**/tests/benchmarks/**\" ",
     "test:bench": "vitest bench --project Benchmarks --mode benchmark",
     "test:coverage": "vitest run --coverage",
