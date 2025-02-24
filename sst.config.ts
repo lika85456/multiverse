@@ -31,7 +31,7 @@ export default $config({
                 }
             },
             // openNextVersion: "3.1.1"..
-            buildCommand: "bunx @opennextjs/aws@latest build"
+            // buildCommand: "bunx @opennextjs/aws@latest build"
         });
 
         // new sst.aws.Cron("Cron", {
