@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - main
+      - dev
+      - staging
+      - production
   workflow_dispatch:
 
 jobs:
@@ -48,29 +51,23 @@ jobs:
         with:
           node-version: 20
 
-      - uses: pnpm/action-setup@v2
-        name: Install pnpm
-        id: pnpm-install
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v1
         with:
-          version: 8
-          run_install: false
-
-      - name: Get pnpm store directory
-        id: pnpm-cache
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+          bun-version: latest
 
       - uses: actions/cache@v3
-        name: Setup pnpm cache
+        name: Setup Bun cache
         with:
-          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm
+          path: |
+            ~/.bun
+            node_modules
+          key: ${{ runner.os }}-bun
           restore-keys: |
-            ${{ runner.os }}-pnpm-store
+            ${{ runner.os }}-bun-store
 
       - name: Install dependencies
-        run: pnpm install --prod=false
+        run: bun install --no-save
       
       - uses: aws-actions/configure-aws-credentials@v4
         name: AWS Credentials
@@ -83,10 +80,10 @@ jobs:
         run: curl -fsSL https://ion.sst.dev/install | bash
 
       - name: Deploy DB
-        run: pnpm deploy:db
+        run: bun run deploy:db
 
       - name: Build orchestrator
-        run: pnpm build:orchestrator
+        run: bun run build:orchestrator
 
       - name: Deploy to production
-        run: sst deploy --stage=dev
+        run: sst deploy --stage=${{ github.ref_name }}
