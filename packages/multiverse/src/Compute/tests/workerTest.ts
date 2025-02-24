@@ -29,7 +29,7 @@ export default function workerTest(initializeWorker: InitializeWorkerFunction) {
         } = initializeWorker({
             databaseId: {
                 name: Math.random().toString(36).substring(7),
-                region: "us-east-1"
+                region: "eu-west-1"
             },
             config: {
                 dimensions: 3,

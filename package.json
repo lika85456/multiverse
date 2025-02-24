@@ -5,6 +5,7 @@
   "scripts": {
     "NEED_HELP_WITH_DEPLOYING": "https://stackoverflow.com/questions/76109195/how-to-fix-docker-login-error-error-saving-credentials",
     "build": "turbo build",
+    "clean": "find . -type d \\( -name 'node_modules' -o -name '.sst' -o -name '.turbo' -o -name 'dist' -o -name '.docusaurus' -o -name 'build' -o -name '.next' \\) -prune -exec rm -rf {} +",
     "build:db": "tsup packages/multiverse/src/Compute/index.ts --sourcemap --dts --format cjs --minify --clean --sourcemap --target es2020 --outDir packages/multiverse/src/Compute/dist",
     "build:orchestrator": "tsup packages/multiverse/src/Orchestrator/index.ts --sourcemap --dts --format cjs --minify --clean --legacy-output --target es2020 --outDir packages/multiverse/src/Orchestrator/dist",
     "build:tsdocs": "typedoc --options packages/config/typedoc.json",
@@ -23,14 +24,15 @@
     "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit"
   },
+  "workspaces": [
+    "packages/*",
+    "packages/config/*",
+    "apps/*"
+  ],
   "devDependencies": {
     "@types/aws-lambda": "8.10.138",
     "@types/jest": "^29.5.14"
   },
-  "workspaces": [
-    "packages/**/*",
-    "apps/*"
-  ],
   "dependencies": {
     "@typescript-eslint/eslint-plugin": "^5.62.0",
     "@vitest/coverage-v8": "^0.34.6",
