@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     description: "Serverless vector mongodb.",
 };
 
-export default async function RootLayout({ children, }: {
+export default function RootLayout({ children }: {
   children: ReactNode;
 }) {
     return (

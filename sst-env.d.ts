@@ -5,8 +5,8 @@
 
 declare module "sst" {
   export interface Resource {
-    "Docs": {
-      "type": "sst.aws.StaticSite"
+    "AppFrontend": {
+      "type": "sst.aws.Nextjs"
       "url": string
     }
   }

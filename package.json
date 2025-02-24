@@ -29,6 +29,7 @@
     "packages/config/*",
     "apps/*"
   ],
+  
   "packageManager": "bun@1.2.3",
   "devDependencies": {
     "@types/aws-lambda": "8.10.147",
@@ -44,7 +45,7 @@
     "eslint-config-custom": "workspace:*",
     "hnswlib-node": "^3.0.0",
     "jsdoc": "^4.0.4",
-    "sst": "ion",
+    "sst": "^3.9.10",
     "tsconfig": "workspace:*",
     "tsup": "^7.3.0",
     "tsx": "^3.14.0",

@@ -41,7 +41,6 @@ jobs:
       SMTP_HOST: ${{ secrets.SMTP_HOST }}
       SMTP_PORT: ${{ secrets.SMTP_PORT }}
 
-      ORCHESTRATOR_SOURCE_BUCKET: ${{ secrets.ORCHESTRATOR_SOURCE_BUCKET }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3

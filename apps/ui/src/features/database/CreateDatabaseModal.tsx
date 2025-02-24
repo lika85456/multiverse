@@ -34,7 +34,11 @@ import sleep from "@/lib/sleep";
 
 const Regions = [{
     code: "eu-central-1",
-    name: "Central Europe",
+    name: "eu-central-1",
+},
+{
+    code: "eu-west-1",
+    name: "eu-west-1",
 }];
 
 //"l2" | "cosine" | "ip"

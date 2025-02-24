@@ -22,7 +22,6 @@ const cronEnvSchema = z.object({
     SMTP_HOST: z.string(),
     SMTP_PORT: z.string(),
     EMAIL_FROM: z.string(),
-    ORCHESTRATOR_SOURCE_BUCKET: z.string(),
 });
 
 export const getEnvIssues = (): z.ZodIssue[] => {

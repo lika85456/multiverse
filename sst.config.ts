@@ -29,7 +29,9 @@ export default $config({
                     runtime: "nodejs20.x",
                     timeout: "300 seconds",
                 }
-            }
+            },
+            // openNextVersion: "3.1.1"..
+            buildCommand: "bunx @opennextjs/aws@latest build"
         });
 
         // new sst.aws.Cron("Cron", {
