@@ -113,7 +113,6 @@ export default class BucketChangesStorage implements ChangesStorage {
             });
 
             log.debug("Downloading body");
-            log.debug("Result, ", data);
             const body = await data.Body?.transformToByteArray();
 
             log.debug("Decoding and parsing content");
