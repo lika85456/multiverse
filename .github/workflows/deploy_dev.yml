@@ -121,4 +121,4 @@ jobs:
         run: bun run build:orchestrator
 
       - name: Deploy to production
-        run: bun sst deploy --stage=${{ github.ref_name }}
+        run: bun sst deploy --stage=${{ github.ref_name }} --print-logs
