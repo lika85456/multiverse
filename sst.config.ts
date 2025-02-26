@@ -2,6 +2,7 @@
 /// <reference path="./.sst/platform/config.d.ts" />
 
 import { sstENV } from "./apps/ui/src/lib/sstEnv";
+import { exec } from "child_process";
 
 export default $config({
     app(input) {
@@ -9,6 +10,7 @@ export default $config({
             name: "multiverse",
             removal: input?.stage === "production" ? "retain" : "remove",
             home: "aws",
+            providers: { aws: { region: "eu-west-1" } }
         };
     },
     async run() {
@@ -20,9 +22,12 @@ export default $config({
         //     }
         // });
 
+        const buildBucket = new sst.aws.Bucket("mv-build-bucket-dev");
+
         const app = new sst.aws.Nextjs("AppFrontend", {
             path: "./apps/ui",
             environment: sstENV,
+            link: [buildBucket],
             transform: {
                 server: {
                     memory: "256 MB",
@@ -30,8 +35,19 @@ export default $config({
                     timeout: "300 seconds",
                 }
             },
-            // openNextVersion: "3.1.1"..
-            // buildCommand: "bunx @opennextjs/aws@latest build"
+            permissions: [
+                {
+                    // add iam get role
+                    actions: ["iam:CreateRole", "iam:AttachRolePolicy", "iam:PutRolePolicy", "iam:GetRole"],
+                    resources: ["*"]
+                }
+            ]
+            // buildCommand: `bunx @opennextjs/aws@latest build`
+        });
+        // bun bin/deployOrchestrator.ts ${buildBucket.name.apply()} eu-west-1 &&
+
+        buildBucket.name.apply(name => {
+            exec(`bun bin/deployOrchestrator.ts ${name} eu-west-1`);
         });
 
         // new sst.aws.Cron("Cron", {

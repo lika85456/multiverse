@@ -144,7 +144,8 @@ export default class Multiverse implements IMultiverse {
     constructor(private options: {
         region: Region,
         awsToken: AwsToken,
-        name: string
+        name: string,
+        buildBucket?: string
     }) {
         this.infrastructureStorage = new DynamoInfrastructureStorage({
             region: options.region,
@@ -152,7 +153,7 @@ export default class Multiverse implements IMultiverse {
             awsToken: this.options.awsToken
         });
 
-        this.buildBucket = new BuildBucket(`mv-build-${this.options.name}`, {
+        this.buildBucket = new BuildBucket(options.buildBucket ?? `mv-build-${this.options.name}`, {
             region: this.options.region,
             awsToken: this.options.awsToken
         });

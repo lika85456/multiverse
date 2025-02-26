@@ -471,6 +471,10 @@ export default class OrchestratorWorker implements Orchestrator {
             awsToken: this.options.awsToken
         });
 
-        await q.push(e);
+        try {
+            await q.push(e);
+        } catch (e) {
+            log.error("Error while sending statistics event", { error: e });
+        }
     }
 }

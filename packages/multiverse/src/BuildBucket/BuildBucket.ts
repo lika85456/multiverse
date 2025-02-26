@@ -24,6 +24,13 @@ export default class BuildBucket {
 
     async deploy() {
         log.info(`Creating build bucket ${this.name}`);
+
+        if (await this.exists()) {
+            log.info(`Bucket ${this.name} already exists`);
+
+            return;
+        }
+
         const result = await this.s3.createBucket({ Bucket: this.name });
 
         if (!result.Location) {

@@ -2,7 +2,7 @@
   "$schema": "https://turbo.build/schema.json",
   "globalEnv": [
     "AWS_ECR",
-    "AWS_REGION",
+    "MULTIVERSE_AWS_REGION",
     "NODE_ENV"
   ],
   "tasks": {

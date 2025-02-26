@@ -155,7 +155,7 @@ export default class LambdaOrchestrator implements Orchestrator {
         const { exec } = await import("child_process");
 
         await new Promise((resolve, reject) => {
-            exec("bun build:orchestrator", (error, stdout, stderr) => {
+            exec("npm run build:orchestrator", (error, stdout, stderr) => {
                 if (error) {
                     reject(error);
 
@@ -221,12 +221,19 @@ export default class LambdaOrchestrator implements Orchestrator {
 
         const roleName = "multiverse-orchestrator-role";
 
+        // TODO maybe not catch if permissions are missing?
         const role = await iam.getRole({ RoleName: roleName }).catch(() => null);
+
+        log.debug("Role", {
+            role,
+            region: this.options.databaseId.region
+        });
 
         if (role?.Role?.Arn) {
             return role.Role.Arn;
         }
 
+        log.debug("ROLE IS BEGING CREATED!!!");
         /**
          * Create role that allows lambda access to dynamodb and to create and manage lambda functions.
          */

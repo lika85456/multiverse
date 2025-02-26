@@ -9,6 +9,10 @@ declare module "sst" {
       "type": "sst.aws.Nextjs"
       "url": string
     }
+    "mv-build-bucket-dev": {
+      "name": string
+      "type": "sst.aws.Bucket"
+    }
   }
 }
 /// <reference path="sst-env.d.ts" />

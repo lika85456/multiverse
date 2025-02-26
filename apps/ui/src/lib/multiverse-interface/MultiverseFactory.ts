@@ -7,6 +7,7 @@ import type { UserFind } from "@/lib/mongodb/collections/user";
 import { getSessionUser } from "@/lib/mongodb/collections/user";
 import { getAwsTokenByOwner } from "@/lib/mongodb/collections/aws-token";
 import { ENV } from "@/lib/env";
+import { Resource } from "sst";
 
 export class MultiverseFactory {
     private readonly user: Promise<UserFind | undefined>;
@@ -44,8 +45,9 @@ export class MultiverseFactory {
                 accessKeyId: awsToken.accessKeyId,
                 secretAccessKey: awsToken.secretAccessKey,
             },
-            region: "eu-central-1",
-            name: ENV.NODE_ENV
+            region: "eu-west-1",
+            name: ENV.NODE_ENV,
+            buildBucket: Resource["mv-build-bucket-dev"].name
         }));
     }
 

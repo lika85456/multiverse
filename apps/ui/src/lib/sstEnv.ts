@@ -2,7 +2,7 @@ import z from "zod";
 import { prettifyIssues } from "@multiverse/env";
 import { config } from "dotenv";
 
-config({ path: "./apps/ui/.env", }); // __dirname is not available for cron environment
+config({ path: ".env", }); // __dirname is not available for cron environment
 
 const cronEnvSchema = z.object({
     NODE_ENV: z
@@ -22,6 +22,8 @@ const cronEnvSchema = z.object({
     SMTP_HOST: z.string(),
     SMTP_PORT: z.string(),
     EMAIL_FROM: z.string(),
+    AWS_ECR: z.string(),
+    MULTIVERSE_AWS_REGION: z.string(),
 });
 
 export const getEnvIssues = (): z.ZodIssue[] => {
