@@ -1,4 +1,3 @@
-/* eslint-disable turbo/no-undeclared-env-vars */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import type z from "zod";
 import { prettifyIssues } from "@multiverse/env";

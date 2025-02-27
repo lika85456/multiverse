@@ -1,4 +1,3 @@
-
 // const region = "eu-central-1";
 
 // const s3 = new S3({
@@ -49,32 +48,30 @@ import log from "@multiverse/log";
 
 const region = "eu-west-1";
 
-const s3 = new S3({region});
-const dynamo =  new DynamoDB({region});
-const lambda = new Lambda({region});
-
-async function removeApp(tags: {[key:string]:string}[]) {
-    // await findBucketsToRemove(tags);
-}
+const s3 = new S3({ region });
+const dynamo = new DynamoDB({ region });
+const lambda = new Lambda({ region });
 
 async function findBucketsToRemove(tags: { [key: string]: string; }[]): Promise<string[]> {
     const buckets = await s3.listBuckets({ BucketRegion: region });
     if (!buckets || !buckets.Buckets) {
         log.error("No buckets found");
+
         return [];
     }
 
     // get tags for each bucket
-    const bucketsWithTags = await Promise.all(buckets.Buckets!.map(async (bucket) => {
-        try{
+    const bucketsWithTags = await Promise.all(buckets.Buckets!.map(async(bucket) => {
+        try {
             const tags = await s3.getBucketTagging({ Bucket: bucket.Name });
+
             return {
                 bucket: bucket.Name,
                 tags: tags.TagSet
             };
-        }
-        catch(e) {
-            if(e.name === "NoSuchTagSet") {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } catch (e: any) {
+            if (e.name === "NoSuchTagSet") {
                 return {
                     bucket: bucket.Name,
                     tags: []
@@ -82,7 +79,7 @@ async function findBucketsToRemove(tags: { [key: string]: string; }[]): Promise<
             }
             throw e;
         }
-        
+
     }));
     // filter buckets with the right tags
     const bucketsToDelete = bucketsWithTags.filter(bucket => {
@@ -105,14 +102,16 @@ async function findDynamoTablesToRemove(tags: { [key: string]: string; }[]): Pro
     const tables = await dynamo.listTables({});
     if (!tables || !tables.TableNames) {
         log.error("No tables found");
+
         return [];
     }
 
     // get tags for each table
-    const tablesWithTags = await Promise.all(tables.TableNames!.map(async (tableName) => {
+    const tablesWithTags = await Promise.all(tables.TableNames!.map(async(tableName) => {
         const tableDetails = await dynamo.describeTable({ TableName: tableName });
         const tableArn = tableDetails.Table?.TableArn;
         const tags = await dynamo.listTagsOfResource({ ResourceArn: tableArn! });
+
         return {
             table: tableName,
             tags: tags.Tags
@@ -139,12 +138,14 @@ async function findLambdasToRemove(tags: { [key: string]: string; }[]): Promise<
     const functions = await lambda.listFunctions({});
     if (!functions || !functions.Functions) {
         log.error("No functions found");
+
         return [];
     }
 
     // get tags for each function
-    const functionsWithTags = await Promise.all(functions.Functions!.map(async (func) => {
+    const functionsWithTags = await Promise.all(functions.Functions!.map(async(func) => {
         const tags = await lambda.listTags({ Resource: func.FunctionArn });
+
         return {
             func,
             tags: tags.Tags
@@ -156,7 +157,7 @@ async function findLambdasToRemove(tags: { [key: string]: string; }[]): Promise<
         for (const tag of tags) {
             const tagKey = Object.keys(tag)[0];
             const tagValue = tag[tagKey];
-            if(func.tags?.[tagKey]  !== tagValue) {
+            if (func.tags?.[tagKey] !== tagValue) {
                 return false;
             }
         }
@@ -170,24 +171,27 @@ async function findLambdasToRemove(tags: { [key: string]: string; }[]): Promise<
 async function deleteBuckets(buckets: string[]) {
     if (buckets.length === 0) {
         log.info("No buckets to delete");
+
         return;
     }
 
     for (const bucket of buckets) {
-        try{
+        try {
             // first clear the bucket
             const objects = await s3.listObjectsV2({ Bucket: bucket });
             if (objects.Contents) {
                 await Promise.all(objects.Contents.map(async object => {
-                    await s3.deleteObject({ Bucket: bucket, Key: object.Key });
+                    await s3.deleteObject({
+                        Bucket: bucket,
+                        Key: object.Key
+                    });
                 }));
             }
 
             // then delete the bucket
             await s3.deleteBucket({ Bucket: bucket });
             log.info(`Deleted bucket ${bucket}`);
-        }
-        catch(e) {
+        } catch (e) {
             log.error(`Cannot delete bucket ${bucket}`);
             log.error(e);
         }
@@ -197,15 +201,15 @@ async function deleteBuckets(buckets: string[]) {
 async function deleteTables(tables: string[]) {
     if (tables.length === 0) {
         log.info("No tables to delete");
+
         return;
     }
 
     for (const table of tables) {
-        try{
+        try {
             await dynamo.deleteTable({ TableName: table });
             log.info(`Deleted table ${table}`);
-        }
-        catch(e) {
+        } catch (e) {
             log.error(`Cannot delete table ${table}`);
             log.error(e);
         }
@@ -215,28 +219,37 @@ async function deleteTables(tables: string[]) {
 async function deleteFunctions(functions: string[]) {
     if (functions.length === 0) {
         log.info("No functions to delete");
+
         return;
     }
 
     for (const func of functions) {
-        try{
+        try {
             await lambda.deleteFunction({ FunctionName: func });
             log.info(`Deleted function ${func}`);
-        }
-        catch(e) {
+        } catch (e) {
             log.error(`Cannot delete function ${func}`);
             log.error(e);
         }
     }
 }
 
-(async ()=>{
+(async() => {
     const [
         buckets, tables, lambdas
     ] = await Promise.all([
-        findBucketsToRemove([{ "sst:stage":"dev", "sst:app":"multiverse" }]),
-        findDynamoTablesToRemove([{ "sst:stage":"dev", "sst:app":"multiverse" }]),
-        findLambdasToRemove([{ "sst:stage":"dev", "sst:app":"multiverse" }])
+        findBucketsToRemove([{
+            "sst:stage": "dev",
+            "sst:app": "multiverse"
+        }]),
+        findDynamoTablesToRemove([{
+            "sst:stage": "dev",
+            "sst:app": "multiverse"
+        }]),
+        findLambdasToRemove([{
+            "sst:stage": "dev",
+            "sst:app": "multiverse"
+        }])
     ]);
 
     log.info("Tables to remove:");
@@ -249,12 +262,13 @@ async function deleteFunctions(functions: string[]) {
     log.info(lambdas);
 
     // take input from user (y=delete)
-    const readline = require('readline').createInterface({
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const readline = require("readline").createInterface({
         input: process.stdin,
         output: process.stdout
     });
 
-    readline.question("Do you want to delete these resources? (y/n)", async (answer: string) => {
+    readline.question("Do you want to delete these resources? (y/n)", async(answer: string) => {
         if (answer === "y") {
             await Promise.all([
                 deleteBuckets(buckets),

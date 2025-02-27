@@ -145,7 +145,8 @@ export default class Multiverse implements IMultiverse {
         region: Region,
         awsToken: AwsToken,
         name: string,
-        buildBucket?: string
+        buildBucket: string,
+        computeImage: string
     }) {
         this.infrastructureStorage = new DynamoInfrastructureStorage({
             region: options.region,
@@ -153,7 +154,7 @@ export default class Multiverse implements IMultiverse {
             awsToken: this.options.awsToken
         });
 
-        this.buildBucket = new BuildBucket(options.buildBucket ?? `mv-build-${this.options.name}`, {
+        this.buildBucket = new BuildBucket(options.buildBucket, {
             region: this.options.region,
             awsToken: this.options.awsToken
         });
@@ -233,7 +234,7 @@ export default class Multiverse implements IMultiverse {
         const orchestrator = new LambdaOrchestrator({
             databaseId,
             secretToken: options.secretTokens[0].secret,
-            awsToken: this.options.awsToken
+            awsToken: this.options.awsToken,
         });
 
         log.info(`Creating database ${options.name}`);
@@ -253,7 +254,8 @@ export default class Multiverse implements IMultiverse {
                     warmSecondaryInstances: 0,
                     secondaryFallbacks: 0,
                     outOfRegionFallbacks: 0
-                }
+                },
+                computeImage: this.options.computeImage,
             })
         ];
 

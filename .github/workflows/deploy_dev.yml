@@ -115,11 +115,8 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ vars.AWS_REGION }}
 
-      - name: Deploy DB
-        run: bun run deploy:db
-
-      - name: Build orchestrator
-        run: bun run build:orchestrator
+      # - name: Deploy DB
+      #   run: bun run deploy:db
 
       - name: Deploy to production
         run: bun sst deploy --stage=${{ github.ref_name }} --print-logs

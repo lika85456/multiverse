@@ -4,6 +4,7 @@ import type { Region } from "../../core/DatabaseConfiguration";
 import { Vector } from "../../core/Vector";
 import LocalIndex from "../../Index/LocalIndex";
 import HNSWIndex from "../../Index/HNSWIndex";
+import BuildBucket from "../../BuildBucket/BuildBucket";
 
 describe.each([
     ["low-dimensions", { dimensions: 100 }],
@@ -11,10 +12,17 @@ describe.each([
 ])("Multiverse E2E %s", (name, config) => {
     const region = "eu-west-1" as Region;
 
+    const buildBucket = new BuildBucket("multiverse-build-bucket-test", {
+        awsToken: undefined as any,
+        region
+    });
+
     const multiverse = new Multiverse({
         region,
         awsToken: undefined as any,
-        name: "test"
+        name: "test",
+        buildBucket: buildBucket.getResourceName(),
+        computeImage:
     });
 
     afterAll(async() => {

@@ -31,7 +31,7 @@ export default class LambdaOrchestrator implements Orchestrator {
     constructor(private options: {
         databaseId: DatabaseID;
         secretToken: string;
-        awsToken: AwsToken
+        awsToken: AwsToken,
     }) {
         this.lambda = new Lambda({
             region: options.databaseId.region,
@@ -402,13 +402,14 @@ export default class LambdaOrchestrator implements Orchestrator {
     }
 
     private async deployPartition({
-        snapshotBucket, env, partition, databaseConfiguration, changesStorage
+        snapshotBucket, env, partition, databaseConfiguration, changesStorage, computeImage
     }: {
         snapshotBucket: string;
         env: "development" | "production";
         partition: number;
         databaseConfiguration: StoredDatabaseConfiguration;
         changesStorage: string;
+        computeImage: string;
     }) {
 
         log.info("Deploying partition", {
@@ -428,7 +429,8 @@ export default class LambdaOrchestrator implements Orchestrator {
             databaseId: this.options.databaseId,
             env,
             partition,
-            changesStorage
+            changesStorage,
+            computeImage
         });
 
         log.info("Deployed partition", {
@@ -454,12 +456,13 @@ export default class LambdaOrchestrator implements Orchestrator {
     }
 
     public async deploy({
-        changesStorage, snapshotBucket, infrastructureTable, databaseConfiguration, scalingTargetConfiguration, buildBucket
+        changesStorage, snapshotBucket, infrastructureTable, databaseConfiguration, scalingTargetConfiguration, buildBucket, computeImage
     }: {
         changesStorage: string;
         snapshotBucket: string;
         infrastructureTable: string;
         buildBucket: string;
+        computeImage: string;
         databaseConfiguration: StoredDatabaseConfiguration;
         scalingTargetConfiguration: ScalingTargetConfiguration;
     }) {
@@ -494,7 +497,8 @@ export default class LambdaOrchestrator implements Orchestrator {
                 env: "production",
                 partition: 0,
                 databaseConfiguration,
-                changesStorage
+                changesStorage,
+                computeImage
             }).catch(e => {
                 log.error("Failed to deploy primary partition", { error: e });
                 errorDeploying = true;
